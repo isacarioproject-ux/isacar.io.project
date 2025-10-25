@@ -1,0 +1,260 @@
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '@/lib/supabase'
+
+export interface DashboardStats {
+  totalProjects: number
+  activeProjects: number
+  completedProjects: number
+  totalDocuments: number
+  recentDocuments: number
+  totalStorage: number
+  totalTeamMembers: number
+  activeMembers: number
+  pendingInvites: number
+  projectsByStatus: {
+    planning: number
+    in_progress: number
+    completed: number
+    on_hold: number
+  }
+  documentsByCategory: {
+    category: string
+    count: number
+  }[]
+  recentActivity: {
+    type: 'project' | 'document' | 'team'
+    action: 'created' | 'updated' | 'deleted'
+    title: string
+    timestamp: string
+  }[]
+}
+
+interface UseDashboardStatsReturn {
+  stats: DashboardStats | null
+  loading: boolean
+  error: Error | null
+  refetch: () => Promise<void>
+}
+
+export function useDashboardStats(): UseDashboardStatsReturn {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      // Primeiro buscar os IDs dos meus projetos
+      const myProjectsResult = await supabase
+        .from('projects')
+        .select('id, status, created_at')
+        .eq('user_id', user.id)
+
+      if (myProjectsResult.error) throw myProjectsResult.error
+      const projects = myProjectsResult.data || []
+      const projectIds = projects.map(p => p.id)
+
+      // Buscar dados em paralelo
+      const [
+        documentsResult,
+        teamMembersResult,
+        myInvitesResult,
+      ] = await Promise.all([
+        // Documents
+        supabase
+          .from('documents')
+          .select('category, file_size, created_at')
+          .eq('user_id', user.id),
+        
+        // Team members dos meus projetos
+        projectIds.length > 0
+          ? supabase
+              .from('team_members')
+              .select('status, project_id, joined_at')
+              .in('project_id', projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        
+        // Meus convites pendentes
+        supabase
+          .from('team_members')
+          .select('id')
+          .eq('email', user.email || '')
+          .eq('status', 'pending'),
+      ])
+
+      if (documentsResult.error) throw documentsResult.error
+
+      const documents = documentsResult.data || []
+      const teamMembers = teamMembersResult.data || []
+      const myInvites = myInvitesResult.data || []
+
+      // Calcular stats de projetos
+      const activeProjects = projects.filter(p => p.status === 'in_progress').length
+      const completedProjects = projects.filter(p => p.status === 'completed').length
+
+      // Calcular stats de documentos
+      const oneWeekAgo = new Date()
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+      const recentDocuments = documents.filter(d => 
+        new Date(d.created_at) >= oneWeekAgo
+      ).length
+
+      const totalStorage = documents.reduce((sum, d) => sum + (d.file_size || 0), 0)
+
+      // Calcular stats de membros
+      const activeMembers = teamMembers.filter(m => m.status === 'active').length
+
+      // Projects by status
+      const projectsByStatus = {
+        planning: projects.filter(p => p.status === 'planning').length,
+        in_progress: projects.filter(p => p.status === 'in_progress').length,
+        completed: projects.filter(p => p.status === 'completed').length,
+        on_hold: projects.filter(p => p.status === 'on_hold').length,
+      }
+
+      // Documents by category
+      const categoryMap = new Map<string, number>()
+      documents.forEach(doc => {
+        const count = categoryMap.get(doc.category) || 0
+        categoryMap.set(doc.category, count + 1)
+      })
+      const documentsByCategory = Array.from(categoryMap.entries()).map(([category, count]) => ({
+        category,
+        count,
+      }))
+
+      // Recent activity (últimas 10)
+      const recentActivity: DashboardStats['recentActivity'] = []
+
+      // Buscar projetos recentes
+      const recentProjects = await supabase
+        .from('projects')
+        .select('name, created_at, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(5)
+
+      if (recentProjects.data) {
+        recentProjects.data.forEach(p => {
+          recentActivity.push({
+            type: 'project',
+            action: new Date(p.created_at).getTime() === new Date(p.updated_at).getTime() 
+              ? 'created' 
+              : 'updated',
+            title: p.name,
+            timestamp: p.updated_at,
+          })
+        })
+      }
+
+      // Buscar documentos recentes
+      const recentDocs = await supabase
+        .from('documents')
+        .select('name, created_at, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(5)
+
+      if (recentDocs.data) {
+        recentDocs.data.forEach(d => {
+          recentActivity.push({
+            type: 'document',
+            action: new Date(d.created_at).getTime() === new Date(d.updated_at).getTime() 
+              ? 'created' 
+              : 'updated',
+            title: d.name,
+            timestamp: d.updated_at,
+          })
+        })
+      }
+
+      // Ordenar por timestamp e pegar últimas 10
+      recentActivity.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )
+      const limitedActivity = recentActivity.slice(0, 10)
+
+      setStats({
+        totalProjects: projects.length,
+        activeProjects,
+        completedProjects,
+        totalDocuments: documents.length,
+        recentDocuments,
+        totalStorage,
+        totalTeamMembers: activeMembers,
+        activeMembers,
+        pendingInvites: myInvites.length,
+        projectsByStatus,
+        documentsByCategory,
+        recentActivity: limitedActivity,
+      })
+    } catch (err) {
+      console.error('Erro ao buscar stats:', err)
+      setError(err instanceof Error ? err : new Error('Erro ao buscar estatísticas'))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  // Realtime subscriptions para atualizar stats
+  useEffect(() => {
+    let projectsChannel: ReturnType<typeof supabase.channel> | null = null
+    let documentsChannel: ReturnType<typeof supabase.channel> | null = null
+
+    const setupSubscriptions = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      projectsChannel = supabase
+        .channel('dashboard-projects')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'projects',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => fetchStats()
+        )
+        .subscribe()
+
+      documentsChannel = supabase
+        .channel('dashboard-documents')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'documents',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => fetchStats()
+        )
+        .subscribe()
+    }
+
+    setupSubscriptions()
+
+    return () => {
+      if (projectsChannel) supabase.removeChannel(projectsChannel)
+      if (documentsChannel) supabase.removeChannel(documentsChannel)
+    }
+  }, [fetchStats])
+
+  return {
+    stats,
+    loading,
+    error,
+    refetch: fetchStats,
+  }
+}
