@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/auth-context'
 import type { Project, ProjectInsert, ProjectUpdate } from '@/types/database'
 
 interface UseProjectsReturn {
@@ -13,6 +14,7 @@ interface UseProjectsReturn {
 }
 
 export function useProjects(): UseProjectsReturn {
+  const { user, loading: authLoading } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -20,19 +22,24 @@ export function useProjects(): UseProjectsReturn {
   // Fetch projects
   const fetchProjects = useCallback(async () => {
     try {
+      console.log('🔄 useProjects: Iniciando fetchProjects')
       setLoading(true)
       setError(null)
 
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('👤 useProjects: User obtido:', user?.id ? 'OK' : 'NULL')
       if (!user) {
         throw new Error('Usuário não autenticado')
       }
 
+      console.log('📊 useProjects: Buscando projetos no Supabase...')
       const { data, error: fetchError } = await supabase
         .from('projects')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
+
+      console.log('📊 useProjects: Resultado:', { count: data?.length, error: fetchError?.message })
 
       if (fetchError) throw fetchError
 
@@ -43,7 +50,7 @@ export function useProjects(): UseProjectsReturn {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user, authLoading])
 
   // Create project
   const createProject = useCallback(async (data: Omit<ProjectInsert, 'user_id'>) => {

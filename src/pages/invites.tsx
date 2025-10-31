@@ -1,11 +1,23 @@
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/empty'
+import { Link } from 'react-router-dom'
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { useMyInvites } from '@/hooks/use-my-invites'
 import { useProjects } from '@/hooks/use-projects'
 import { Mail, Check, X, Crown, Shield, Edit, User, Inbox } from 'lucide-react'
 import type { TeamMemberRole } from '@/types/database'
+import { CardSkeleton } from '@/components/loading-skeleton'
+import { EmptyState } from '@/components/empty-state'
+import { toast } from 'sonner'
+import { useI18n } from '@/hooks/use-i18n'
 
 const roleIcons: Record<TeamMemberRole, any> = {
   owner: Crown,
@@ -15,43 +27,41 @@ const roleIcons: Record<TeamMemberRole, any> = {
 }
 
 const roleColors: Record<TeamMemberRole, string> = {
-  owner: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  admin: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  editor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  viewer: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  owner: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20',
+  admin: 'bg-primary/10 text-primary border-primary/20',
+  editor: 'bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20',
+  viewer: 'bg-secondary text-secondary-foreground border-border',
 }
 
-const roleLabels: Record<TeamMemberRole, string> = {
-  owner: 'Proprietário',
-  admin: 'Administrador',
-  editor: 'Editor',
-  viewer: 'Visualizador',
-}
+// Removido - usar t('roles.xxx') em vez de roleLabels
 
 export default function InvitesPage() {
+  const { t } = useI18n()
   const { invites, loading, error, acceptInvite, declineInvite } = useMyInvites()
   const { projects, loading: loadingProjects } = useProjects()
 
   const handleAccept = async (inviteId: string) => {
     try {
       await acceptInvite(inviteId)
-      // Toast de sucesso (você pode adicionar um toast aqui)
+      toast.success(t('invites.accepted'), {
+        description: t('invites.acceptedDescription')
+      })
     } catch (err) {
-      console.error('Erro ao aceitar:', err)
-      // Toast de erro
+      toast.error(t('invites.errorAccept'), {
+        description: err instanceof Error ? err.message : t('invites.tryAgain')
+      })
     }
   }
 
   const handleDecline = async (inviteId: string) => {
-    if (window.confirm('Tem certeza que deseja recusar este convite?')) {
-      try {
-        await declineInvite(inviteId)
-        // Toast de sucesso
-      } catch (err) {
-        console.error('Erro ao recusar:', err)
-        // Toast de erro
+    toast.promise(
+      declineInvite(inviteId),
+      {
+        loading: t('invites.declining'),
+        success: t('invites.declinedSuccess'),
+        error: t('invites.errorDecline')
       }
-    }
+    )
   }
 
   const getProjectName = (projectId: string) => {
@@ -61,76 +71,79 @@ export default function InvitesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
-        {/* Header */}
-        <header>
-          <h1 className="text-3xl font-bold text-slate-50">Convites Recebidos</h1>
-          <p className="mt-2 text-slate-400">
-            Gerencie os convites de projetos que você recebeu
-          </p>
-        </header>
+      <div className="space-y-6 p-6">
+        {/* Breadcrumb */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/">{t('nav.dashboard')}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{t('invites.title')}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         {/* Loading */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-              <p className="mt-4 text-slate-400">Carregando convites...</p>
-            </div>
-          </div>
+          <CardSkeleton />
         ) : error ? (
-          <Card className="border-red-500/50 bg-red-500/5">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-red-400">{error.message}</p>
+          <Card className="border-destructive/50">
+            <CardContent className="p-12">
+              <EmptyState
+                icon={Mail}
+                title={t('invites.errorLoading')}
+                description={error.message}
+              />
             </CardContent>
           </Card>
         ) : invites.length === 0 ? (
           /* Empty State */
-          <Empty className="border-2">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Inbox className="h-6 w-6" />
-              </EmptyMedia>
-              <EmptyTitle>Nenhum convite pendente</EmptyTitle>
-              <EmptyDescription>
-                Você não tem convites de projetos no momento. Quando alguém te convidar para um projeto, aparecerá aqui.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <Card>
+            <CardContent className="p-12">
+              <EmptyState
+                icon={Inbox}
+                title={t('invites.noInvites')}
+                description={t('invites.noInvitesDesc')}
+              />
+            </CardContent>
+          </Card>
         ) : (
           /* Lista de Convites */
-          <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Convites Pendentes ({invites.length})</CardTitle>
-                <CardDescription>
-                  Você foi convidado para participar destes projetos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('invites.pending')} ({invites.length})</CardTitle>
+              <CardDescription>
+                {t('invites.invitedTo')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
                   {invites.map((invite) => {
                     const RoleIcon = roleIcons[invite.role]
                     return (
                       <div
                         key={invite.id}
-                        className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 p-4 hover:border-indigo-500/30 transition-colors"
+                        className="flex items-center justify-between rounded-lg border bg-card p-4 hover:border-primary/30 transition-colors"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10">
-                            <Mail className="h-6 w-6 text-indigo-400" />
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                            <Mail className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-slate-50">
-                              {loadingProjects ? 'Carregando...' : getProjectName(invite.project_id)}
+                            <h3 className="text-sm font-medium">
+                              {loadingProjects ? t('common.loading') : getProjectName(invite.project_id)}
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${roleColors[invite.role]}`}>
+                              <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${roleColors[invite.role]}`}>
                                 <RoleIcon className="h-3 w-3" />
-                                {roleLabels[invite.role]}
+                                {t(`roles.${invite.role}`)}
                               </span>
-                              <span className="text-sm text-slate-500">
-                                • Convidado em {new Date(invite.invited_at).toLocaleDateString('pt-BR')}
+                              <span className="text-xs text-muted-foreground">
+                                • {new Date(invite.invited_at).toLocaleDateString('pt-BR')}
                               </span>
                             </div>
                           </div>
@@ -142,25 +155,24 @@ export default function InvitesPage() {
                             size="sm"
                           >
                             <Check className="h-4 w-4" />
-                            Aceitar
+                            {t('invites.accept')}
                           </Button>
                           <Button
                             onClick={() => handleDecline(invite.id)}
                             variant="outline"
                             size="sm"
-                            className="gap-2 text-red-400 hover:text-red-300 hover:border-red-500/50"
+                            className="gap-2 text-destructive hover:text-destructive"
                           >
                             <X className="h-4 w-4" />
-                            Recusar
+                            {t('invites.decline')}
                           </Button>
                         </div>
                       </div>
                     )
                   })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </DashboardLayout>

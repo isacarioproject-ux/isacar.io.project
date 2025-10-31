@@ -1,23 +1,46 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { ThemeProvider } from '@/components/theme-provider'
-import AuthPage from '@/pages/auth'
-import DashboardPage from '@/pages/dashboard'
-import ProjectsPage from '@/pages/projects'
-import DocumentsPage from '@/pages/documents'
-import AnalyticsPage from '@/pages/analytics'
-import TeamPage from '@/pages/team'
-import InvitesPage from '@/pages/invites'
-import SettingsPage from '@/pages/settings'
-import ProfilePage from '@/pages/settings/profile'
-import NotificationsPage from '@/pages/settings/notifications'
-import PreferencesPage from '@/pages/settings/preferences'
-import BillingPage from '@/pages/settings/billing'
+import { SubscriptionProvider } from '@/contexts/subscription-context'
+import { Toaster } from 'sonner'
+import { AuthProvider } from '@/contexts/auth-context'
+
+// Lazy load pages for code splitting
+const AuthPage = lazy(() => import('@/pages/auth'))
+const DashboardPage = lazy(() => import('@/pages/dashboard'))
+const ProjectsPage = lazy(() => import('@/pages/projects'))
+const DocumentsPage = lazy(() => import('@/pages/documents'))
+const AnalyticsPage = lazy(() => import('@/pages/analytics'))
+const TeamPage = lazy(() => import('@/pages/team'))
+const InvitesPage = lazy(() => import('@/pages/invites'))
+const SettingsPage = lazy(() => import('@/pages/settings'))
+const ProfilePage = lazy(() => import('@/pages/settings/profile'))
+const NotificationsPage = lazy(() => import('@/pages/settings/notifications'))
+const PreferencesPage = lazy(() => import('@/pages/settings/preferences'))
+const BillingPage = lazy(() => import('@/pages/settings/billing'))
+
+// Minimal loader - sem chamadas assíncronas
+const PageLoader = () => {
+  return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="relative h-12 w-12">
+        <div className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
+        <div className="absolute inset-2 animate-pulse rounded-full bg-primary/50" />
+        <div className="absolute inset-4 rounded-full bg-primary" />
+      </div>
+    </div>
+  )
+}
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
+      <Toaster richColors position="top-right" expand={false} />
       <BrowserRouter>
-        <Routes>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <Suspense fallback={<PageLoader />}>
+            <Routes>
           {/* Auth */}
           <Route path="/auth" element={<AuthPage />} />
           
@@ -39,7 +62,10 @@ function App() {
           {/* Redirects */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            </Routes>
+            </Suspense>
+          </SubscriptionProvider>
+        </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
   )

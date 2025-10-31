@@ -2,16 +2,40 @@ import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { StatsCard } from '@/components/stats-card'
+import { StatsSkeleton, CardSkeleton } from '@/components/loading-skeleton'
+import { EmptyState } from '@/components/empty-state'
+import { DashboardManagement } from '@/components/dashboard-management'
 import { User } from '@supabase/supabase-js'
-import { Activity, TrendingUp, Users, FolderKanban, FileText, Clock, UserPlus, BarChart3 } from 'lucide-react'
+import { Activity, Users, FolderKanban, FileText, Clock, HardDrive, Layout, Crown } from 'lucide-react'
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
+import { useSubscription } from '@/contexts/subscription-context'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { cn } from '@/lib/utils'
+import { useI18n } from '@/hooks/use-i18n'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e']
+const COLORS = ['hsl(var(--primary))', 'hsl(239 84% 57%)', 'hsl(239 84% 77%)', 'hsl(239 84% 87%)']
+
+const activityIcons: Record<string, any> = {
+  project: FolderKanban,
+  document: FileText,
+  team: Users,
+}
+
+const activityColors: Record<string, string> = {
+  project: 'bg-blue-500/10 text-blue-500',
+  document: 'bg-purple-500/10 text-purple-500',
+  team: 'bg-green-500/10 text-green-500',
+}
 
 export default function DashboardPage() {
+  const { t, locale } = useI18n()
   const [user, setUser] = useState<User | null>(null)
   const { stats, loading, error } = useDashboardStats()
+  const { subscription } = useSubscription()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,217 +61,324 @@ export default function DashboardPage() {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Agora'
-    if (diffMins < 60) return `${diffMins}m atrás`
-    if (diffHours < 24) return `${diffHours}h atrás`
-    if (diffDays < 7) return `${diffDays}d atrás`
+    if (diffMins < 1) return t('common.now')
+    if (diffMins < 60) return `${diffMins}${t('common.minutesAgo')}`
+    if (diffHours < 24) return `${diffHours}${t('common.hoursAgo')}`
+    if (diffDays < 7) return `${diffDays}${t('common.daysAgo')}`
     return date.toLocaleDateString('pt-BR')
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
-        {/* Header */}
-        <header>
-          <h1 className="text-3xl font-bold text-slate-50">Dashboard</h1>
-          <p className="mt-2 text-slate-400">
-            Bem-vindo de volta, {user?.user_metadata?.name || 'Usuário'}! 👋
-          </p>
-        </header>
+      <div className="flex flex-col gap-6 p-4 lg:p-6">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList key={locale} className="h-9 w-fit">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">
+              {t('dashboard.tabs.overview')}
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="text-xs sm:text-sm">
+              {t('dashboard.tabs.recentActivity')}
+            </TabsTrigger>
+            <TabsTrigger value="management" className="text-xs sm:text-sm">
+              {t('dashboard.tabs.management')}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-              <p className="mt-4 text-slate-400">Carregando estatísticas...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <Card className="border-red-500/50 bg-red-500/5">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-red-400">{error.message}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Stats Cards */}
-        {stats && (
-          <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Projetos</CardTitle>
-                  <FolderKanban className="h-4 w-4 text-slate-400" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-slate-50">{stats.totalProjects}</div>
-                  <p className="text-xs text-slate-500">
-                    {stats.activeProjects} em andamento
-                  </p>
+          <TabsContent value="overview" className="space-y-4">
+            {error ? (
+              <Card className="border-destructive/50 bg-destructive/5">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <p className="text-destructive">{error.message}</p>
                 </CardContent>
               </Card>
+            ) : null}
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Documentos</CardTitle>
-                  <FileText className="h-4 w-4 text-slate-400" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-slate-50">{stats.totalDocuments}</div>
-                  <p className="text-xs text-slate-500">
-                    {formatBytes(stats.totalStorage)} armazenados
-                  </p>
-                </CardContent>
-              </Card>
+            {loading ? (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <StatsSkeleton key={i} />
+                  ))}
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <CardSkeleton />
+                  <CardSkeleton />
+                </div>
+              </>
+            ) : stats ? (
+              <>
+                {/* Stats Principais */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <StatsCard
+                    title={t('dashboard.stats.totalProjects')}
+                    value={stats.totalProjects}
+                    description={t('dashboard.stats.inProgress', { count: stats.activeProjects })}
+                    icon={FolderKanban}
+                    trend="up"
+                    trendValue="+12%"
+                  />
+                  <StatsCard
+                    title={t('dashboard.stats.documents')}
+                    value={stats.totalDocuments}
+                    description={formatBytes(stats.totalStorage)}
+                    icon={FileText}
+                    trend="up"
+                    trendValue="+8%"
+                  />
+                  <StatsCard
+                    title={t('dashboard.stats.teamMembers')}
+                    value={stats.totalTeamMembers}
+                    description={t('dashboard.stats.activeMembers', { count: stats.activeMembers })}
+                    icon={Users}
+                  />
+                  <StatsCard
+                    title={t('dashboard.stats.newThisWeek')}
+                    value={stats.recentDocuments}
+                    description={t('dashboard.stats.docsAdded')}
+                    icon={Clock}
+                    trend="up"
+                    trendValue="+23%"
+                  />
+                </div>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Membros Ativos</CardTitle>
-                  <Users className="h-4 w-4 text-slate-400" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-slate-50">{stats.activeMembers}</div>
-                  <p className="text-xs text-slate-500">
-                    {stats.totalTeamMembers} total
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Novos Esta Semana</CardTitle>
-                  <Clock className="h-4 w-4 text-slate-400" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-slate-50">{stats.recentDocuments}</div>
-                  <p className="text-xs text-slate-500">
-                    Documentos recentes
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Gráficos */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Projetos por Status */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Projetos por Status</CardTitle>
-                  <CardDescription>Distribuição dos seus projetos</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: 'Planejamento', value: stats.projectsByStatus.planning },
-                      { name: 'Em Andamento', value: stats.projectsByStatus.in_progress },
-                      { name: 'Concluído', value: stats.projectsByStatus.completed },
-                      { name: 'Pausado', value: stats.projectsByStatus.on_hold },
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="name" stroke="#94a3b8" />
-                      <YAxis stroke="#94a3b8" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1e293b', 
-                          border: '1px solid #334155',
-                          borderRadius: '8px',
-                        }}
-                      />
-                      <Bar dataKey="value" fill="#6366f1" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Documentos por Categoria */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Documentos por Categoria</CardTitle>
-                  <CardDescription>Distribuição por tipo</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={stats.documentsByCategory}
-                        dataKey="count"
-                        nameKey="category"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label={(entry) => `${entry.category}: ${entry.count}`}
-                      >
-                        {stats.documentsByCategory.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1e293b', 
-                          border: '1px solid #334155',
-                          borderRadius: '8px',
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Activity Feed */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Atividade Recente</CardTitle>
-                <CardDescription>Últimas alterações nos seus projetos e documentos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {stats.recentActivity.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Activity className="h-12 w-12 text-slate-600 mb-4" />
-                    <p className="text-slate-400">Nenhuma atividade recente</p>
-                    <p className="text-sm text-slate-500 mt-2">
-                      Crie projetos ou documentos para ver atividades aqui
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {stats.recentActivity.map((activity, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3 hover:border-indigo-500/30 transition-colors"
-                      >
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                          activity.type === 'project' ? 'bg-indigo-500/10 text-indigo-400' :
-                          activity.type === 'document' ? 'bg-emerald-500/10 text-emerald-400' :
-                          'bg-violet-500/10 text-violet-400'
-                        }`}>
-                          {activity.type === 'project' ? <FolderKanban className="h-4 w-4" /> :
-                           activity.type === 'document' ? <FileText className="h-4 w-4" /> :
-                           <UserPlus className="h-4 w-4" />}
+                {/* Limites do Plano */}
+                {subscription && (
+                  <Card className="border-primary/20">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Crown className="h-5 w-5 text-primary" />
+                          <CardTitle className="text-base">
+                            Plano {subscription.plan_id.toUpperCase()}
+                          </CardTitle>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-50">
-                            {activity.action === 'created' ? 'Criou' :
-                             activity.action === 'updated' ? 'Atualizou' :
-                             'Deletou'}{' '}
-                            <span className="font-medium">{activity.title}</span>
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {formatTimestamp(activity.timestamp)}
-                          </p>
+                        <Button asChild variant="outline" size="sm">
+                          <Link to="/settings/billing">Gerenciar Plano</Link>
+                        </Button>
+                      </div>
+                      <CardDescription>Uso dos recursos do seu plano</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {/* Projetos */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Projetos</span>
+                            <span className="font-medium">
+                              {subscription.usage.projects_used} / {subscription.limits.projects_limit === -1 ? '∞' : subscription.limits.projects_limit}
+                            </span>
+                          </div>
+                          {subscription.limits.projects_limit !== -1 && (
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary transition-all"
+                                style={{ 
+                                  width: `${Math.min((subscription.usage.projects_used / subscription.limits.projects_limit) * 100, 100)}%` 
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Whiteboards */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Whiteboards</span>
+                            <span className="font-medium">
+                              {subscription.usage.whiteboards_used} {subscription.limits.whiteboards_per_project_limit === -1 && '/ ∞'}
+                            </span>
+                          </div>
+                          {subscription.limits.whiteboards_per_project_limit !== -1 && (
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary" style={{ width: '0%' }} />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Membros */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Membros</span>
+                            <span className="font-medium">
+                              {subscription.usage.members_used} / {subscription.limits.members_limit === -1 ? '∞' : subscription.limits.members_limit}
+                            </span>
+                          </div>
+                          {subscription.limits.members_limit !== -1 && (
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary transition-all"
+                                style={{ 
+                                  width: `${Math.min((subscription.usage.members_used / subscription.limits.members_limit) * 100, 100)}%` 
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Armazenamento */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Armazenamento</span>
+                            <span className="font-medium">
+                              {subscription.usage.storage_used_gb.toFixed(2)} GB / {subscription.limits.storage_limit_gb === -1 ? '∞' : subscription.limits.storage_limit_gb} GB
+                            </span>
+                          </div>
+                          {subscription.limits.storage_limit_gb !== -1 && (
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary transition-all"
+                                style={{ 
+                                  width: `${Math.min((subscription.usage.storage_used_gb / subscription.limits.storage_limit_gb) * 100, 100)}%` 
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
-          </>
-        )}
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{t('dashboard.charts.projectsByStatus')}</CardTitle>
+                      <CardDescription>{t('dashboard.charts.projectsDistribution')}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart
+                          data={[
+                            { name: t('dashboard.status.planning'), value: stats.projectsByStatus.planning },
+                            { name: t('dashboard.status.inProgress'), value: stats.projectsByStatus.in_progress },
+                            { name: t('dashboard.status.completed'), value: stats.projectsByStatus.completed },
+                            { name: t('dashboard.status.onHold'), value: stats.projectsByStatus.on_hold },
+                          ]}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                          <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} />
+                          <YAxis tick={{ fontSize: 12 }} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                            }}
+                          />
+                          <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{t('dashboard.charts.documentsByCategory')}</CardTitle>
+                      <CardDescription>{t('dashboard.charts.documentsTypes')}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={stats.documentsByCategory}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="hsl(var(--primary))"
+                            dataKey="count"
+                            label={({ category, percent }) =>
+                              `${category} ${(percent * 100).toFixed(0)}%`
+                            }
+                          >
+                            {stats.documentsByCategory.map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-4">
+            {loading ? (
+              <CardSkeleton />
+            ) : stats ? (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{t('dashboard.activity.title')}</CardTitle>
+                  <CardDescription>{t('dashboard.activity.description')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {stats.recentActivity.length === 0 ? (
+                    <EmptyState
+                      icon={Activity}
+                      title={t('dashboard.activity.empty')}
+                      description={t('dashboard.activity.emptyDesc')}
+                      compact
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {stats.recentActivity.map((activity: any, index: number) => {
+                        const Icon = activityIcons[activity.type] || Activity
+                        return (
+                          <div
+                            key={index}
+                            className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted/40 sm:flex-row sm:items-start sm:gap-3"
+                          >
+                            <div
+                              className={cn(
+                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+                                activityColors[activity.type]
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm">
+                                <span className="font-medium">{activity.title}</span>
+                                <span className="text-muted-foreground">
+                                  {' '}
+                                  {t('dashboard.activity.was')} {
+                                    activity.action === 'created'
+                                      ? t('dashboard.activity.created')
+                                      : activity.action === 'updated'
+                                      ? t('dashboard.activity.updated')
+                                      : t('dashboard.activity.deleted')
+                                  }
+                                </span>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1 sm:mt-0.5">
+                                {formatTimestamp(activity.timestamp)}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="management" className="space-y-4">
+            <DashboardManagement loading={loading} />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   )

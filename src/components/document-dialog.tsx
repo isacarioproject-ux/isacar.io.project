@@ -9,6 +9,8 @@ import { useFileUpload } from '@/hooks/use-file-upload'
 import { documentSchema, type DocumentFormData } from '@/lib/validations/document'
 import { Plus, Loader2 } from 'lucide-react'
 import type { Document, DocumentCategory } from '@/types/database'
+import { useI18n } from '@/hooks/use-i18n'
+import { toast } from 'sonner'
 
 interface DocumentDialogProps {
   document?: Document | null
@@ -27,6 +29,7 @@ const categoryOptions: { value: DocumentCategory; label: string }[] = [
 ]
 
 export function DocumentDialog({ document, onSave, trigger, projects = [] }: DocumentDialogProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -92,6 +95,10 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
       // Salvar documento
       await onSave(validated)
       
+      toast.success(document ? t('common.updated') : t('common.created'), {
+        description: document ? t('documents.updated') : t('documents.created')
+      })
+      
       // Fechar modal e resetar form
       setOpen(false)
       if (!document) {
@@ -117,6 +124,9 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
         })
         setErrors(fieldErrors)
       } else {
+        toast.error(t('common.error'), {
+          description: err.message || t('documents.saveError')
+        })
         console.error('Erro ao salvar documento:', err)
       }
     } finally {
@@ -165,17 +175,17 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
             {/* Nome */}
             <div className="grid gap-2">
               <Label htmlFor="name">
-                Nome do Documento <span className="text-red-500">*</span>
+                Nome do Documento <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ex: Relatório Anual 2024"
-                className={errors.name ? 'border-red-500' : ''}
+                className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
-                <p className="text-xs text-red-500">{errors.name}</p>
+                <p className="text-xs text-destructive">{errors.name}</p>
               )}
             </div>
 
@@ -268,13 +278,13 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-400 border border-indigo-500/20"
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary border border-primary/20"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-indigo-300"
+                        className="hover:text-primary/80"
                       >
                         ×
                       </button>
@@ -295,20 +305,20 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
               />
               {uploading && progress && (
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>Fazendo upload...</span>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t('documents.uploading')}</span>
                     <span>{progress.percentage}%</span>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                     <div 
-                      className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ width: `${progress.percentage}%` }}
                     />
                   </div>
                 </div>
               )}
-              <p className="text-xs text-slate-500">
-                {selectedFile ? `Arquivo selecionado: ${selectedFile.name}` : 'Tipos aceitos: PDF, Word, Excel, PowerPoint, Imagens'}
+              <p className="text-xs text-muted-foreground">
+                {selectedFile ? `${t('documents.selectedFile')}: ${selectedFile.name}` : t('documents.acceptedTypes')}
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { 
+import {
   Shield, 
   Key, 
   Smartphone, 
@@ -31,9 +31,21 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useNavigate } from 'react-router-dom'
+import { useI18n } from '@/hooks/use-i18n'
+import { toast } from 'sonner'
+import { Link } from 'react-router-dom'
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 export default function PreferencesPage() {
   const navigate = useNavigate()
+  const { locale, changeLocale, t } = useI18n()
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   
@@ -45,21 +57,91 @@ export default function PreferencesPage() {
   })
 
   const [preferences, setPreferences] = useState({
-    language: 'pt-BR',
     timezone: 'America/Sao_Paulo',
     dateFormat: 'DD/MM/YYYY',
     timeFormat: '24h',
   })
 
-  const handleSave = async () => {
-    setSaving(true)
+  // Sync language with i18n system
+  const [currentLanguage, setCurrentLanguage] = useState<'pt-BR' | 'en' | 'es'>(locale)
+
+  // Sync with i18n when locale changes
+  useEffect(() => {
+    setCurrentLanguage(locale)
+  }, [locale])
+
+  // Load preferences from Supabase
+  useEffect(() => {
+    loadPreferences()
+  }, [])
+
+  const loadPreferences = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      localStorage.setItem('security_settings', JSON.stringify(security))
-      localStorage.setItem('preferences', JSON.stringify(preferences))
-      alert('Configurações salvas com sucesso!')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') throw error
+
+      if (data) {
+        setSecurity({
+          twoFactor: data.two_factor_enabled,
+          sessionTimeout: data.session_timeout.toString(),
+          loginNotifications: data.login_notifications,
+          suspiciousActivity: data.suspicious_activity_alerts,
+        })
+        setPreferences({
+          timezone: data.timezone,
+          dateFormat: data.date_format,
+          timeFormat: data.time_format,
+        })
+      }
     } catch (error) {
-      alert('Erro ao salvar configurações')
+      console.error('Error loading preferences:', error)
+    }
+  }
+
+  // Update language when changed
+  const handleLanguageChange = (newLanguage: string) => {
+    const lang = newLanguage as 'pt-BR' | 'en' | 'es'
+    setCurrentLanguage(lang)
+    // Update i18n immediately - this triggers re-render of entire app
+    changeLocale(lang)
+  }
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not found')
+
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          two_factor_enabled: security.twoFactor,
+          session_timeout: parseInt(security.sessionTimeout),
+          login_notifications: security.loginNotifications,
+          suspicious_activity_alerts: security.suspiciousActivity,
+          timezone: preferences.timezone,
+          date_format: preferences.dateFormat,
+          time_format: preferences.timeFormat,
+        })
+
+      if (error) throw error
+
+      toast.success(t('common.success'), {
+        description: t('settings.saved')
+      })
+    } catch (error: any) {
+      toast.error(t('common.error'), {
+        description: error.message || t('settings.saveFailed')
+      })
     } finally {
       setSaving(false)
     }
@@ -90,25 +172,38 @@ export default function PreferencesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
-        {/* Header */}
+      <div className="space-y-6 p-6">
+        {/* Breadcrumb */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-50">Configurações</h1>
-            <p className="mt-2 text-slate-400">
-              Segurança, idioma, região e preferências avançadas
-            </p>
-          </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">{t('nav.dashboard')}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/settings">{t('settings.title')}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{t('preferences.title')}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <Button onClick={handleSave} disabled={saving} className="h-9">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
+                {t('settings.saving')}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar
+                {t('settings.save')}
               </>
             )}
           </Button>
@@ -118,24 +213,24 @@ export default function PreferencesPage() {
           {/* Security */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Segurança
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                {t('settings.security')}
               </CardTitle>
-              <CardDescription>
-                Proteja sua conta com medidas de segurança adicionais
+              <CardDescription className="text-xs">
+                {t('settings.securityDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* 2FA */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="twoFactor" className="font-medium text-slate-50">
-                      Autenticação de Dois Fatores (2FA)
+                  <div className="space-y-0.5">
+                    <Label htmlFor="twoFactor" className="font-medium text-sm">
+                      {t('settings.twoFactor')}
                     </Label>
-                    <p className="text-sm text-slate-400">
-                      Adicione uma camada extra de segurança
+                    <p className="text-xs text-muted-foreground">
+                      {t('settings.twoFactorDesc')}
                     </p>
                   </div>
                   <Switch
@@ -148,16 +243,16 @@ export default function PreferencesPage() {
                 </div>
 
                 {security.twoFactor && (
-                  <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
-                    <div className="flex items-start gap-3">
-                      <Smartphone className="h-5 w-5 text-green-400 flex-shrink-0" />
+                  <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
+                    <div className="flex items-start gap-2">
+                      <Smartphone className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-medium text-green-400">2FA Ativado</p>
-                        <p className="mt-1 text-sm text-green-400/80">
-                          Sua conta está protegida com autenticação de dois fatores
+                        <p className="font-medium text-sm text-green-400">{t('settings.twoFactorActive')}</p>
+                        <p className="mt-0.5 text-xs text-green-400/80">
+                          {t('settings.twoFactorActiveDesc')}
                         </p>
-                        <Button variant="outline" size="sm" className="mt-3">
-                          Configurar Aplicativo
+                        <Button variant="outline" size="sm" className="mt-2 h-8">
+                          {t('settings.configureApp')}
                         </Button>
                       </div>
                     </div>
@@ -169,7 +264,7 @@ export default function PreferencesPage() {
 
               {/* Session Timeout */}
               <div className="space-y-2">
-                <Label htmlFor="sessionTimeout">Tempo de Sessão</Label>
+                <Label htmlFor="sessionTimeout" className="text-sm">{t('settings.sessionTimeout')}</Label>
                 <Select
                   value={security.sessionTimeout}
                   onValueChange={(value) => 
@@ -180,15 +275,15 @@ export default function PreferencesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="15">15 minutos</SelectItem>
-                    <SelectItem value="30">30 minutos</SelectItem>
-                    <SelectItem value="60">1 hora</SelectItem>
-                    <SelectItem value="120">2 horas</SelectItem>
-                    <SelectItem value="never">Nunca expirar</SelectItem>
+                    <SelectItem value="15">{t('settings.timeout15')}</SelectItem>
+                    <SelectItem value="30">{t('settings.timeout30')}</SelectItem>
+                    <SelectItem value="60">{t('settings.timeout60')}</SelectItem>
+                    <SelectItem value="120">{t('settings.timeout120')}</SelectItem>
+                    <SelectItem value="never">{t('settings.timeoutNever')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-500">
-                  Tempo de inatividade antes de desconectar automaticamente
+                <p className="text-xs text-muted-foreground">
+                  {t('settings.sessionTimeoutDesc')}
                 </p>
               </div>
 
@@ -196,12 +291,12 @@ export default function PreferencesPage() {
 
               {/* Login Notifications */}
               <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="loginNotifications" className="font-medium text-slate-50">
-                    Notificações de Login
+                <div className="space-y-0.5">
+                  <Label htmlFor="loginNotifications" className="font-medium text-sm">
+                    {t('settings.loginNotifications')}
                   </Label>
-                  <p className="text-sm text-slate-400">
-                    Avise quando houver login de novo dispositivo
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.loginNotificationsDesc')}
                   </p>
                 </div>
                 <Switch
@@ -217,12 +312,12 @@ export default function PreferencesPage() {
 
               {/* Suspicious Activity */}
               <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="suspiciousActivity" className="font-medium text-slate-50">
-                    Alertas de Atividade Suspeita
+                <div className="space-y-0.5">
+                  <Label htmlFor="suspiciousActivity" className="font-medium text-sm">
+                    {t('settings.suspiciousActivity')}
                   </Label>
-                  <p className="text-sm text-slate-400">
-                    Detectar e notificar atividades incomuns
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.suspiciousActivityDesc')}
                   </p>
                 </div>
                 <Switch
@@ -239,42 +334,41 @@ export default function PreferencesPage() {
           {/* Language & Region */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Idioma e Região
+              <CardTitle className="text-base flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                {t('settings.languageRegion')}
               </CardTitle>
-              <CardDescription>
-                Personalize idioma, fuso horário e formato de data
+              <CardDescription className="text-xs">
+                {t('settings.languageRegionDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Language */}
               <div className="space-y-2">
-                <Label htmlFor="language">Idioma</Label>
+                <Label htmlFor="language" className="text-sm">{t('settings.language')}</Label>
                 <Select
-                  value={preferences.language}
-                  onValueChange={(value) => 
-                    setPreferences({ ...preferences, language: value })
-                  }
+                  value={currentLanguage}
+                  onValueChange={handleLanguageChange}
                 >
                   <SelectTrigger id="language">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
-                    <SelectItem value="en-US">🇺🇸 English (US)</SelectItem>
-                    <SelectItem value="es-ES">🇪🇸 Español</SelectItem>
-                    <SelectItem value="fr-FR">🇫🇷 Français</SelectItem>
-                    <SelectItem value="de-DE">🇩🇪 Deutsch</SelectItem>
+                    <SelectItem value="en">🇺🇸 English (US)</SelectItem>
+                    <SelectItem value="es">🇪🇸 Español</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t('settings.languageDesc')}
+                </p>
               </div>
 
               <Separator />
 
               {/* Timezone */}
               <div className="space-y-2">
-                <Label htmlFor="timezone">Fuso Horário</Label>
+                <Label htmlFor="timezone" className="text-sm">{t('settings.timezone')}</Label>
                 <Select
                   value={preferences.timezone}
                   onValueChange={(value) => 
@@ -299,7 +393,7 @@ export default function PreferencesPage() {
 
               {/* Date Format */}
               <div className="space-y-2">
-                <Label htmlFor="dateFormat">Formato de Data</Label>
+                <Label htmlFor="dateFormat" className="text-sm">{t('settings.dateFormat')}</Label>
                 <Select
                   value={preferences.dateFormat}
                   onValueChange={(value) => 
@@ -321,7 +415,7 @@ export default function PreferencesPage() {
 
               {/* Time Format */}
               <div className="space-y-2">
-                <Label htmlFor="timeFormat">Formato de Hora</Label>
+                <Label htmlFor="timeFormat" className="text-sm">{t('settings.timeFormat')}</Label>
                 <Select
                   value={preferences.timeFormat}
                   onValueChange={(value) => 
@@ -344,41 +438,41 @@ export default function PreferencesPage() {
         {/* Danger Zone */}
         <Card className="border-red-500/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-400">
-              <AlertTriangle className="h-5 w-5" />
-              Zona de Perigo
+            <CardTitle className="text-base flex items-center gap-2 text-red-400">
+              <AlertTriangle className="h-4 w-4" />
+              {t('settings.dangerZone')}
             </CardTitle>
-            <CardDescription>
-              Ações irreversíveis que afetam sua conta
+            <CardDescription className="text-xs">
+              {t('settings.dangerZoneDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Sign Out All Devices */}
-            <div className="flex items-center justify-between rounded-lg border border-slate-800 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
-                <p className="font-medium text-slate-50">Desconectar Todos os Dispositivos</p>
-                <p className="text-sm text-slate-400">
-                  Encerra todas as sessões ativas exceto a atual
+                <p className="font-medium text-sm">{t('settings.signOutAll')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('settings.signOutAllDesc')}
                 </p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
                     <LogOut className="h-4 w-4" />
-                    Desconectar
+                    {t('settings.signOut')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Desconectar todos os dispositivos?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('settings.signOutAllTitle')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Você será desconectado de todos os dispositivos e precisará fazer login novamente.
+                      {t('settings.signOutAllConfirm')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={handleSignOutAllDevices}>
-                      Confirmar
+                      {t('common.confirm')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -386,32 +480,31 @@ export default function PreferencesPage() {
             </div>
 
             {/* Delete Account */}
-            <div className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 p-3">
               <div>
-                <p className="font-medium text-red-400">Excluir Conta</p>
-                <p className="text-sm text-red-400/70">
-                  Exclui permanentemente sua conta e todos os dados
+                <p className="font-medium text-sm text-red-400">{t('settings.deleteAccount')}</p>
+                <p className="text-xs text-red-400/70">
+                  {t('settings.deleteAccountDesc')}
                 </p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="gap-2">
                     <Trash2 className="h-4 w-4" />
-                    Excluir
+                    {t('common.delete')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-red-400">
-                      Tem certeza absoluta?
+                      {t('settings.deleteAccountTitle')}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação NÃO PODE ser desfeita. Isso irá excluir permanentemente sua conta,
-                      todos os seus projetos, documentos e remover todos os dados de nossos servidores.
+                      {t('settings.deleteAccountConfirm')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeleteAccount}
                       className="bg-red-500 hover:bg-red-600"
@@ -419,10 +512,10 @@ export default function PreferencesPage() {
                       {deleting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Excluindo...
+                          {t('settings.deleting')}
                         </>
                       ) : (
-                        'Sim, excluir minha conta'
+                        t('settings.deleteAccountButton')
                       )}
                     </AlertDialogAction>
                   </AlertDialogFooter>

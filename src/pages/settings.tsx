@@ -1,49 +1,67 @@
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { User, Bell, Shield, CreditCard, Globe } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import { useI18n } from '@/hooks/use-i18n'
 
 export default function SettingsPage() {
+  const { t } = useI18n()
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
-        {/* Header */}
-        <header>
-          <h1 className="text-3xl font-bold text-slate-50">Configurações</h1>
-          <p className="mt-2 text-slate-400">
-            Gerencie suas preferências e configurações da conta
-          </p>
-        </header>
+      <div className="space-y-6 p-6">
+        {/* Breadcrumb */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/">{t('nav.dashboard')}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{t('settings.title')}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         {/* Profile Settings */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-slate-400" />
+              <User className="h-4 w-4 text-muted-foreground" />
               <CardTitle>Perfil</CardTitle>
             </div>
             <CardDescription>
               Atualize suas informações pessoais
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl font-bold text-white">
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
                 JS
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Button variant="outline" size="sm">
                   Alterar Foto
                 </Button>
-                <p className="text-xs text-slate-500">JPG, PNG ou GIF. Máximo 2MB.</p>
+                <p className="text-xs text-muted-foreground">JPG, PNG ou GIF. Máximo 2MB.</p>
               </div>
             </div>
 
-            <Separator className="bg-slate-800" />
+            <Separator />
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -73,62 +91,62 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-slate-400" />
+              <Bell className="h-4 w-4 text-muted-foreground" />
               <CardTitle>Notificações</CardTitle>
             </div>
             <CardDescription>
               Configure como você quer receber notificações
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-notifications" className="text-base">
+                <Label htmlFor="email-notifications" className="text-sm font-medium">
                   Notificações por Email
                 </Label>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Receba atualizações importantes por email
                 </p>
               </div>
               <Switch id="email-notifications" defaultChecked />
             </div>
 
-            <Separator className="bg-slate-800" />
+            <Separator />
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="project-updates" className="text-base">
+                <Label htmlFor="project-updates" className="text-sm font-medium">
                   Atualizações de Projetos
                 </Label>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Notificações sobre mudanças nos seus projetos
                 </p>
               </div>
               <Switch id="project-updates" defaultChecked />
             </div>
 
-            <Separator className="bg-slate-800" />
+            <Separator />
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="team-invites" className="text-base">
+                <Label htmlFor="team-invites" className="text-sm font-medium">
                   Convites de Equipe
                 </Label>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Receba notificações de novos membros
                 </p>
               </div>
               <Switch id="team-invites" defaultChecked />
             </div>
 
-            <Separator className="bg-slate-800" />
+            <Separator />
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="marketing" className="text-base">
+                <Label htmlFor="marketing" className="text-sm font-medium">
                   Emails de Marketing
                 </Label>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Novidades, dicas e ofertas especiais
                 </p>
               </div>
@@ -141,46 +159,44 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-slate-400" />
+              <Shield className="h-4 w-4 text-muted-foreground" />
               <CardTitle>Segurança</CardTitle>
             </div>
             <CardDescription>
               Mantenha sua conta segura
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <Label className="text-base">Senha</Label>
-                <p className="text-sm text-slate-500 mb-3">
-                  Última alteração há 3 meses
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Senha</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Última alteração há 3 meses
+              </p>
+              <Button variant="outline" size="sm">Alterar Senha</Button>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="2fa" className="text-sm font-medium">
+                  Autenticação de Dois Fatores
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Adicione uma camada extra de segurança
                 </p>
-                <Button variant="outline">Alterar Senha</Button>
               </div>
+              <Switch id="2fa" />
+            </div>
 
-              <Separator className="bg-slate-800" />
+            <Separator />
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="2fa" className="text-base">
-                    Autenticação de Dois Fatores
-                  </Label>
-                  <p className="text-sm text-slate-500">
-                    Adicione uma camada extra de segurança
-                  </p>
-                </div>
-                <Switch id="2fa" />
-              </div>
-
-              <Separator className="bg-slate-800" />
-
-              <div>
-                <Label className="text-base">Sessões Ativas</Label>
-                <p className="text-sm text-slate-500 mb-3">
-                  Gerencie onde você está logado
-                </p>
-                <Button variant="outline">Ver Sessões</Button>
-              </div>
+            <div>
+              <Label className="text-sm font-medium">Sessões Ativas</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Gerencie onde você está logado
+              </p>
+              <Button variant="outline" size="sm">Ver Sessões</Button>
             </div>
           </CardContent>
         </Card>
@@ -189,35 +205,35 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-slate-400" />
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
               <CardTitle>Plano e Cobrança</CardTitle>
             </div>
             <CardDescription>
               Gerencie sua assinatura e método de pagamento
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="rounded-lg border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 p-6">
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border bg-primary/5 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-50">Plano Pro</h3>
-                  <p className="text-sm text-slate-400">Próxima cobrança em 15/02/2024</p>
+                  <h3 className="text-sm font-semibold">Plano Pro</h3>
+                  <p className="text-xs text-muted-foreground">Próxima cobrança em 15/02/2024</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-slate-50">R$ 49</p>
-                  <p className="text-sm text-slate-400">/mês</p>
+                  <p className="text-xl font-bold">R$ 49</p>
+                  <p className="text-xs text-muted-foreground">/mês</p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Button variant="outline" className="w-full">
+            <div className="space-y-2">
+              <Button variant="outline" size="sm" className="w-full">
                 Alterar Plano
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" size="sm" className="w-full">
                 Gerenciar Método de Pagamento
               </Button>
-              <Button variant="outline" className="w-full text-red-400 hover:text-red-300">
+              <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive">
                 Cancelar Assinatura
               </Button>
             </div>
@@ -228,7 +244,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-slate-400" />
+              <Globe className="h-4 w-4 text-muted-foreground" />
               <CardTitle>Idioma e Região</CardTitle>
             </div>
             <CardDescription>
@@ -248,18 +264,18 @@ export default function SettingsPage() {
         </Card>
 
         {/* Danger Zone */}
-        <Card className="border-red-500/20">
+        <Card className="border-destructive/50">
           <CardHeader>
-            <CardTitle className="text-red-400">Zona de Perigo</CardTitle>
+            <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
             <CardDescription>
               Ações irreversíveis para sua conta
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+          <CardContent>
+            <div className="flex items-center justify-between rounded-lg border bg-card p-3">
               <div>
-                <p className="font-medium text-slate-50">Excluir Conta</p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm font-medium">Excluir Conta</p>
+                <p className="text-xs text-muted-foreground">
                   Remova permanentemente sua conta e todos os dados
                 </p>
               </div>

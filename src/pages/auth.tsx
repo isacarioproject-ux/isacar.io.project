@@ -11,6 +11,13 @@ import { Chrome, Github } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { loginSchema, registerSchema, forgotPasswordSchema, type LoginInput, type RegisterInput, type ForgotPasswordInput } from '@/lib/validations'
 import { z } from 'zod'
+import { useI18n } from '@/hooks/use-i18n'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { toast } from 'sonner'
+import { scaleIn } from '@/lib/animations'
+import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 
 type LoginStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -209,11 +216,15 @@ export default function AuthPage() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
         <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1 text-center">
-            <Logo size="lg" className="mx-auto mb-4" />
-            <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
+          <CardHeader className="space-y-2 text-center pt-6 pb-4">
+            <Logo className="mx-auto mb-2" />
+            <CardTitle className="text-xl">Recuperar Senha</CardTitle>
             <CardDescription>
               Digite seu email para receber instruções de recuperação
             </CardDescription>
@@ -252,10 +263,14 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+        <ThemeToggle />
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <Logo size="lg" className="mx-auto mb-4" />
+        <CardHeader className="space-y-2 text-center pt-6 pb-4">
+          <Logo className="mx-auto mb-2" />
         </CardHeader>
         <CardContent>
           {renderFeedback()}
@@ -336,10 +351,10 @@ export default function AuthPage() {
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-700" />
+                  <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-slate-800/50 px-2 text-slate-400">ou</span>
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
                 </div>
               </div>
 
@@ -447,10 +462,10 @@ export default function AuthPage() {
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-700" />
+                  <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-slate-800/50 px-2 text-slate-400">ou</span>
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
                 </div>
               </div>
 

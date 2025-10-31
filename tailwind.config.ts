@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import { fontFamily } from 'tailwindcss/defaultTheme'
 
 const config: Config = {
   darkMode: ['class'],
@@ -7,6 +8,18 @@ const config: Config = {
     './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+  	container: {
+  		center: true,
+  		padding: {
+  			DEFAULT: '1rem',
+  			sm: '1rem',
+  			lg: '1.5rem',
+  			xl: '2rem'
+  		},
+  		screens: {
+  			'2xl': '1400px'
+  		}
+  	},
   	extend: {
   		colors: {
   			border: 'hsl(var(--border))',
@@ -51,19 +64,30 @@ const config: Config = {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			},
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
   			}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		fontFamily: {
+  			sans: [
+  				'Inter var',
+                    ...fontFamily.sans
+                ]
+  		},
+  		fontSize: {
+  			'2xs': [
+  				'0.625rem',
+  				{
+  					lineHeight: '0.75rem'
+  				}
+  			]
+  		},
+  		spacing: {
+  			'4.5': '1.125rem',
+  			'5.5': '1.375rem'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -81,11 +105,23 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
+  			},
+  			shine: {
+  				'0%': {
+  					'background-position': '0% 0%'
+  				},
+  				'50%': {
+  					'background-position': '100% 100%'
+  				},
+  				to: {
+  					'background-position': '0% 0%'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			shine: 'shine var(--duration) infinite linear'
   		}
   	}
   },

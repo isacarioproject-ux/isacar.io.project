@@ -27,3 +27,10 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Arquivos de documentação com informações sensíveis
+SUPABASE_SETUP.md
+README_SUPABASE.md
+*_SETUP.md
+CORRECAO_*.md
+IMPLEMENTACAO_*.md

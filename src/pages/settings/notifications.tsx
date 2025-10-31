@@ -17,6 +17,18 @@ import {
   Save,
   Loader2
 } from 'lucide-react'
+import { useI18n } from '@/hooks/use-i18n'
+import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
+import { Link } from 'react-router-dom'
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 interface NotificationSettings {
   // Email Notifications
@@ -46,6 +58,7 @@ interface NotificationSettings {
 }
 
 export default function NotificationsPage() {
+  const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<NotificationSettings>({
@@ -76,24 +89,64 @@ export default function NotificationsPage() {
   })
 
   useEffect(() => {
-    // Load settings from localStorage or API
-    const saved = localStorage.getItem('notification_settings')
-    if (saved) {
-      setSettings(JSON.parse(saved))
-    }
+    loadSettings()
   }, [])
 
-  const handleSave = async () => {
-    setSaving(true)
+  const loadSettings = async () => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      localStorage.setItem('notification_settings', JSON.stringify(settings))
-      
-      // Show success toast (you can add toast notification here)
-      alert('Configurações salvas com sucesso!')
-    } catch (error) {
-      alert('Erro ao salvar configurações')
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        const loadedSettings: any = { ...settings }
+        data.forEach(item => {
+          loadedSettings[item.setting_key] = item.enabled
+        })
+        setSettings(loadedSettings)
+      }
+    } catch (error: any) {
+      console.error('Error loading notification settings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not found')
+
+      // Upsert all 17 notification settings
+      const settingsArray = Object.entries(settings).map(([key, value]) => ({
+        user_id: user.id,
+        setting_key: key,
+        enabled: value,
+      }))
+
+      const { error } = await supabase
+        .from('notification_settings')
+        .upsert(settingsArray, {
+          onConflict: 'user_id,setting_key',
+        })
+
+      if (error) throw error
+
+      toast.success(t('common.success'), {
+        description: t('notifications.saved')
+      })
+    } catch (error: any) {
+      toast.error(t('common.error'), {
+        description: error.message
+      })
     } finally {
       setSaving(false)
     }
@@ -101,6 +154,23 @@ export default function NotificationsPage() {
 
   const updateSetting = (key: keyof NotificationSettings, value: boolean) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleDisableAll = () => {
+    const allDisabled = Object.keys(settings).reduce((acc, key) => {
+      // Manter apenas notificações de segurança e sistema críticas
+      if (key === 'email_security' || key === 'system_maintenance') {
+        acc[key as keyof NotificationSettings] = true
+      } else {
+        acc[key as keyof NotificationSettings] = false
+      }
+      return acc
+    }, {} as NotificationSettings)
+    
+    setSettings(allDisabled)
+    toast.info(t('notifications.allDisabled'), {
+      description: t('notifications.securityRemains')
+    })
   }
 
   const NotificationItem = ({ 
@@ -114,47 +184,61 @@ export default function NotificationsPage() {
     description: string
     settingKey: keyof NotificationSettings
   }) => (
-    <div className="flex items-start justify-between gap-4 py-4">
-      <div className="flex gap-3">
-        <div className="rounded-lg bg-indigo-500/10 p-2">
-          <Icon className="h-5 w-5 text-indigo-400" />
+    <div className="flex items-center justify-between gap-4 py-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="rounded-lg bg-primary/10 p-2 shrink-0">
+          <Icon className="h-4 w-4 text-primary" />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor={settingKey} className="font-medium text-slate-50 cursor-pointer">
+        <div className="space-y-0.5 flex-1 min-w-0">
+          <Label htmlFor={settingKey} className="font-medium cursor-pointer text-sm">
             {title}
           </Label>
-          <p className="text-sm text-slate-400">{description}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
       <Switch
         id={settingKey}
         checked={settings[settingKey]}
         onCheckedChange={(checked) => updateSetting(settingKey, checked)}
+        className="shrink-0"
       />
     </div>
   )
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
-        {/* Header */}
+      <div className="space-y-6 p-6">
+        {/* Breadcrumb */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-50">Notificações</h1>
-            <p className="mt-2 text-slate-400">
-              Personalize como e quando você deseja receber notificações
-            </p>
-          </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">{t('nav.dashboard')}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/settings">{t('settings.title')}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{t('notifications.title')}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <Button onClick={handleSave} disabled={saving} className="h-9">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
+                {t('settings.saving')}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Alterações
+                {t('notifications.saveChanges')}
               </>
             )}
           </Button>
@@ -164,59 +248,59 @@ export default function NotificationsPage() {
           {/* Email Notifications */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                Notificações por Email
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                {t('notifications.emailNotifications')}
               </CardTitle>
-              <CardDescription>
-                Receba atualizações importantes por email
+              <CardDescription className="text-xs">
+                {t('notifications.emailNotificationsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <NotificationItem
                 icon={FolderKanban}
-                title="Novos Projetos"
-                description="Quando um novo projeto é criado ou você é adicionado a um"
+                title={t('notifications.newProjects')}
+                description={t('notifications.newProjectsDesc')}
                 settingKey="email_projects"
               />
               <Separator />
               
               <NotificationItem
                 icon={FileText}
-                title="Documentos"
-                description="Quando documentos são adicionados ou compartilhados com você"
+                title={t('notifications.documents')}
+                description={t('notifications.documentsDesc')}
                 settingKey="email_documents"
               />
               <Separator />
               
               <NotificationItem
                 icon={Users}
-                title="Equipe"
-                description="Convites de equipe e mudanças de membros"
+                title={t('notifications.team')}
+                description={t('notifications.teamDesc')}
                 settingKey="email_team"
               />
               <Separator />
               
               <NotificationItem
                 icon={Calendar}
-                title="Prazos"
-                description="Lembretes de prazos próximos e vencidos"
+                title={t('notifications.deadlines')}
+                description={t('notifications.deadlinesDesc')}
                 settingKey="email_deadlines"
               />
               <Separator />
               
               <NotificationItem
                 icon={MessageSquare}
-                title="Menções"
-                description="Quando alguém menciona você em um comentário"
+                title={t('notifications.mentions')}
+                description={t('notifications.mentionsDesc')}
                 settingKey="email_mentions"
               />
               <Separator />
               
               <NotificationItem
                 icon={AlertCircle}
-                title="Segurança"
-                description="Alertas de segurança e atividades suspeitas"
+                title={t('notifications.security')}
+                description={t('notifications.securityDesc')}
                 settingKey="email_security"
               />
             </CardContent>
@@ -225,59 +309,59 @@ export default function NotificationsPage() {
           {/* In-App Notifications */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notificações no App
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                {t('notifications.appNotifications')}
               </CardTitle>
-              <CardDescription>
-                Notificações que aparecem enquanto você usa o app
+              <CardDescription className="text-xs">
+                {t('notifications.appNotificationsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <NotificationItem
                 icon={FolderKanban}
-                title="Projetos"
-                description="Atualizações de status e progresso de projetos"
+                title={t('notifications.projects')}
+                description={t('notifications.projectsDesc')}
                 settingKey="app_projects"
               />
               <Separator />
               
               <NotificationItem
                 icon={FileText}
-                title="Documentos"
-                description="Novos documentos e compartilhamentos"
+                title={t('notifications.documents')}
+                description={t('notifications.documentsDesc')}
                 settingKey="app_documents"
               />
               <Separator />
               
               <NotificationItem
                 icon={Users}
-                title="Equipe"
-                description="Atividades e atualizações da equipe"
+                title={t('notifications.team')}
+                description={t('notifications.teamDesc')}
                 settingKey="app_team"
               />
               <Separator />
               
               <NotificationItem
                 icon={Calendar}
-                title="Prazos"
-                description="Alertas de prazos e lembretes"
+                title={t('notifications.deadlines')}
+                description={t('notifications.deadlinesDesc')}
                 settingKey="app_deadlines"
               />
               <Separator />
               
               <NotificationItem
                 icon={MessageSquare}
-                title="Menções"
-                description="Quando alguém menciona você"
+                title={t('notifications.mentions')}
+                description={t('notifications.mentionsDesc')}
                 settingKey="app_mentions"
               />
               <Separator />
               
               <NotificationItem
                 icon={MessageSquare}
-                title="Comentários"
-                description="Novos comentários em itens que você segue"
+                title={t('notifications.comments')}
+                description={t('notifications.commentsDesc')}
                 settingKey="app_comments"
               />
             </CardContent>
@@ -289,32 +373,32 @@ export default function NotificationsPage() {
           {/* Marketing */}
           <Card>
             <CardHeader>
-              <CardTitle>Marketing e Comunicações</CardTitle>
-              <CardDescription>
-                Emails promocionais e atualizações de produto
+              <CardTitle className="text-base">{t('notifications.marketing')}</CardTitle>
+              <CardDescription className="text-xs">
+                {t('notifications.marketingDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <NotificationItem
                 icon={Mail}
-                title="Newsletter"
-                description="Novidades, tendências e melhores práticas mensais"
+                title={t('notifications.newsletter')}
+                description={t('notifications.newsletterDesc')}
                 settingKey="marketing_newsletter"
               />
               <Separator />
               
               <NotificationItem
                 icon={Bell}
-                title="Atualizações de Produto"
-                description="Novos recursos e melhorias da plataforma"
+                title={t('notifications.productUpdates')}
+                description={t('notifications.productUpdatesDesc')}
                 settingKey="marketing_updates"
               />
               <Separator />
               
               <NotificationItem
                 icon={MessageSquare}
-                title="Dicas e Tutoriais"
-                description="Aprenda a usar melhor a plataforma"
+                title={t('notifications.tips')}
+                description={t('notifications.tipsDesc')}
                 settingKey="marketing_tips"
               />
             </CardContent>
@@ -323,34 +407,34 @@ export default function NotificationsPage() {
           {/* System */}
           <Card>
             <CardHeader>
-              <CardTitle>Sistema</CardTitle>
-              <CardDescription>
-                Notificações importantes do sistema
+              <CardTitle className="text-base">{t('notifications.system')}</CardTitle>
+              <CardDescription className="text-xs">
+                {t('notifications.systemDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <NotificationItem
                 icon={AlertCircle}
-                title="Manutenção"
-                description="Avisos de manutenção programada e downtime"
+                title={t('notifications.maintenance')}
+                description={t('notifications.maintenanceDesc')}
                 settingKey="system_maintenance"
               />
               <Separator />
               
               <NotificationItem
                 icon={Bell}
-                title="Atualizações do Sistema"
-                description="Mudanças importantes e patches de segurança"
+                title={t('notifications.systemUpdates')}
+                description={t('notifications.systemUpdatesDesc')}
                 settingKey="system_updates"
               />
 
-              <div className="mt-6 rounded-lg bg-amber-500/10 border border-amber-500/20 p-4">
-                <div className="flex gap-3">
-                  <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="mt-4 rounded-lg bg-amber-500/10 border border-amber-500/20 p-3">
+                <div className="flex gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-400">Notificações Críticas</p>
-                    <p className="mt-1 text-sm text-amber-400/80">
-                      Alertas de segurança e manutenção crítica sempre serão enviados, independentemente das suas configurações.
+                    <p className="font-medium text-sm text-amber-400">{t('notifications.critical')}</p>
+                    <p className="mt-0.5 text-xs text-amber-400/80">
+                      {t('notifications.criticalDesc')}
                     </p>
                   </div>
                 </div>
@@ -361,15 +445,19 @@ export default function NotificationsPage() {
 
         {/* Footer Actions */}
         <Card>
-          <CardContent className="flex items-center justify-between p-6">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
             <div>
-              <p className="font-medium text-slate-50">Desativar todas as notificações</p>
-              <p className="text-sm text-slate-400">
-                Você pode reativar a qualquer momento
+              <p className="font-medium text-sm">{t('notifications.disableAll')}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('notifications.reactivateAnytime')}
               </p>
             </div>
-            <Button variant="destructive">
-              Desativar Tudo
+            <Button 
+              variant="destructive" 
+              onClick={handleDisableAll}
+              className="h-9"
+            >
+              {t('notifications.disableAllButton')}
             </Button>
           </CardContent>
         </Card>

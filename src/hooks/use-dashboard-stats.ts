@@ -46,8 +46,35 @@ export function useDashboardStats(): UseDashboardStatsReturn {
       setLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Usuário não autenticado')
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      // Se erro de conexão ou sessão inválida
+      if (sessionError || !session) {
+        console.warn('Sessão inválida ou erro de conexão:', sessionError)
+        // Retorna com estado vazio e finaliza loading
+        setStats({
+          totalProjects: 0,
+          activeProjects: 0,
+          completedProjects: 0,
+          totalDocuments: 0,
+          recentDocuments: 0,
+          totalStorage: 0,
+          totalTeamMembers: 0,
+          activeMembers: 0,
+          pendingInvites: 0,
+          projectsByStatus: {
+            planning: 0,
+            in_progress: 0,
+            completed: 0,
+            on_hold: 0,
+          },
+          documentsByCategory: [],
+          recentActivity: [],
+        })
+        setLoading(false)
+        return
+      }
+      const user = session.user
 
       // Primeiro buscar os IDs dos meus projetos
       const myProjectsResult = await supabase
@@ -55,7 +82,10 @@ export function useDashboardStats(): UseDashboardStatsReturn {
         .select('id, status, created_at')
         .eq('user_id', user.id)
 
-      if (myProjectsResult.error) throw myProjectsResult.error
+      if (myProjectsResult.error) {
+        console.error('Erro ao buscar projetos:', myProjectsResult.error)
+        throw new Error(`Erro ao buscar projetos: ${myProjectsResult.error.message}`)
+      }
       const projects = myProjectsResult.data || []
       const projectIds = projects.map(p => p.id)
 
@@ -87,7 +117,10 @@ export function useDashboardStats(): UseDashboardStatsReturn {
           .eq('status', 'pending'),
       ])
 
-      if (documentsResult.error) throw documentsResult.error
+      if (documentsResult.error) {
+        console.error('Erro ao buscar documentos:', documentsResult.error)
+        throw new Error(`Erro ao buscar documentos: ${documentsResult.error.message}`)
+      }
 
       const documents = documentsResult.data || []
       const teamMembers = teamMembersResult.data || []
@@ -194,8 +227,30 @@ export function useDashboardStats(): UseDashboardStatsReturn {
         recentActivity: limitedActivity,
       })
     } catch (err) {
-      console.error('Erro ao buscar stats:', err)
-      setError(err instanceof Error ? err : new Error('Erro ao buscar estatísticas'))
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido ao buscar estatísticas'
+      console.error('Erro ao buscar stats:', errorMessage, err)
+      setError(err instanceof Error ? err : new Error(errorMessage))
+      
+      // Fallback com dados vazios em caso de erro
+      setStats({
+        totalProjects: 0,
+        activeProjects: 0,
+        completedProjects: 0,
+        totalDocuments: 0,
+        recentDocuments: 0,
+        totalStorage: 0,
+        totalTeamMembers: 0,
+        activeMembers: 0,
+        pendingInvites: 0,
+        projectsByStatus: {
+          planning: 0,
+          in_progress: 0,
+          completed: 0,
+          on_hold: 0,
+        },
+        documentsByCategory: [],
+        recentActivity: [],
+      })
     } finally {
       setLoading(false)
     }
@@ -211,8 +266,9 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     let documentsChannel: ReturnType<typeof supabase.channel> | null = null
 
     const setupSubscriptions = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const user = session.user
 
       projectsChannel = supabase
         .channel('dashboard-projects')

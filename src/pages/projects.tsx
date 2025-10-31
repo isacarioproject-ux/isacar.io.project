@@ -1,23 +1,32 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ProjectCard } from '@/components/project-card'
+import { StatsCard } from '@/components/stats-card'
+import { StatsSkeleton, CardSkeleton } from '@/components/loading-skeleton'
+import { EmptyState } from '@/components/empty-state'
 import { ProjectDialog } from '@/components/project-dialog'
 import { useProjects } from '@/hooks/use-projects'
-import { FolderKanban, Calendar, Users, Pencil, Trash2, AlertCircle } from 'lucide-react'
-import type { Project, ProjectStatus } from '@/types/database'
+import { useSubscription } from '@/hooks/use-subscription'
+import { FolderKanban, Clock, CheckCircle2, Plus, AlertCircle, Crown } from 'lucide-react'
 import type { ProjectFormData } from '@/lib/validations/project'
-
-const statusColors: Record<ProjectStatus, string> = {
-  'Em andamento': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  'Planejamento': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  'Concluído': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  'Pausado': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-  'Cancelado': 'bg-red-500/10 text-red-400 border-red-500/20',
-}
+import { toast } from 'sonner'
+import { useI18n } from '@/hooks/use-i18n'
+import { Link } from 'react-router-dom'
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 export default function ProjectsPage() {
+  const { t } = useI18n()
   const { projects, loading, error, createProject, updateProject, deleteProject } = useProjects()
+  const { subscription, canCreateProject } = useSubscription()
 
   // Calcular stats
   const stats = useMemo(() => {
@@ -29,6 +38,10 @@ export default function ProjectsPage() {
   }, [projects])
 
   const handleCreateProject = async (data: ProjectFormData) => {
+    // Verificar limite antes de criar
+    if (!canCreateProject()) {
+      return // Toast já é mostrado pelo hook
+    }
     await createProject(data)
   }
 
@@ -37,163 +50,146 @@ export default function ProjectsPage() {
   }
 
   const handleDeleteProject = async (projectId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este projeto?')) {
-      await deleteProject(projectId)
-    }
+    const project = projects.find(p => p.id === projectId)
+    toast.promise(
+      deleteProject(projectId),
+      {
+        loading: t('projects.deleting'),
+        success: `${t('projects.deleted')}: "${project?.name}"`,
+        error: t('projects.deleteError')
+      }
+    )
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
-        {/* Header */}
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-50">Projetos</h1>
-            <p className="mt-2 text-slate-400">
-              Gerencie todos os seus projetos em um só lugar
-            </p>
-          </div>
-          <ProjectDialog onSave={handleCreateProject} />
-        </header>
-
-        {/* Stats */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total</CardTitle>
-              <FolderKanban className="h-4 w-4 text-slate-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-50">{stats.total}</div>
-              <p className="text-xs text-slate-500">Projetos ativos</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-              <Calendar className="h-4 w-4 text-slate-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-50">{stats.inProgress}</div>
-              <p className="text-xs text-slate-500">Com prazo ativo</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
-              <Users className="h-4 w-4 text-slate-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-50">{stats.completed}</div>
-              <p className="text-xs text-slate-500">Este mês</p>
-            </CardContent>
-          </Card>
+      <div className="space-y-6 p-4 lg:p-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center justify-between">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">{t('nav.dashboard')}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{t('projects.title')}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <ProjectDialog
+            onSave={handleCreateProject}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                {t('projects.new')}
+              </Button>
+            }
+          />
         </div>
 
         {/* Error State */}
         {error && (
-          <Card className="border-red-500/20 bg-red-500/5">
-            <CardContent className="flex items-center gap-3 py-4">
-              <AlertCircle className="h-5 w-5 text-red-400" />
-              <p className="text-sm text-red-400">{error.message}</p>
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="flex items-center gap-3 p-4">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-sm text-destructive">{error.message}</p>
             </CardContent>
           </Card>
         )}
 
         {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-              <p className="mt-4 text-slate-400">Carregando projetos...</p>
+        {loading ? (
+          <>
+            <div className="grid gap-4 md:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <StatsSkeleton key={i} />
+              ))}
             </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && projects.length === 0 && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <FolderKanban className="h-12 w-12 text-slate-600 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-50 mb-2">Nenhum projeto ainda</h3>
-              <p className="text-sm text-slate-400 mb-6">Comece criando seu primeiro projeto</p>
-              <ProjectDialog onSave={handleCreateProject} />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Projects Grid */}
-        {!loading && projects.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <Card key={project.id} className="hover:border-indigo-500/30 transition-colors">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <CardTitle>{project.name}</CardTitle>
-                      <CardDescription>{project.description || 'Sem descrição'}</CardDescription>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Stats */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <StatsCard title={t('projects.stats.total')} value={stats.total} icon={FolderKanban} />
+              <StatsCard title={t('projects.stats.inProgress')} value={stats.inProgress} icon={Clock} />
+              <StatsCard title={t('projects.stats.completed')} value={stats.completed} icon={CheckCircle2} />
+              
+              {/* Card de Limite do Plano */}
+              {subscription && (
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Plano {subscription.plan_id.toUpperCase()}
+                      </span>
                     </div>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${statusColors[project.status]}`}>
-                      {project.status}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Progress */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400">Progresso</span>
-                      <span className="font-medium text-slate-50">{project.progress}%</span>
+                    <div className="text-2xl font-bold">
+                      {subscription.usage.projects_used} / {subscription.limits.projects_limit === -1 ? '∞' : subscription.limits.projects_limit}
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                      <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Meta */}
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Users className="h-4 w-4" />
-                      <span>{project.team_size || 1} membros</span>
-                    </div>
-                    {project.due_date && (
-                      <div className="flex items-center gap-2 text-slate-400">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(project.due_date).toLocaleDateString('pt-BR')}</span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Projetos utilizados
+                    </p>
+                    {subscription.limits.projects_limit !== -1 && (
+                      <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all"
+                          style={{ 
+                            width: `${Math.min((subscription.usage.projects_used / subscription.limits.projects_limit) * 100, 100)}%` 
+                          }}
+                        />
                       </div>
                     )}
-                  </div>
+                    {subscription.usage.projects_used >= subscription.limits.projects_limit && subscription.limits.projects_limit !== -1 && (
+                      <p className="text-xs text-destructive mt-2">
+                        Limite atingido! Faça upgrade.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <ProjectDialog
-                      project={project}
-                      onSave={handleUpdateProject(project.id)}
-                      trigger={
-                        <Button variant="outline" className="flex-1 gap-2">
-                          <Pencil className="h-4 w-4" />
-                          Editar
-                        </Button>
-                      }
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="text-red-400 hover:text-red-300 hover:border-red-500/30"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            {/* Empty State */}
+            {projects.length === 0 ? (
+              <EmptyState
+                icon={FolderKanban}
+                title={t('projects.empty.title')}
+                description={t('projects.empty.description')}
+                action={
+                  <ProjectDialog
+                    onSave={handleCreateProject}
+                    trigger={
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t('projects.empty.action')}
+                      </Button>
+                    }
+                  />
+                }
+              />
+            ) : (
+              /* Projects Grid */
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {projects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onEdit={() => {}}
+                    onDelete={() => handleDeleteProject(project.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </DashboardLayout>

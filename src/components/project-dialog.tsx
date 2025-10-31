@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { projectSchema, type ProjectFormData } from '@/lib/validations/project'
 import { Plus } from 'lucide-react'
 import type { Project, ProjectStatus } from '@/types/database'
+import { toast } from 'sonner'
+import { useI18n } from '@/hooks/use-i18n'
 
 interface ProjectDialogProps {
   project?: Project | null
@@ -33,6 +35,7 @@ const colorOptions = [
 ]
 
 export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -59,6 +62,13 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
       // Salvar projeto
       await onSave(validated)
       
+      // Toast de sucesso
+      toast.success(project ? t('common.updated') : t('common.created'), {
+        description: project 
+          ? t('projects.updated') 
+          : t('projects.created')
+      })
+      
       // Fechar modal e resetar form
       setOpen(false)
       if (!project) {
@@ -81,8 +91,13 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
           fieldErrors[field] = error.message
         })
         setErrors(fieldErrors)
+        toast.error(t('common.error'), {
+          description: t('projects.validationError')
+        })
       } else {
-        console.error('Erro ao salvar projeto:', err)
+        toast.error(t('common.error'), {
+          description: err.message || t('projects.saveError')
+        })
       }
     } finally {
       setLoading(false)
@@ -113,17 +128,17 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
             {/* Nome */}
             <div className="grid gap-2">
               <Label htmlFor="name">
-                Nome do Projeto <span className="text-red-500">*</span>
+                Nome do Projeto <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ex: Website Institucional"
-                className={errors.name ? 'border-red-500' : ''}
+                className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
-                <p className="text-xs text-red-500">{errors.name}</p>
+                <p className="text-xs text-destructive">{errors.name}</p>
               )}
             </div>
 
