@@ -11,7 +11,6 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { useMyInvites } from '@/hooks/use-my-invites'
-import { useProjects } from '@/hooks/use-projects'
 import { Mail, Check, X, Crown, Shield, Edit, User, Inbox } from 'lucide-react'
 import type { TeamMemberRole } from '@/types/database'
 import { CardSkeleton } from '@/components/loading-skeleton'
@@ -38,7 +37,6 @@ const roleColors: Record<TeamMemberRole, string> = {
 export default function InvitesPage() {
   const { t } = useI18n()
   const { invites, loading, error, acceptInvite, declineInvite } = useMyInvites()
-  const { projects, loading: loadingProjects } = useProjects()
 
   const handleAccept = async (inviteId: string) => {
     try {
@@ -64,10 +62,6 @@ export default function InvitesPage() {
     )
   }
 
-  const getProjectName = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId)
-    return project?.name || 'Projeto'
-  }
 
   return (
     <DashboardLayout>
@@ -127,7 +121,7 @@ export default function InvitesPage() {
                     return (
                       <div
                         key={invite.id}
-                        className="flex items-center justify-between rounded-lg border bg-card p-4 hover:border-primary/30 transition-colors"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 rounded-lg border bg-card p-4 hover:border-primary/30 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -135,23 +129,25 @@ export default function InvitesPage() {
                           </div>
                           <div>
                             <h3 className="text-sm font-medium">
-                              {loadingProjects ? t('common.loading') : getProjectName(invite.project_id)}
+                              Convite para equipe ISACAR
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
                               <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${roleColors[invite.role]}`}>
                                 <RoleIcon className="h-3 w-3" />
                                 {t(`roles.${invite.role}`)}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                • {new Date(invite.invited_at).toLocaleDateString('pt-BR')}
-                              </span>
+                              {invite.invited_at && (
+                                <span className="text-xs text-muted-foreground">
+                                  • {new Date(invite.invited_at).toLocaleDateString('pt-BR')}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                           <Button
                             onClick={() => handleAccept(invite.id)}
-                            className="gap-2"
+                            className="gap-2 w-full sm:w-auto"
                             size="sm"
                           >
                             <Check className="h-4 w-4" />
@@ -161,7 +157,7 @@ export default function InvitesPage() {
                             onClick={() => handleDecline(invite.id)}
                             variant="outline"
                             size="sm"
-                            className="gap-2 text-destructive hover:text-destructive"
+                            className="gap-2 text-destructive hover:text-destructive w-full sm:w-auto"
                           >
                             <X className="h-4 w-4" />
                             {t('invites.decline')}

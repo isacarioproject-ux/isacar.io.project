@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileUpload } from '@/components/file-upload'
 import { useFileUpload } from '@/hooks/use-file-upload'
 import { documentSchema, type DocumentFormData } from '@/lib/validations/document'
-import { Plus, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import type { Document, DocumentCategory } from '@/types/database'
 import { useI18n } from '@/hooks/use-i18n'
 import { toast } from 'sonner'
@@ -152,36 +152,24 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Documento
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>{document ? 'Editar Documento' : 'Novo Documento'}</DialogTitle>
-          <DialogDescription>
-            {document
-              ? 'Atualize as informações do documento'
-              : 'Adicione um novo documento à sua biblioteca'}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal open={open} onOpenChange={setOpen}>
+      <ModalContent className="md:max-w-[480px]">
+        <ModalHeader>
+          <ModalTitle>{document ? 'Editar Documento' : 'Novo Documento'}</ModalTitle>
+          <ModalDescription>
+            {document ? 'Atualize as informações' : 'Faça upload do documento'}
+          </ModalDescription>
+        </ModalHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-3 py-2">
+          <ModalBody className="space-y-4">
             {/* Nome */}
-            <div className="grid gap-2">
-              <Label htmlFor="name">
-                Nome do Documento <span className="text-destructive">*</span>
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Relatório Anual 2024"
+                placeholder="Relatório Anual 2024"
                 className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
@@ -189,114 +177,29 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
               )}
             </div>
 
-            {/* Descrição */}
-            <div className="grid gap-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descreva o documento"
-              />
-            </div>
-
-            {/* Categoria e Projeto */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="category">Categoria</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value: string) => setFormData({ ...formData, category: value as DocumentCategory })}
-                >
-                  <SelectTrigger id="category">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="project">Vincular a Projeto</Label>
-                <Select
-                  value={formData.project_id || 'none'}
-                  onValueChange={(value: string) => 
-                    setFormData({ ...formData, project_id: value === 'none' ? null : value })
-                  }
-                >
-                  <SelectTrigger id="project">
-                    <SelectValue placeholder="Nenhum" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhum</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="grid gap-2">
-              <Label htmlFor="tags">Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="tags"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleAddTag()
-                    }
-                  }}
-                  placeholder="Digite e pressione Enter"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleAddTag()
-                  }}
-                  className="shrink-0"
-                >
-                  Adicionar
-                </Button>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary border border-primary/20"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-primary/80"
-                      >
-                        ×
-                      </button>
-                    </span>
+            {/* Categoria */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value: string) => setFormData({ ...formData, category: value as DocumentCategory })}
+              >
+                <SelectTrigger id="category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
                   ))}
-                </div>
-              )}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* File Upload */}
-            <div className="grid gap-2">
-              <Label>Upload de Arquivo</Label>
+            <div className="space-y-2">
+              <Label>Arquivo</Label>
               <FileUpload
                 onFileSelect={handleFileSelect}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.svg"
@@ -318,32 +221,32 @@ export function DocumentDialog({ document, onSave, trigger, projects = [] }: Doc
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                {selectedFile ? `${t('documents.selectedFile')}: ${selectedFile.name}` : t('documents.acceptedTypes')}
+                {selectedFile ? `${selectedFile.name}` : 'PDF, Word, Excel, PowerPoint, Imagens'}
               </p>
             </div>
-          </div>
+          </ModalBody>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading || uploading}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading || uploading}>
+          <ModalFooter>
+            <Button type="submit" disabled={loading || uploading} className="w-full">
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Fazendo upload...
                 </>
               ) : loading ? (
-                'Salvando...'
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
               ) : document ? (
                 'Atualizar'
               ) : (
                 'Criar Documento'
               )}
             </Button>
-          </DialogFooter>
+          </ModalFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ModalContent>
+    </Modal>
   )
 }

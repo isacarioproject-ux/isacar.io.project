@@ -1,11 +1,11 @@
 import { useState, FormEvent } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalTrigger } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { projectSchema, type ProjectFormData } from '@/lib/validations/project'
-import { Plus } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import type { Project, ProjectStatus } from '@/types/database'
 import { toast } from 'sonner'
 import { useI18n } from '@/hooks/use-i18n'
@@ -105,36 +105,27 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Projeto
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>{project ? 'Editar Projeto' : 'Novo Projeto'}</DialogTitle>
-          <DialogDescription>
-            {project
-              ? 'Atualize as informações do seu projeto'
-              : 'Crie um novo projeto para organizar seu trabalho'}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal open={open} onOpenChange={setOpen}>
+      <ModalTrigger asChild>
+        {trigger}
+      </ModalTrigger>
+      <ModalContent className="md:max-w-[480px]">
+        <ModalHeader>
+          <ModalTitle>{project ? 'Editar Projeto' : 'Novo Projeto'}</ModalTitle>
+          <ModalDescription>
+            {project ? 'Atualize as informações' : 'Preencha os dados do projeto'}
+          </ModalDescription>
+        </ModalHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+          <ModalBody className="space-y-4">
             {/* Nome */}
-            <div className="grid gap-2">
-              <Label htmlFor="name">
-                Nome do Projeto <span className="text-destructive">*</span>
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome do Projeto</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Website Institucional"
+                placeholder="Website Institucional"
                 className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
@@ -143,19 +134,19 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
             </div>
 
             {/* Descrição */}
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <Label htmlFor="description">Descrição</Label>
               <Input
                 id="description"
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descreva brevemente o projeto"
+                placeholder="Descrição breve"
               />
             </div>
 
-            {/* Status e Progresso */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
+            {/* Status e Data */}
+            <div className="grid gap-3 grid-cols-2">
+              <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
@@ -174,35 +165,8 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="progress">Progresso (%)</Label>
-                <Input
-                  id="progress"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.progress}
-                  onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-
-            {/* Equipe e Data */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="team_size">Tamanho da Equipe</Label>
-                <Input
-                  id="team_size"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={formData.team_size || 1}
-                  onChange={(e) => setFormData({ ...formData, team_size: parseInt(e.target.value) || 1 })}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="due_date">Data de Entrega</Label>
+              <div className="space-y-2">
+                <Label htmlFor="due_date">Data Entrega</Label>
                 <Input
                   id="due_date"
                   type="date"
@@ -211,38 +175,22 @@ export function ProjectDialog({ project, onSave, trigger }: ProjectDialogProps) 
                 />
               </div>
             </div>
+          </ModalBody>
 
-            {/* Cor */}
-            <div className="grid gap-2">
-              <Label htmlFor="color">Cor do Projeto</Label>
-              <Select
-                value={formData.color}
-                onValueChange={(value: string) => setFormData({ ...formData, color: value })}
-              >
-                <SelectTrigger id="color">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {colorOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
+          <ModalFooter>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                project ? 'Atualizar' : 'Criar Projeto'
+              )}
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : project ? 'Atualizar' : 'Criar Projeto'}
-            </Button>
-          </DialogFooter>
+          </ModalFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ModalContent>
+    </Modal>
   )
 }

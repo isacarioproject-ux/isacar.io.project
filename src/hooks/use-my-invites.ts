@@ -21,9 +21,10 @@ export function useMyInvites(): UseMyInvitesReturn {
       setLoading(true)
       setError(null)
 
-      // Pegar email do usuário logado
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user?.email) {
+      // Pegar email do usuário logado (evitar AuthSessionMissingError)
+      const { data: { session } } = await supabase.auth.getSession()
+      const userEmail = session?.user?.email
+      if (!userEmail) {
         setInvites([])
         setLoading(false)
         return
@@ -33,7 +34,7 @@ export function useMyInvites(): UseMyInvitesReturn {
       const { data, error: fetchError } = await supabase
         .from('team_members')
         .select('*')
-        .eq('email', user.email)
+        .eq('email', userEmail)
         .eq('status', 'pending')
         .order('invited_at', { ascending: false })
 
@@ -57,8 +58,9 @@ export function useMyInvites(): UseMyInvitesReturn {
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     const setupSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user?.email) return
+      const { data: { session } } = await supabase.auth.getSession()
+      const userEmail = session?.user?.email
+      if (!userEmail) return
 
       channel = supabase
         .channel('my-invites')
@@ -68,7 +70,7 @@ export function useMyInvites(): UseMyInvitesReturn {
             event: '*',
             schema: 'public',
             table: 'team_members',
-            filter: `email=eq.${user.email}`,
+            filter: `email=eq.${userEmail}`,
           },
           () => {
             fetchInvites()
@@ -88,10 +90,11 @@ export function useMyInvites(): UseMyInvitesReturn {
 
   const acceptInvite = async (inviteId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) throw new Error('Usuário não autenticado')
 
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('team_members')
         .update({
           status: 'active',
@@ -99,15 +102,22 @@ export function useMyInvites(): UseMyInvitesReturn {
           joined_at: new Date().toISOString(),
         })
         .eq('id', inviteId)
+        .eq('status', 'pending')
+        .eq('email', user.email as string)
+        .select('id')
 
       if (updateError) throw updateError
+      if (!data || data.length === 0) {
+        throw new Error('Convite não encontrado ou já processado')
+      }
 
       // Atualização otimista
       setInvites(prev => prev.filter(invite => invite.id !== inviteId))
     } catch (err) {
-      console.error('Erro ao aceitar convite:', err)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error('Erro ao aceitar convite:', errorMessage, err)
       await fetchInvites() // Revert on error
-      throw err instanceof Error ? err : new Error('Erro ao aceitar convite')
+      throw err instanceof Error ? err : new Error(`Erro ao aceitar convite: ${errorMessage}`)
     }
   }
 

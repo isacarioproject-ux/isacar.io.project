@@ -21,10 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Buscar usuário inicial
     const getInitialUser = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        if (error) throw error
-        console.log('👤 AuthContext: Usuário inicial:', user?.id ? 'OK' : 'NULL')
-        setUser(user)
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.warn('⚠️ AuthContext: getSession retornou erro:', error.message)
+        }
+        const initialUser = session?.user ?? null
+        console.log('👤 AuthContext: Usuário inicial:', initialUser?.id ? 'OK' : 'NULL')
+        setUser(initialUser)
       } catch (err) {
         console.error('❌ AuthContext: Erro ao buscar usuário:', err)
         setError(err instanceof Error ? err : new Error('Erro de autenticação'))
@@ -61,3 +64,4 @@ export function useAuth() {
   }
   return context
 }
+

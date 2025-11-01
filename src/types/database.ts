@@ -112,11 +112,12 @@ export type TeamMemberStatus = 'pending' | 'active' | 'declined' | 'removed'
 
 export interface TeamMember {
   id: string
-  project_id: string
-  user_id: string | null
+  project_id: string | null // Opcional - convite de organização ou projeto específico
   email: string
+  name: string | null
   role: TeamMemberRole
   status: TeamMemberStatus
+  user_id: string | null
   invited_by: string
   invited_at: string
   joined_at: string | null
@@ -125,14 +126,17 @@ export interface TeamMember {
 }
 
 export interface TeamMemberInsert {
-  project_id: string
+  project_id?: string | null // Opcional - convite de organização ou projeto
   email: string
+  name?: string | null
   role?: TeamMemberRole
   status?: TeamMemberStatus
   invited_by: string
 }
 
 export interface TeamMemberUpdate {
+  project_id?: string
+  name?: string | null
   role?: TeamMemberRole
   status?: TeamMemberStatus
   user_id?: string | null

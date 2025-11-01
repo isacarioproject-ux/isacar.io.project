@@ -1,45 +1,36 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { TeamMember, TeamMemberInsert, TeamMemberUpdate } from '@/types/database'
+import type { TeamMember, TeamMemberRole } from '@/types/database'
+import { toast } from 'sonner'
 
-export interface UseTeamMembersOptions {
-  allowParticipantAccess?: boolean
-}
-
-interface UseTeamMembersReturn {
+interface UseOrganizationMembersReturn {
   members: TeamMember[]
   loading: boolean
   error: Error | null
-  inviteMember: (data: Omit<TeamMemberInsert, 'invited_by'>) => Promise<void>
-  updateMember: (id: string, data: TeamMemberUpdate) => Promise<void>
+  inviteMember: (email: string, role: TeamMemberRole, projectId?: string | null, name?: string) => Promise<void>
+  updateMember: (id: string, data: Partial<TeamMember>) => Promise<void>
   removeMember: (id: string) => Promise<void>
-  acceptInvite?: (id: string) => Promise<void>
-  declineInvite?: (id: string) => Promise<void>
   refetch: () => Promise<void>
 }
 
-export function useTeamMembers(projectId?: string, options: UseTeamMembersOptions = {}): UseTeamMembersReturn {
+export function useOrganizationMembers(): UseOrganizationMembersReturn {
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const allowParticipantAccess = options.allowParticipantAccess ?? false
-
   const fetchMembers = useCallback(async () => {
-    if (!projectId) {
-      setMembers([])
-      setLoading(false)
-      return
-    }
-
     try {
       setLoading(true)
       setError(null)
 
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      // Buscar TODOS os membros que o usuário convidou (sem filtro de projeto)
       const { data, error: fetchError } = await supabase
         .from('team_members')
         .select('*')
-        .eq('project_id', projectId)
+        .or(`invited_by.eq.${user.id},user_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
@@ -51,7 +42,7 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
     } finally {
       setLoading(false)
     }
-  }, [projectId])
+  }, [])
 
   useEffect(() => {
     fetchMembers()
@@ -59,17 +50,14 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
 
   // Realtime subscription
   useEffect(() => {
-    if (!projectId) return
-
     const channel = supabase
-      .channel(`team-members-${projectId}`)
+      .channel('organization-team-members')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'team_members',
-          filter: `project_id=eq.${projectId}`,
         },
         () => {
           fetchMembers()
@@ -80,9 +68,9 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [projectId, fetchMembers])
+  }, [fetchMembers])
 
-  const inviteMember = async (data: Omit<TeamMemberInsert, 'invited_by'>) => {
+  const inviteMember = async (email: string, role: TeamMemberRole, projectId?: string | null, name?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
@@ -90,20 +78,26 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
       const { error: insertError } = await supabase
         .from('team_members')
         .insert({
-          ...data,
+          project_id: projectId || null, // ✅ Opcional - convite de organização
+          email,
+          name,
+          role,
           invited_by: user.id,
+          status: 'pending',
         })
 
       if (insertError) throw insertError
 
       await fetchMembers()
+      toast.success('Convite enviado com sucesso!')
     } catch (err) {
       console.error('Erro ao convidar membro:', err)
+      toast.error('Erro ao enviar convite')
       throw err instanceof Error ? err : new Error('Erro ao convidar membro')
     }
   }
 
-  const updateMember = async (id: string, data: TeamMemberUpdate) => {
+  const updateMember = async (id: string, data: Partial<TeamMember>) => {
     try {
       const { error: updateError } = await supabase
         .from('team_members')
@@ -118,9 +112,11 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
           member.id === id ? { ...member, ...data } : member
         )
       )
+      toast.success('Membro atualizado!')
     } catch (err) {
       console.error('Erro ao atualizar membro:', err)
       await fetchMembers() // Revert on error
+      toast.error('Erro ao atualizar membro')
       throw err instanceof Error ? err : new Error('Erro ao atualizar membro')
     }
   }
@@ -136,49 +132,12 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
 
       // Atualização otimista
       setMembers(prev => prev.filter(member => member.id !== id))
+      toast.success('Membro removido!')
     } catch (err) {
       console.error('Erro ao remover membro:', err)
       await fetchMembers() // Revert on error
+      toast.error('Erro ao remover membro')
       throw err instanceof Error ? err : new Error('Erro ao remover membro')
-    }
-  }
-
-  const acceptInvite = async (id: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Usuário não autenticado')
-
-      const { error: updateError } = await supabase
-        .from('team_members')
-        .update({
-          status: 'active',
-          user_id: user.id,
-          joined_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-
-      if (updateError) throw updateError
-
-      await fetchMembers()
-    } catch (err) {
-      console.error('Erro ao aceitar convite:', err)
-      throw err instanceof Error ? err : new Error('Erro ao aceitar convite')
-    }
-  }
-
-  const declineInvite = async (id: string) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('team_members')
-        .update({ status: 'declined' })
-        .eq('id', id)
-
-      if (updateError) throw updateError
-
-      await fetchMembers()
-    } catch (err) {
-      console.error('Erro ao recusar convite:', err)
-      throw err instanceof Error ? err : new Error('Erro ao recusar convite')
     }
   }
 
@@ -189,8 +148,6 @@ export function useTeamMembers(projectId?: string, options: UseTeamMembersOption
     inviteMember,
     updateMember,
     removeMember,
-    acceptInvite: allowParticipantAccess ? acceptInvite : undefined,
-    declineInvite: allowParticipantAccess ? declineInvite : undefined,
     refetch: fetchMembers,
   }
 }
