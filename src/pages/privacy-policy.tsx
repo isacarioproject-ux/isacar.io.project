@@ -2,9 +2,11 @@ import { Shield } from 'lucide-react'
 import { LegalHeader } from '@/components/legal-header'
 import { LegalFooter } from '@/components/legal-footer'
 import { useI18n } from '@/hooks/use-i18n'
+import { privacyContent } from '@/lib/legal-content'
 
 export default function PrivacyPolicyPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const content = privacyContent[locale as keyof typeof privacyContent] || privacyContent['en']
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,13 +52,10 @@ export default function PrivacyPolicyPage() {
           <section id="introduction" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('privacy.section1')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Welcome to ISACAR ("we," "our," or "us"). We are committed to protecting your personal information 
-              and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard 
-              your information when you use our platform and services.
+              {content.introduction.p1}
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              By using ISACAR, you agree to the collection and use of information in accordance with this policy. 
-              If you do not agree with our policies and practices, please do not use our services.
+              {content.introduction.p2}
             </p>
           </section>
 
@@ -66,31 +65,27 @@ export default function PrivacyPolicyPage() {
             
             <h3 className="text-xl font-semibold text-foreground mb-3 mt-6">2.1 Information You Provide</h3>
             <p className="text-muted-foreground leading-relaxed mb-3">
-              We collect information that you voluntarily provide when using our services:
+              {content.informationWeCollect.intro}
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-              <li><strong>Account Information:</strong> Name, email address, phone number (optional), password</li>
-              <li><strong>Profile Information:</strong> Profile picture, job title, company information</li>
-              <li><strong>Content:</strong> Projects, documents, comments, files you create or upload</li>
-              <li><strong>Payment Information:</strong> Billing details, processed securely through third-party payment processors</li>
-              <li><strong>Communications:</strong> Messages, support requests, feedback you send to us</li>
+              {content.informationWeCollect.provided.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
             </ul>
 
             <h3 className="text-xl font-semibold text-foreground mb-3 mt-6">2.2 Information Collected Automatically</h3>
             <p className="text-muted-foreground leading-relaxed mb-3">
-              When you access our platform, we automatically collect certain information:
+              {content.informationWeCollect.intro}
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-              <li><strong>Usage Data:</strong> Pages viewed, features used, time spent, actions taken</li>
-              <li><strong>Device Information:</strong> IP address, browser type, operating system, device identifiers</li>
-              <li><strong>Location Data:</strong> Approximate location based on IP address</li>
-              <li><strong>Cookies and Similar Technologies:</strong> See Section 7 for details</li>
+              {content.informationWeCollect.automated.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
             </ul>
 
             <h3 className="text-xl font-semibold text-foreground mb-3 mt-6">2.3 Information from Third Parties</h3>
             <p className="text-muted-foreground leading-relaxed">
-              We may receive information about you from third-party services such as authentication providers 
-              (Google, GitHub), payment processors, and analytics services.
+              {content.informationWeCollect.thirdParty}
             </p>
           </section>
 
@@ -98,17 +93,12 @@ export default function PrivacyPolicyPage() {
           <section id="how-we-use" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('privacy.section3')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-3">
-              We use your information for the following purposes:
+              {content.howWeUse.intro}
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-              <li><strong>Service Delivery:</strong> To provide, maintain, and improve our platform</li>
-              <li><strong>Account Management:</strong> To create and manage your account</li>
-              <li><strong>Communication:</strong> To send you updates, newsletters, and support messages</li>
-              <li><strong>Personalization:</strong> To customize your experience and provide relevant content</li>
-              <li><strong>Analytics:</strong> To understand how users interact with our platform</li>
-              <li><strong>Security:</strong> To detect and prevent fraud, abuse, and security incidents</li>
-              <li><strong>Legal Compliance:</strong> To comply with legal obligations and enforce our terms</li>
-              <li><strong>Marketing:</strong> To send promotional communications (with your consent)</li>
+              {content.howWeUse.purposes.map((purpose, idx) => (
+                <li key={idx}>{purpose}</li>
+              ))}
             </ul>
           </section>
 
@@ -167,19 +157,15 @@ export default function PrivacyPolicyPage() {
           <section id="your-rights" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('privacy.section6')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-3">
-              Depending on your location, you may have the following rights regarding your personal data:
+              {content.yourRights.intro}
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-              <li><strong>Access:</strong> Request access to your personal data</li>
-              <li><strong>Correction:</strong> Request correction of inaccurate data</li>
-              <li><strong>Deletion:</strong> Request deletion of your personal data</li>
-              <li><strong>Portability:</strong> Request a copy of your data in a structured format</li>
-              <li><strong>Objection:</strong> Object to processing of your data for certain purposes</li>
-              <li><strong>Restriction:</strong> Request restriction of processing</li>
-              <li><strong>Withdraw Consent:</strong> Withdraw previously given consent</li>
+              {content.yourRights.rights.map((right, idx) => (
+                <li key={idx}>{right}</li>
+              ))}
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              To exercise these rights, please contact us at <strong>isacar.dev@gmail.com</strong>
+              {content.yourRights.contact} <strong>isacar.dev@gmail.com</strong>
             </p>
           </section>
 
@@ -258,19 +244,18 @@ export default function PrivacyPolicyPage() {
           <section id="contact" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('privacy.section12')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, 
-              please contact us:
+              {content.contact.intro}
             </p>
             <div className="bg-card border border-border rounded-lg p-6">
-              <p className="text-foreground font-semibold mb-2">ISACAR Technologies</p>
+              <p className="text-foreground font-semibold mb-2">{content.contact.company}</p>
               <p className="text-muted-foreground mb-1">
-                Email: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
+                {content.contact.email}: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
               </p>
               <p className="text-muted-foreground mb-1">
-                Support: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
+                {content.contact.support}: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
               </p>
               <p className="text-muted-foreground">
-                Website: <a href="https://isacar.dev" className="text-primary hover:underline">https://isacar.dev</a>
+                {content.contact.website}: <a href="https://isacar.dev" className="text-primary hover:underline">https://isacar.dev</a>
               </p>
             </div>
           </section>

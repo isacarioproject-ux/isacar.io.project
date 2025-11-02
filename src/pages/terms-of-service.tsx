@@ -2,9 +2,11 @@ import { FileText } from 'lucide-react'
 import { LegalHeader } from '@/components/legal-header'
 import { LegalFooter } from '@/components/legal-footer'
 import { useI18n } from '@/hooks/use-i18n'
+import { termsContent } from '@/lib/legal-content'
 
 export default function TermsOfServicePage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const content = termsContent[locale as keyof typeof termsContent] || termsContent['en']
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,17 +54,13 @@ export default function TermsOfServicePage() {
           <section id="acceptance" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('terms.section1')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Welcome to ISACAR. These Terms of Service ("Terms") govern your access to and use of the ISACAR 
-              platform, website, and services (collectively, the "Service"). By accessing or using the Service, 
-              you agree to be bound by these Terms.
+              {content.acceptance.p1}
             </p>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              If you are using the Service on behalf of an organization, you represent and warrant that you have 
-              the authority to bind that organization to these Terms, and your agreement to these Terms will be 
-              treated as the agreement of the organization.
+              {content.acceptance.p2}
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              If you do not agree to these Terms, you must not access or use the Service.
+              {content.acceptance.p3}
             </p>
           </section>
 
@@ -70,22 +68,15 @@ export default function TermsOfServicePage() {
           <section id="description" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('terms.section2')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-3">
-              ISACAR provides a cloud-based platform for project management, team collaboration, and productivity. 
-              Our Service includes, but is not limited to:
+              {content.description.intro}
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-              <li>Project and task management tools</li>
-              <li>Collaborative document editing and sharing</li>
-              <li>Real-time whiteboard and brainstorming features</li>
-              <li>Team communication and collaboration tools</li>
-              <li>Analytics and reporting capabilities</li>
-              <li>File storage and management</li>
-              <li>Integration with third-party services</li>
+              {content.description.features.map((feature, idx) => (
+                <li key={idx}>{feature}</li>
+              ))}
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              We reserve the right to modify, suspend, or discontinue any part of the Service at any time, 
-              with or without notice. We will not be liable to you or any third party for any modification, 
-              suspension, or discontinuation of the Service.
+              {content.description.disclaimer}
             </p>
           </section>
 
@@ -408,18 +399,18 @@ export default function TermsOfServicePage() {
           <section id="contact" className="mb-12 scroll-mt-24">
             <h2 className="text-2xl font-semibold text-foreground mb-4">{t('terms.section14')}</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              If you have any questions, concerns, or requests regarding these Terms, please contact us:
+              {content.contact.intro}
             </p>
             <div className="bg-card border border-border rounded-lg p-6">
-              <p className="text-foreground font-semibold mb-2">ISACAR Technologies</p>
+              <p className="text-foreground font-semibold mb-2">{content.contact.company}</p>
               <p className="text-muted-foreground mb-1">
-                Email: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
+                {content.contact.email}: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
               </p>
               <p className="text-muted-foreground mb-1">
-                Support: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
+                {content.contact.support}: <a href="mailto:isacar.dev@gmail.com" className="text-primary hover:underline">isacar.dev@gmail.com</a>
               </p>
               <p className="text-muted-foreground">
-                Website: <a href="https://isacar.dev" className="text-primary hover:underline">https://isacar.dev</a>
+                {content.contact.website}: <a href="https://isacar.dev" className="text-primary hover:underline">https://isacar.dev</a>
               </p>
             </div>
           </section>
