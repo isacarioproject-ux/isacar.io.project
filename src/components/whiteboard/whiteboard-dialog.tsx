@@ -44,6 +44,9 @@ import {
 } from '@/components/ui/menubar'
 import FuturisticToolbar, { ToolItem } from './futuristic-toolbar'
 import { useWhiteboardPresence } from '@/hooks/use-whiteboard-presence'
+import { useWhiteboardCollaborators } from '@/hooks/use-whiteboard-collaborators'
+import { AddCollaboratorsDialog } from './add-collaborators-dialog'
+import { CollaboratorsAvatars } from './collaborators-avatars'
 import { exportWhiteboardToPNG, exportWhiteboardToPDF, copyWhiteboardToClipboard } from '@/lib/whiteboard-export'
 import { 
   CheckSquare, 
@@ -82,6 +85,7 @@ import {
   FileImage,
   FileText,
   Share2,
+  Users,
   ZoomIn,
   ZoomOut,
   Eraser,
@@ -165,6 +169,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
   const [selectedTool, setSelectedTool] = useState<string>('select')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [showCollaborators, setShowCollaborators] = useState(false)
   const [showTopToolbar, setShowTopToolbar] = useState(false)
   const [showRightToolbar, setShowRightToolbar] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -224,8 +229,14 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
     setLocalItems(prev => prev.filter(i => i.id !== id))
   }, [whiteboard, deleteItem])
 
-  // Real-time presence
-  const { collaborators, updateCursor } = useWhiteboardPresence(whiteboard?.id, userId)
+  // Real-time presence (online users)
+  const { collaborators: onlineCollaborators, updateCursor } = useWhiteboardPresence(whiteboard?.id, userId)
+
+  // All collaborators (with access)
+  const { collaborators: allCollaborators, loading: loadingCollaborators } = useWhiteboardCollaborators(
+    whiteboard?.id,
+    whiteboard?.user_id
+  )
 
   const allItems = useMemo(() => whiteboard?.items ?? localItems, [whiteboard?.items, localItems])
 
@@ -1176,44 +1187,41 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-              <AnimatePresence>
-                {collaborators.slice(0, 3).map((collab) => (
-                  <motion.div
-                    key={collab.id}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                  >
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Avatar
-                              className="h-8 w-8 border-2 border-border/40"
-                              style={{ borderColor: collab.color }}
-                            >
-                              {collab.avatar ? (
-                                <AvatarImage src={collab.avatar} alt={collab.name} />
-                              ) : (
-                                <AvatarFallback
-                                  className="text-xs"
-                                  style={{ backgroundColor: `${collab.color}20` }}
-                                >
-                                  {collab.name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs">
-                          {collab.name}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              {/* Mostrar avatares de todos os colaboradores */}
+              {allCollaborators.length > 0 && (
+                <div className="px-2">
+                  <CollaboratorsAvatars
+                    collaborators={allCollaborators.map(c => ({
+                      id: c.id,
+                      email: c.email,
+                      name: c.name,
+                      avatar: c.avatar,
+                      online: onlineCollaborators.some(oc => oc.id === c.id)
+                    }))}
+                    maxVisible={3}
+                    size="md"
+                  />
+                </div>
+              )}
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setShowCollaborators(true)}
+                      className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-primary/20"
+                      aria-label="Gerenciar colaboradores"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="hidden sm:inline">Colaboradores</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    Gerenciar Colaboradores
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               <TooltipProvider>
                 <Tooltip>
@@ -2190,6 +2198,15 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
         onOpenChange={setShowShare}
         whiteboardId={whiteboard?.id}
         whiteboardName={whiteboardName}
+      />
+
+      {/* Add Collaborators Dialog */}
+      <AddCollaboratorsDialog
+        open={showCollaborators}
+        onOpenChange={setShowCollaborators}
+        whiteboardId={whiteboard?.id}
+        whiteboardName={whiteboardName}
+        ownerId={whiteboard?.user_id}
       />
     </Dialog>
   )
