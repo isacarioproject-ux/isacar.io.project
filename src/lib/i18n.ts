@@ -85,6 +85,76 @@ const translations: Translations = {
   'auth.termsOfService': { 'pt-BR': 'Termos de Serviço', 'en': 'Terms of Service', 'es': 'Términos de Servicio' },
   'auth.and': { 'pt-BR': 'e', 'en': 'and', 'es': 'y' },
   'auth.privacyPolicy': { 'pt-BR': 'Política de Privacidade', 'en': 'Privacy Policy', 'es': 'Política de Privacidad' },
+  'legal.nav.privacy': { 'pt-BR': 'Política de Privacidade', 'en': 'Privacy Policy', 'es': 'Política de Privacidad' },
+  'legal.nav.terms': { 'pt-BR': 'Termos de Serviço', 'en': 'Terms of Service', 'es': 'Términos de Servicio' },
+  'legal.footer.companyTitle': { 'pt-BR': 'Empresa', 'en': 'Company', 'es': 'Empresa' },
+  'legal.footer.resourcesTitle': { 'pt-BR': 'Recursos', 'en': 'Resources', 'es': 'Recursos' },
+  'legal.footer.tagline': {
+    'pt-BR': 'Onde a colaboração da sua equipe é co-criada em tempo real.',
+    'en': 'Where your team collaboration is co-created in real time.',
+    'es': 'Donde la colaboración de tu equipo se co-crea en tiempo real.'
+  },
+  'legal.footer.rights': {
+    'pt-BR': 'Todos os direitos reservados.',
+    'en': 'All rights reserved.',
+    'es': 'Todos los derechos reservados.'
+  },
+  'legal.footer.links.about': { 'pt-BR': 'Sobre', 'en': 'About', 'es': 'Acerca de' },
+  'legal.footer.links.clients': { 'pt-BR': 'Clientes', 'en': 'Clients', 'es': 'Clientes' },
+  'legal.footer.links.careers': { 'pt-BR': 'Carreiras', 'en': 'Careers', 'es': 'Carreras' },
+  'legal.footer.links.privacy': { 'pt-BR': 'Política de Privacidade', 'en': 'Privacy Policy', 'es': 'Política de Privacidad' },
+  'legal.footer.links.terms': { 'pt-BR': 'Termos de Serviço', 'en': 'Terms of Service', 'es': 'Términos de Servicio' },
+  'legal.footer.links.blog': { 'pt-BR': 'Blog', 'en': 'Blog', 'es': 'Blog' },
+  'legal.footer.links.docs': { 'pt-BR': 'Documentação', 'en': 'Documentation', 'es': 'Documentación' },
+  'legal.footer.links.support': { 'pt-BR': 'Suporte', 'en': 'Support', 'es': 'Soporte' },
+  'legal.footer.links.community': { 'pt-BR': 'Comunidade', 'en': 'Community', 'es': 'Comunidad' },
+  'legal.footer.links.status': { 'pt-BR': 'Status', 'en': 'Status', 'es': 'Estado' },
+  'legal.footer.contact': { 'pt-BR': 'Contato', 'en': 'Contact', 'es': 'Contacto' },
+  'legal.lastUpdated': {
+    'pt-BR': 'Última atualização: {date}',
+    'en': 'Last updated: {date}',
+    'es': 'Última actualización: {date}'
+  },
+
+  // ===== TERMS OF SERVICE =====
+  'terms.title': { 'pt-BR': 'Termos de Serviço', 'en': 'Terms of Service', 'es': 'Términos de Servicio' },
+  'terms.lastUpdated': { 'pt-BR': 'Última Atualização: 2 de novembro de 2025', 'en': 'Last Updated: November 2, 2025', 'es': 'Última Actualización: 2 de noviembre de 2025' },
+  'terms.tableOfContents': { 'pt-BR': 'Índice', 'en': 'Table of Contents', 'es': 'Índice' },
+  
+  // Seções
+  'terms.section1': { 'pt-BR': '1. Aceitação dos Termos', 'en': '1. Acceptance of Terms', 'es': '1. Aceptación de los Términos' },
+  'terms.section2': { 'pt-BR': '2. Descrição do Serviço', 'en': '2. Description of Service', 'es': '2. Descripción del Servicio' },
+  'terms.section3': { 'pt-BR': '3. Registro de Conta e Segurança', 'en': '3. Account Registration and Security', 'es': '3. Registro de Cuenta y Seguridad' },
+  'terms.section4': { 'pt-BR': '4. Política de Uso Aceitável', 'en': '4. Acceptable Use Policy', 'es': '4. Política de Uso Aceptable' },
+  'terms.section5': { 'pt-BR': '5. Direitos de Propriedade Intelectual', 'en': '5. Intellectual Property Rights', 'es': '5. Derechos de Propiedad Intelectual' },
+  'terms.section6': { 'pt-BR': '6. Conteúdo do Usuário', 'en': '6. User Content', 'es': '6. Contenido del Usuario' },
+  'terms.section7': { 'pt-BR': '7. Planos e Pagamentos', 'en': '7. Plans and Payments', 'es': '7. Planes y Pagos' },
+  'terms.section8': { 'pt-BR': '8. Limitação de Responsabilidade', 'en': '8. Limitation of Liability', 'es': '8. Limitación de Responsabilidad' },
+  'terms.section9': { 'pt-BR': '9. Garantias e Isenções', 'en': '9. Warranties and Disclaimers', 'es': '9. Garantías y Exenciones' },
+  'terms.section10': { 'pt-BR': '10. Modificações nos Termos', 'en': '10. Modifications to Terms', 'es': '10. Modificaciones de los Términos' },
+  'terms.section11': { 'pt-BR': '11. Rescisão', 'en': '11. Termination', 'es': '11. Terminación' },
+  'terms.section12': { 'pt-BR': '12. Disputas e Lei Aplicável', 'en': '12. Disputes and Governing Law', 'es': '12. Disputas y Ley Aplicable' },
+  'terms.section13': { 'pt-BR': '13. Disposições Gerais', 'en': '13. General Provisions', 'es': '13. Disposiciones Generales' },
+  'terms.section14': { 'pt-BR': '14. Informações de Contato', 'en': '14. Contact Information', 'es': '14. Información de Contacto' },
+
+  // ===== PRIVACY POLICY =====
+  'privacy.title': { 'pt-BR': 'Política de Privacidade', 'en': 'Privacy Policy', 'es': 'Política de Privacidad' },
+  'privacy.lastUpdated': { 'pt-BR': 'Última Atualização: 2 de novembro de 2025', 'en': 'Last Updated: November 2, 2025', 'es': 'Última Actualización: 2 de noviembre de 2025' },
+  'privacy.tableOfContents': { 'pt-BR': 'Índice', 'en': 'Table of Contents', 'es': 'Índice' },
+  
+  // Seções
+  'privacy.section1': { 'pt-BR': '1. Introdução', 'en': '1. Introduction', 'es': '1. Introducción' },
+  'privacy.section2': { 'pt-BR': '2. Informações que Coletamos', 'en': '2. Information We Collect', 'es': '2. Información que Recopilamos' },
+  'privacy.section3': { 'pt-BR': '3. Como Usamos Suas Informações', 'en': '3. How We Use Your Information', 'es': '3. Cómo Usamos Su Información' },
+  'privacy.section4': { 'pt-BR': '4. Compartilhamento e Divulgação de Dados', 'en': '4. Data Sharing and Disclosure', 'es': '4. Compartir y Divulgación de Datos' },
+  'privacy.section5': { 'pt-BR': '5. Segurança de Dados', 'en': '5. Data Security', 'es': '5. Seguridad de Datos' },
+  'privacy.section6': { 'pt-BR': '6. Seus Direitos (LGPD/GDPR)', 'en': '6. Your Rights (LGPD/GDPR)', 'es': '6. Sus Derechos (LGPD/GDPR)' },
+  'privacy.section7': { 'pt-BR': '7. Cookies e Tecnologias de Rastreamento', 'en': '7. Cookies and Tracking Technologies', 'es': '7. Cookies y Tecnologías de Seguimiento' },
+  'privacy.section8': { 'pt-BR': '8. Retenção de Dados', 'en': '8. Data Retention', 'es': '8. Retención de Datos' },
+  'privacy.section9': { 'pt-BR': '9. Transferências Internacionais de Dados', 'en': '9. International Data Transfers', 'es': '9. Transferencias Internacionales de Datos' },
+  'privacy.section10': { 'pt-BR': '10. Privacidade de Crianças', 'en': '10. Children\'s Privacy', 'es': '10. Privacidad de Niños' },
+  'privacy.section11': { 'pt-BR': '11. Atualizações desta Política', 'en': '11. Updates to This Policy', 'es': '11. Actualizaciones de Esta Política' },
+  'privacy.section12': { 'pt-BR': '12. Entre em Contato', 'en': '12. Contact Us', 'es': '12. Contáctenos' },
 
   // ===== PROJECTS =====
   'projects.title': { 'pt-BR': 'Projetos', 'en': 'Projects', 'es': 'Proyectos' },

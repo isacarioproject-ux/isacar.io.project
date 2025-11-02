@@ -7,53 +7,55 @@ import {
   TwitterIcon,
   YoutubeIcon,
 } from 'lucide-react'
+import { useI18n } from '@/hooks/use-i18n'
 
 export function LegalFooter() {
+  const { t, locale } = useI18n()
   const year = new Date().getFullYear()
 
   const company = [
     {
-      title: 'Sobre',
-      href: '/empresa',
+      key: 'legal.footer.links.about',
+      href: locale === 'en' ? '/company' : '/empresa',
     },
     {
-      title: 'Clientes',
-      href: '/clientes',
+      key: 'legal.footer.links.clients',
+      href: locale === 'en' ? '/clients' : '/clientes',
     },
     {
-      title: 'Carreiras',
-      href: '/empresa',
+      key: 'legal.footer.links.careers',
+      href: locale === 'en' ? '/careers' : '/empresa',
     },
     {
-      title: 'Política de Privacidade',
+      key: 'legal.footer.links.privacy',
       href: '/privacy-policy',
     },
     {
-      title: 'Termos de Serviço',
+      key: 'legal.footer.links.terms',
       href: '/terms-of-service',
     },
   ]
 
   const resources = [
     {
-      title: 'Blog',
-      href: '/recursos',
+      key: 'legal.footer.links.blog',
+      href: locale === 'en' ? '/blog' : '/recursos',
     },
     {
-      title: 'Documentação',
-      href: '/recursos',
+      key: 'legal.footer.links.docs',
+      href: locale === 'en' ? '/docs' : '/recursos',
     },
     {
-      title: 'Suporte',
-      href: '/recursos',
+      key: 'legal.footer.links.support',
+      href: locale === 'en' ? '/support' : '/recursos',
     },
     {
-      title: 'Comunidade',
-      href: '/recursos',
+      key: 'legal.footer.links.community',
+      href: locale === 'en' ? '/community' : '/recursos',
     },
     {
-      title: 'Status',
-      href: '/recursos',
+      key: 'legal.footer.links.status',
+      href: locale === 'en' ? '/status' : '/recursos',
     },
   ]
 
@@ -96,7 +98,7 @@ export function LegalFooter() {
               </span>
             </Link>
             <p className="text-muted-foreground max-w-sm font-mono text-sm text-balance">
-              Onde a colaboração da sua equipe é co-criada em tempo real.
+              {t('legal.footer.tagline')}
             </p>
             <div className="flex gap-2">
               {socialLinks.map((item, i) => (
@@ -114,31 +116,41 @@ export function LegalFooter() {
           </div>
           <div className="col-span-3 w-full md:col-span-1">
             <span className="text-muted-foreground mb-1 text-xs">
-              Recursos
+              {t('legal.footer.resourcesTitle')}
             </span>
             <div className="flex flex-col gap-1">
-              {resources.map(({ href, title }, i) => (
+              {resources.map(({ href, key }, i) => (
                 <a
                   key={i}
                   className="w-max py-1 text-sm duration-200 hover:underline text-foreground"
                   href={href}
                 >
-                  {title}
+                  {t(key)}
                 </a>
               ))}
             </div>
           </div>
           <div className="col-span-3 w-full md:col-span-1">
-            <span className="text-muted-foreground mb-1 text-xs">Empresa</span>
+            <span className="text-muted-foreground mb-1 text-xs">{t('legal.footer.companyTitle')}</span>
             <div className="flex flex-col gap-1">
-              {company.map(({ href, title }, i) => (
-                <Link
-                  key={i}
-                  className="w-max py-1 text-sm duration-200 hover:underline text-foreground"
-                  to={href}
-                >
-                  {title}
-                </Link>
+              {company.map(({ href, key }, i) => (
+                href.startsWith('/') ? (
+                  <Link
+                    key={i}
+                    className="w-max py-1 text-sm duration-200 hover:underline text-foreground"
+                    to={href}
+                  >
+                    {t(key)}
+                  </Link>
+                ) : (
+                  <a
+                    key={i}
+                    className="w-max py-1 text-sm duration-200 hover:underline text-foreground"
+                    href={href}
+                  >
+                    {t(key)}
+                  </a>
+                )
               ))}
             </div>
           </div>
@@ -146,7 +158,7 @@ export function LegalFooter() {
         <div className="bg-border absolute inset-x-0 h-px w-full" />
         <div className="flex max-w-4xl flex-col justify-between gap-2 pt-2 pb-5">
           <p className="text-muted-foreground text-center font-thin text-sm">
-            © {year} Isacar.dev. Todos os direitos reservados.
+            © {year} Isacar.dev. {t('legal.footer.rights')}
           </p>
         </div>
       </div>
