@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/hooks/use-i18n';
@@ -525,14 +526,14 @@ export function AuthFormMinimal({
               className="w-3.5 h-3.5 mt-0.5 rounded border-input text-primary focus:ring-ring"
             />
             <span className="text-muted-foreground">
-              I agree to the{' '}
-              <a href="#" className="text-primary hover:underline">
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="#" className="text-primary hover:underline">
-                Privacy Policy
-              </a>
+              {t('auth.agreeToThe')}{' '}
+              <Link to="/terms-of-service" className="text-primary hover:underline" target="_blank">
+                {t('auth.termsOfService')}
+              </Link>{' '}
+              {t('auth.and')}{' '}
+              <Link to="/privacy-policy" className="text-primary hover:underline" target="_blank">
+                {t('auth.privacyPolicy')}
+              </Link>
             </span>
           </label>
         )}

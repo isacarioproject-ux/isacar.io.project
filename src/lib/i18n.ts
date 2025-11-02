@@ -81,6 +81,10 @@ const translations: Translations = {
   'auth.sending': { 'pt-BR': 'Enviando...', 'en': 'Sending...', 'es': 'Enviando...' },
   'auth.alreadyHaveAccount': { 'pt-BR': 'Já tem uma conta?', 'en': 'Already have an account?', 'es': '¿Ya tienes una cuenta?' },
   'auth.noAccount': { 'pt-BR': 'Não tem uma conta?', 'en': "Don't have an account?", 'es': '¿No tienes una cuenta?' },
+  'auth.agreeToThe': { 'pt-BR': 'Eu concordo com os', 'en': 'I agree to the', 'es': 'Acepto los' },
+  'auth.termsOfService': { 'pt-BR': 'Termos de Serviço', 'en': 'Terms of Service', 'es': 'Términos de Servicio' },
+  'auth.and': { 'pt-BR': 'e', 'en': 'and', 'es': 'y' },
+  'auth.privacyPolicy': { 'pt-BR': 'Política de Privacidade', 'en': 'Privacy Policy', 'es': 'Política de Privacidad' },
 
   // ===== PROJECTS =====
   'projects.title': { 'pt-BR': 'Projetos', 'en': 'Projects', 'es': 'Proyectos' },

@@ -18,6 +18,8 @@ const ProfilePage = lazy(() => import('@/pages/settings/profile'))
 const NotificationsPage = lazy(() => import('@/pages/settings/notifications'))
 const PreferencesPage = lazy(() => import('@/pages/settings/preferences'))
 const BillingPage = lazy(() => import('@/pages/settings/billing'))
+const PrivacyPolicyPage = lazy(() => import('@/pages/privacy-policy'))
+const TermsOfServicePage = lazy(() => import('@/pages/terms-of-service'))
 
 // Minimal loader - sem chamadas assíncronas
 const PageLoader = () => {
@@ -43,6 +45,10 @@ function App() {
             <Routes>
           {/* Auth */}
           <Route path="/auth" element={<AuthPage />} />
+          
+          {/* Legal Pages */}
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<DashboardPage />} />
