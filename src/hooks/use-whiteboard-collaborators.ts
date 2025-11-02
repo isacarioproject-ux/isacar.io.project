@@ -183,7 +183,7 @@ export const useWhiteboardCollaborators = (whiteboardId?: string, ownerId?: stri
       }
 
       const currentCollaborators = whiteboard?.collaborators || []
-      const newCollaborators = currentCollaborators.filter(id => id !== userId)
+      const newCollaborators = currentCollaborators.filter((id: string) => id !== userId)
 
       // Atualizar whiteboard
       const { error: updateError } = await supabase

@@ -285,7 +285,14 @@ export function AuthForm({
 
     fieldsToValidate.forEach(field => {
       const error = validateField(field, formData[field]);
-      if (error) newErrors[field] = error;
+      if (error) {
+        // Only add to errors if it's a valid error field
+        if (field === 'name' || field === 'email' || field === 'password' ||
+            field === 'confirmPassword' || field === 'phone' || field === 'agreeToTerms' ||
+            field === 'verificationCode') {
+          newErrors[field] = error;
+        }
+      }
     });
 
     setErrors(newErrors);

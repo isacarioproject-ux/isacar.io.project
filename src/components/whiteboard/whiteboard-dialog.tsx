@@ -1426,7 +1426,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
               )}
 
               {/* Cursores dos Colaboradores em Real-time */}
-              {collaborators.map(collab => (
+              {onlineCollaborators.map((collab) => (
                 <CollaboratorCursor key={collab.id} collaborator={collab} />
               ))}
             </div>
