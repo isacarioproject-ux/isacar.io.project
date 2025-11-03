@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CardSticky, ContainerScroll } from '@/components/ui/cards-stack'
+import { CardStacked, CardsStackContainer } from '@/components/ui/cards-stack'
 import { TrendingUp, TrendingDown, LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,14 +26,10 @@ export const StatsCardStacked = ({
   className,
   index,
 }: StatsCardStackedProps) => (
-  <CardSticky
+  <CardStacked
     index={index}
-    incrementY={20}
-    incrementZ={10}
+    total={4}
     className="w-full"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3, delay: index * 0.1 }}
   >
     <Card className={cn('relative overflow-hidden backdrop-blur-sm border-2', className)}>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
@@ -75,7 +71,7 @@ export const StatsCardStacked = ({
         )}
       </CardContent>
     </Card>
-  </CardSticky>
+  </CardStacked>
 )
 
 interface StatsCardsContainerProps {
@@ -84,7 +80,7 @@ interface StatsCardsContainerProps {
 }
 
 export const StatsCardsContainer = ({ children, className }: StatsCardsContainerProps) => (
-  <ContainerScroll className={cn("min-h-[400px] grid gap-4 md:grid-cols-2 lg:grid-cols-4", className)}>
+  <CardsStackContainer className={cn(className)}>
     {children}
-  </ContainerScroll>
+  </CardsStackContainer>
 )
