@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatsCard } from '@/components/stats-card'
+import { StatsCardStacked, StatsCardsContainer } from '@/components/stats-card-stacked'
 import { StatsSkeleton, CardSkeleton } from '@/components/loading-skeleton'
 import { EmptyState } from '@/components/empty-state'
 import { DashboardManagement } from '@/components/dashboard-management'
@@ -107,9 +108,10 @@ export default function DashboardPage() {
               </>
             ) : stats ? (
               <>
-                {/* Stats Principais */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <StatsCard
+                {/* Stats Principais com Cards Empilhados */}
+                <StatsCardsContainer>
+                  <StatsCardStacked
+                    index={0}
                     title={t('dashboard.stats.totalProjects')}
                     value={stats.totalProjects}
                     description={t('dashboard.stats.inProgress', { count: stats.activeProjects })}
@@ -117,7 +119,8 @@ export default function DashboardPage() {
                     trend="up"
                     trendValue="+12%"
                   />
-                  <StatsCard
+                  <StatsCardStacked
+                    index={1}
                     title={t('dashboard.stats.documents')}
                     value={stats.totalDocuments}
                     description={formatBytes(stats.totalStorage)}
@@ -125,13 +128,15 @@ export default function DashboardPage() {
                     trend="up"
                     trendValue="+8%"
                   />
-                  <StatsCard
+                  <StatsCardStacked
+                    index={2}
                     title={t('dashboard.stats.teamMembers')}
                     value={stats.totalTeamMembers}
                     description={t('dashboard.stats.activeMembers', { count: stats.activeMembers })}
                     icon={Users}
                   />
-                  <StatsCard
+                  <StatsCardStacked
+                    index={3}
                     title={t('dashboard.stats.newThisWeek')}
                     value={stats.recentDocuments}
                     description={t('dashboard.stats.docsAdded')}
@@ -139,7 +144,7 @@ export default function DashboardPage() {
                     trend="up"
                     trendValue="+23%"
                   />
-                </div>
+                </StatsCardsContainer>
 
                 {/* Limites do Plano */}
                 {subscription && (
