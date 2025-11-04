@@ -433,15 +433,23 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
             file_url: '',
             description: JSON.stringify(elements),
             icon: template.icon,
+            template_id: template.id, // ✅ Salvar ID do template
           })
           .select()
           .single()
 
-        if (!error && newDoc) {
-          setSelectedDocId(newDoc.id)
+        if (error) {
+          console.error('❌ Erro ao criar template:', error)
+          toast.error('Erro ao criar documento', { description: error.message })
+          return
+        }
+
+        if (newDoc) {
+          console.log('✅ Template criado:', newDoc.id)
+          refetch() // Atualizar lista
+          setSelectedDocId(newDoc.id) // Abrir documento
           setShowPageEditor(false)
-          refetch()
-          toast.success(`✓ ${template.name} criado!`)
+          toast.success(`✓ ${template.name} ${t('pages.created')}`)
         }
       }}
     />

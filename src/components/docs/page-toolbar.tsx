@@ -15,12 +15,22 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
   Link2,
   CheckSquare,
   Smile,
   ImagePlus,
   Settings,
   Trash2,
+  FileText,
+  Clock,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -60,6 +70,53 @@ export const PageToolbar = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showCoverPopover, setShowCoverPopover] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showPropertiesDialog, setShowPropertiesDialog] = useState(false)
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false)
+  const [properties, setProperties] = useState({
+    category: '',
+    created_at: '',
+    updated_at: '',
+  })
+
+  // Carregar propriedades do documento
+  const loadProperties = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('category, created_at, updated_at')
+        .eq('id', docId)
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setProperties({
+          category: data.category || 'Outros',
+          created_at: new Date(data.created_at).toLocaleString('pt-BR'),
+          updated_at: new Date(data.updated_at).toLocaleString('pt-BR'),
+        })
+      }
+    } catch (err: any) {
+      toast.error('Erro ao carregar propriedades', { description: err.message })
+    }
+  }
+
+  // Atualizar categoria
+  const updateCategory = async (newCategory: string) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({ category: newCategory })
+        .eq('id', docId)
+
+      if (error) throw error
+
+      setProperties({ ...properties, category: newCategory })
+      toast.success('✓ Categoria atualizada')
+    } catch (err: any) {
+      toast.error('Erro ao atualizar', { description: err.message })
+    }
+  }
 
   const toggleWiki = async () => {
     const newValue = !isWiki
@@ -70,7 +127,7 @@ export const PageToolbar = ({
       .update({ is_wiki: newValue })
       .eq('id', docId)
     
-    toast.success(newValue ? '✓ Marcado como Wiki' : 'Desmarcado', { duration: 2000 })
+    toast.success(newValue ? t('pages.toolbar.wikiMarked') : t('pages.toolbar.wikiUnmarked'))
   }
 
   const setIcon = async (emoji: string) => {
@@ -358,10 +415,19 @@ export const PageToolbar = ({
             </TooltipContent>
           </Tooltip>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                loadProperties()
+                setShowPropertiesDialog(true)
+              }}
+            >
+              <FileText className="mr-2 h-4 w-4" />
               {t('pages.toolbar.properties')}
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setShowHistoryDialog(true)}
+            >
+              <Clock className="mr-2 h-4 w-4" />
               {t('pages.toolbar.history')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -376,6 +442,89 @@ export const PageToolbar = ({
         </DropdownMenu>
       </div>
     </div>
+
+    {/* Dialog de Propriedades */}
+    <Dialog open={showPropertiesDialog} onOpenChange={setShowPropertiesDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Propriedades da Página</DialogTitle>
+          <DialogDescription>
+            Informações e metadados do documento
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Categoria</Label>
+            <Input
+              value={properties.category}
+              onChange={(e) => setProperties({ ...properties, category: e.target.value })}
+              onBlur={(e) => updateCategory(e.target.value)}
+              className="h-9"
+              placeholder="Ex: Trabalho, Pessoal, Projeto..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Criado em</Label>
+              <p className="text-xs">{properties.created_at}</p>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Atualizado em</Label>
+              <p className="text-xs">{properties.updated_at}</p>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">ID do Documento</Label>
+            <code className="text-xs bg-muted px-2 py-1 rounded block">
+              {docId}
+            </code>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowPropertiesDialog(false)}
+          >
+            Fechar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog de Histórico */}
+    <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Histórico da Página</DialogTitle>
+          <DialogDescription>
+            Versões anteriores e alterações realizadas
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-8 text-center">
+          <Clock className="h-16 w-16 mx-auto mb-4 opacity-20" />
+          <p className="text-sm text-muted-foreground mb-2">
+            Histórico em desenvolvimento
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Em breve você poderá visualizar e restaurar versões anteriores
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowHistoryDialog(false)}
+          >
+            Fechar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </TooltipProvider>
   )
 }

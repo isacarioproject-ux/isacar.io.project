@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { CommentsSidebar } from './comments-sidebar'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { useI18n } from '@/hooks/use-i18n'
+import { retranslateTemplate } from '@/lib/template-translator'
 import {
   Tooltip,
   TooltipContent,
@@ -55,7 +56,7 @@ interface PageViewerProps {
 }
 
 export const PageViewer = ({ docId, projectId, onOpenSidebar, onBack, onAddElement, onDataChange, onNavigate }: PageViewerProps) => {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const [title, setTitle] = useState('')
   const [elements, setElements] = useState<PageElement[]>([])
   const [loading, setLoading] = useState(true)
@@ -78,10 +79,10 @@ export const PageViewer = ({ docId, projectId, onOpenSidebar, onBack, onAddEleme
     })
   )
 
-  // Fetch inicial
+  // Fetch inicial e quando idioma mudar
   useEffect(() => {
     fetchDoc()
-  }, [docId])
+  }, [docId, locale]) // ✅ Re-carregar quando idioma mudar
 
   // Notificar mudanças de dados ao componente pai (para ExportMenu)
   useEffect(() => {
@@ -107,7 +108,7 @@ export const PageViewer = ({ docId, projectId, onOpenSidebar, onBack, onAddEleme
     try {
       const { data, error } = await supabase
         .from('documents')
-        .select('name, description, is_wiki, icon, cover_image')
+        .select('name, description, is_wiki, icon, cover_image, template_id')
         .eq('id', docId)
         .single()
 
@@ -116,9 +117,20 @@ export const PageViewer = ({ docId, projectId, onOpenSidebar, onBack, onAddEleme
         setIsWiki(data.is_wiki || false)
         setIconEmoji(data.icon || null)
         setCoverImg(data.cover_image || null)
+        
         try {
           const parsed = JSON.parse(data.description || '[]')
-          const elementsArray = Array.isArray(parsed) ? parsed : []
+          let elementsArray = Array.isArray(parsed) ? parsed : []
+          
+          // ✅ Se é um template, re-traduzir para o idioma atual
+          if (data.template_id) {
+            const retranslated = retranslateTemplate(data.template_id, elementsArray)
+            if (retranslated) {
+              console.log('🌍 Template re-traduzido:', data.template_id)
+              elementsArray = retranslated
+            }
+          }
+          
           setElements(elementsArray)
           lastSavedRef.current = JSON.stringify({ name: data.name, elements: elementsArray })
         } catch {

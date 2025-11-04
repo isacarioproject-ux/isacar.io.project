@@ -387,6 +387,7 @@ const translations: Translations = {
   'pages.pageDeleted': { 'pt-BR': 'Página excluída', 'en': 'Page deleted', 'es': 'Página eliminada' },
   'pages.addFirstElement': { 'pt-BR': 'Adicionar primeiro elemento', 'en': 'Add first element', 'es': 'Añadir primer elemento' },
   'pages.addElement': { 'pt-BR': 'Adicionar elemento', 'en': 'Add element', 'es': 'Añadir elemento' },
+  'pages.created': { 'pt-BR': 'criado!', 'en': 'created!', 'es': 'creado!' },
   'pages.confirmDeleteDoc': { 'pt-BR': 'Excluir', 'en': 'Delete', 'es': 'Eliminar' },
   'pages.deleteSubpages': { 'pt-BR': 'Isso também excluirá todas as subpáginas.', 'en': 'This will also delete all subpages.', 'es': 'Esto también eliminará todas las subpáginas.' },
   'pages.elements.addItem': { 'pt-BR': 'Adicionar item', 'en': 'Add item', 'es': 'Añadir ítem' },
