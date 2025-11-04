@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { DocsCard } from '@/components/docs/docs-card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatsCard } from '@/components/stats-card'
 import { StatsCardStacked, StatsCardsContainer } from '@/components/stats-card-stacked'
@@ -277,42 +278,14 @@ export default function DashboardPage() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{t('dashboard.charts.documentsByCategory')}</CardTitle>
-                      <CardDescription>{t('dashboard.charts.documentsTypes')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={stats.documentsByCategory}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="hsl(var(--primary))"
-                            dataKey="count"
-                            label={({ category, percent }) =>
-                              `${category} ${(percent * 100).toFixed(0)}%`
-                            }
-                          >
-                            {stats.documentsByCategory.map((entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
+                  {/* DocsCard - Novo componente de documentos */}
+                  <DocsCard
+                    defaultName="Meus Documentos"
+                    onExpand={() => console.log('expand')}
+                    onAddDoc={() => console.log('add')}
+                    onDuplicate={() => console.log('duplicate')}
+                    onDelete={() => console.log('delete')}
+                  />
                 </div>
               </>
             ) : null}
