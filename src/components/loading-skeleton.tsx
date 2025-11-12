@@ -2,13 +2,36 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const CardSkeleton = () => (
-  <Card>
-    <CardHeader className="pb-3">
-      <Skeleton className="h-5 w-3/4" />
-      <Skeleton className="h-3 w-1/2 mt-1.5" />
+  <Card className="w-full h-[500px] min-h-[360px] flex flex-col">
+    <CardHeader className="pb-3 px-4 py-3 border-b">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-6 rounded" />
+          <Skeleton className="h-5 w-32" />
+        </div>
+        <div className="flex items-center gap-1">
+          <Skeleton className="h-7 w-7 rounded" />
+          <Skeleton className="h-7 w-7 rounded" />
+          <Skeleton className="h-7 w-7 rounded" />
+        </div>
+      </div>
     </CardHeader>
-    <CardContent>
-      <Skeleton className="h-20 w-full" />
+    <CardContent className="flex-1 p-4 space-y-3">
+      {/* Linha de tabs/filtros */}
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+      
+      {/* Conteúdo principal */}
+      <div className="space-y-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
     </CardContent>
   </Card>
 )

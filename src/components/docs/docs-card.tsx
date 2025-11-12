@@ -45,6 +45,7 @@ import {
   PanelRight,
   PanelRightClose,
   Sparkles,
+  GripVertical,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -185,22 +186,29 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
 
   return (
     <>
-    <Card className="border border-border bg-card rounded-lg overflow-hidden">
-      {/* MENUBAR SUPERIOR */}
-      <CardHeader className="p-0">
-        <div className="flex items-center justify-between gap-2 px-0.5 py-0.5">
-          {/* Input Editável de Nome */}
+    <Card className="border border-border bg-card rounded-lg overflow-hidden w-[400px] h-[400px] flex flex-col">
+      {/* HEADER - 6 Elementos */}
+      <CardHeader className="p-3 border-b border-border shrink-0">
+        <div className="flex items-center gap-2">
+          {/* 1. [::] Drag Handle - 6 pontinhos */}
+          <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+            <GripVertical className="h-4 w-4" />
+          </div>
+
+          {/* 2. Input Nome - Editável */}
           <Input
             value={cardName}
             onChange={handleNameChange}
             placeholder={t('pages.title')}
-            className="text-sm font-semibold bg-transparent border-none focus:border-border focus:ring-1 focus:ring-ring h-7 px-2 w-40"
+            className="text-sm font-semibold bg-transparent border-none focus-visible:ring-1 focus-visible:ring-ring h-7 px-2 flex-1 min-w-0"
           />
 
+          {/* 3. Badge Workspace (condicional) - TODO: implementar quando tiver workspace */}
+          
           {/* Botões de Ação */}
           <TooltipProvider>
-          <div className="flex items-center gap-1">
-            {/* Botão Expandir */}
+          <div className="flex items-center gap-0.5">
+            {/* 4. [⤢] Expandir - Abre modal fullscreen */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -217,7 +225,7 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
               </TooltipContent>
             </Tooltip>
 
-            {/* Botão Adicionar com Dropdown */}
+            {/* 5. [+] Adicionar - Dropdown com 3 opções */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -292,7 +300,7 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Dropdown Menu */}
+            {/* 6. [⋮] Menu 3 Pontos - Duplicar/Excluir card */}
             <DropdownMenu>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -329,8 +337,8 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
         </div>
       </CardHeader>
 
-      {/* CONTEÚDO DO CARD - Layout Flex com Sidebar */}
-      <CardContent className="p-0 flex overflow-hidden">
+      {/* CONTEÚDO DO CARD - Ocupa espaço restante */}
+      <CardContent className="p-0 flex-1 flex overflow-hidden">
         {/* Tabela de Documentos */}
         <div className={cn("flex-1 overflow-auto", showPageEditor && "border-r border-border")}>
           {loading ? (
@@ -340,7 +348,7 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
               <Skeleton className="h-10 w-full" />
             </div>
           ) : documents.length === 0 ? (
-            <div className="min-h-[200px] flex items-center justify-center p-4">
+            <div className="flex items-center justify-center p-4 h-full">
               <div className="text-center text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">{t('pages.noPages')}</p>
@@ -348,19 +356,19 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
               </div>
             </div>
           ) : (
-            <div className="max-h-[300px] overflow-auto">
+            <div className="overflow-auto h-full">
             <Table>
               <TableBody>
                 {documents.map((doc) => (
                   <DocumentRow
                     key={doc.id}
-                    doc={doc}
-                    onSelectDoc={(id) => {
+                    document={doc}
+                    onSelect={(id: string) => {
                       setSelectedDocId(id)
                       setShowPageEditor(true)
                     }}
-                    onRefetch={refetch}
-                    onCreateSubpage={handleCreateSubpage}
+                    onUpdate={refetch}
+                    projectId={projectId || ''}
                   />
                 ))}
               </TableBody>
@@ -373,27 +381,6 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
         {showPageEditor && selectedDocId && (
           <PageEditorSidebar
             docId={selectedDocId}
-            onClose={() => setShowPageEditor(false)}
-            onAddElement={async (element) => {
-              // Adicionar elemento ao documento
-              const { data } = await supabase
-                .from('documents')
-                .select('description')
-                .eq('id', selectedDocId)
-                .single()
-              
-              if (data) {
-                const elements = JSON.parse(data.description || '[]')
-                elements.push(element)
-                
-                await supabase
-                  .from('documents')
-                  .update({ description: JSON.stringify(elements) })
-                  .eq('id', selectedDocId)
-                
-                refetch()
-              }
-            }}
           />
         )}
       </CardContent>
@@ -403,20 +390,21 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
     <UploadDocumentModal
       open={showUploadModal}
       onOpenChange={setShowUploadModal}
-      projectId={projectId}
-      onSuccess={refetch}
+      projectId={projectId || ''}
+      onUploadComplete={refetch}
     />
 
     {/* Dialog de Seleção de Template */}
     <TemplateSelectorDialog
       open={showTemplateSelector}
       onOpenChange={setShowTemplateSelector}
-      onSelectTemplate={async (template) => {
+      projectId={projectId || ''}
+      onTemplateSelect={async (template: any) => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
         // Regenerar IDs dos elementos
-        const elements = template.elements.map(el => ({
+        const elements = template.elements.map((el: any) => ({
           ...el,
           id: nanoid(),
         }))
@@ -506,8 +494,7 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
               {/* Menu de Exportação - aparece quando página selecionada */}
               {selectedDocId && (
                 <ExportMenu
-                  title={selectedDocData.title || 'Sem título'}
-                  elements={selectedDocData.elements}
+                  docId={selectedDocId}
                 />
               )}
 
@@ -674,19 +661,10 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
                 <PageViewer
                   key={selectedDocId}
                   docId={selectedDocId}
-                  projectId={projectId}
-                  onOpenSidebar={() => setShowPageEditor(true)}
                   onBack={() => {
                     setSelectedDocId(null)
                     setShowPageEditor(false)
                     refetch()
-                  }}
-                  onDataChange={(title, elements) => {
-                    setSelectedDocData({ title, elements })
-                  }}
-                  onNavigate={(newDocId) => {
-                    // ✅ Trocar documento sem fechar modal
-                    setSelectedDocId(newDocId)
                   }}
                 />
               ) : loading ? (
@@ -712,13 +690,13 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
                       {documents.map((doc) => (
                         <DocumentRow
                           key={doc.id}
-                          doc={doc}
-                          onSelectDoc={(id) => {
+                          document={doc}
+                          onSelect={(id: string) => {
                             setSelectedDocId(id)
                             setShowPageEditor(true)
                           }}
-                          onRefetch={refetch}
-                          onCreateSubpage={handleCreateSubpage}
+                          onUpdate={refetch}
+                          projectId={projectId || ''}
                         />
                       ))}
                     </TableBody>
@@ -731,25 +709,6 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
             {showPageEditor && selectedDocId && (
               <PageEditorSidebar
                 docId={selectedDocId}
-                onClose={() => setShowPageEditor(false)}
-                onAddElement={async (element) => {
-                  // Adicionar elemento ao documento
-                  const { data } = await supabase
-                    .from('documents')
-                    .select('description')
-                    .eq('id', selectedDocId)
-                    .single()
-                  
-                  if (data) {
-                    const elements = JSON.parse(data.description || '[]')
-                    elements.push(element)
-                    
-                    await supabase
-                      .from('documents')
-                      .update({ description: JSON.stringify(elements) })
-                      .eq('id', selectedDocId)
-                  }
-                }}
               />
             )}
           </div>

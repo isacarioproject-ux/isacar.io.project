@@ -17,7 +17,15 @@ import {
   Mail,
   Settings,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
+  User,
+  Bell,
+  Palette,
+  CreditCard,
+  LayoutDashboard,
+  Wallet,
+  CheckSquare,
+  Clock
 } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { cn } from '@/lib/utils'
@@ -27,9 +35,10 @@ interface SearchResult {
   id: string
   title: string
   description?: string
-  type: 'page' | 'project' | 'document' | 'team'
+  type: 'page' | 'project' | 'document' | 'team' | 'card'
   path: string
   icon: any
+  shortcut?: string
 }
 
 interface GlobalSearchProps {
@@ -42,13 +51,19 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const navigate = useNavigate()
   
   const pages: SearchResult[] = [
-    { id: '1', title: t('nav.dashboard'), type: 'page', path: '/dashboard', icon: TrendingUp },
-    { id: '2', title: t('nav.projects'), type: 'page', path: '/projects', icon: FolderKanban },
-    { id: '3', title: t('nav.documents'), type: 'page', path: '/documents', icon: FileText },
-    { id: '4', title: t('nav.team'), type: 'page', path: '/team', icon: Users },
-    { id: '5', title: t('nav.analytics'), type: 'page', path: '/analytics', icon: TrendingUp },
-    { id: '6', title: t('nav.invites'), type: 'page', path: '/invites', icon: Users },
-    { id: '7', title: t('nav.settings'), type: 'page', path: '/settings', icon: Settings },
+    // Páginas principais
+    { id: '1', title: t('nav.dashboard'), type: 'page', path: '/dashboard', icon: LayoutDashboard, shortcut: 'D' },
+    
+    // Settings
+    { id: '2', title: t('settings.profile'), type: 'page', path: '/settings/profile', icon: User, shortcut: 'P' },
+    { id: '3', title: t('settings.notifications'), type: 'page', path: '/settings/notifications', icon: Bell, shortcut: 'N' },
+    { id: '4', title: t('settings.preferences'), type: 'page', path: '/settings/preferences', icon: Palette, shortcut: 'R' },
+    { id: '5', title: t('settings.billing'), type: 'page', path: '/settings/billing', icon: CreditCard, shortcut: 'B' },
+    
+    // Cards do Dashboard
+    { id: '6', title: 'Finance', description: 'Gestão financeira', type: 'card', path: '/dashboard#finance', icon: Wallet, shortcut: 'F' },
+    { id: '7', title: 'Tasks', description: 'Minhas tarefas', type: 'card', path: '/dashboard#tasks', icon: CheckSquare, shortcut: 'T' },
+    { id: '8', title: 'Recente', description: 'Atividades recentes', type: 'card', path: '/dashboard#recent', icon: Clock, shortcut: 'C' },
   ]
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -146,9 +161,16 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                         </div>
                       )}
                     </div>
-                    <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                      <span className="text-xs">↵</span>
-                    </kbd>
+                    <div className="flex items-center gap-1">
+                      {result.shortcut && (
+                        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-70 hidden sm:flex">
+                          <span className="text-xs">{result.shortcut}</span>
+                        </kbd>
+                      )}
+                      <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                        <span className="text-xs">↵</span>
+                      </kbd>
+                    </div>
                   </button>
                 )
               })}

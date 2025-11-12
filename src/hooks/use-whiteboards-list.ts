@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import type { Whiteboard, WhiteboardType } from '@/types/whiteboard'
 import { toast } from 'sonner'
 import { useSubscription } from './use-subscription'
+import { useWorkspace } from '@/contexts/workspace-context'
 
 const PLAN_LIMITS: Record<string, Record<WhiteboardType, number>> = {
   free: {
@@ -30,7 +31,7 @@ const PLAN_LIMITS: Record<string, Record<WhiteboardType, number>> = {
 type WhiteboardTab = 'recent' | 'favorites' | 'createdByMe'
 
 interface UseWhiteboardsListOptions {
-  teamId?: string | null
+  workspaceId?: string | null // ✅ Renomeado de teamId
 }
 
 type OwnedBoardSummary = Pick<Whiteboard, 'id' | 'name' | 'whiteboard_type'>
@@ -53,7 +54,7 @@ interface UseWhiteboardsListResult {
 interface CreateWhiteboardInput {
   name?: string
   type: WhiteboardType
-  teamId?: string | null
+  workspaceId?: string | null // ✅ Renomeado de teamId
   projectId?: string | null
 }
 
@@ -133,7 +134,7 @@ const fetchUserPlan = async (userId: string): Promise<string> => {
 }
 
 export const useWhiteboardsList = ({
-  teamId,
+  workspaceId,
 }: UseWhiteboardsListOptions = {}): UseWhiteboardsListResult => {
   const [loading, setLoading] = useState(true)
   const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([])
@@ -160,8 +161,11 @@ export const useWhiteboardsList = ({
         .order('updated_at', { ascending: false })
         .or(`user_id.eq.${user.id},collaborators.cs.{"${user.id}"}`)
 
-      if (teamId) {
-        queryBuilder = queryBuilder.eq('team_id', teamId)
+      // ✅ Filtrar por workspace
+      if (workspaceId) {
+        queryBuilder = queryBuilder.eq('workspace_id', workspaceId)
+      } else {
+        queryBuilder = queryBuilder.is('workspace_id', null)
       }
 
       const { data, error, count } = await queryBuilder
@@ -198,7 +202,7 @@ export const useWhiteboardsList = ({
     } finally {
       setLoading(false)
     }
-  }, [teamId])
+  }, [workspaceId])
 
   useEffect(() => {
     refresh()
@@ -215,7 +219,7 @@ export const useWhiteboardsList = ({
   )
 
   const createWhiteboard = useCallback(
-    async ({ name, type, teamId: createTeamId, projectId }: CreateWhiteboardInput) => {
+    async ({ name, type, workspaceId: createWorkspaceId, projectId }: CreateWhiteboardInput) => {
       try {
         const user = await fetchCurrentUser()
         const limit = PLAN_LIMITS[planId]?.[type] ?? 0
@@ -239,7 +243,7 @@ export const useWhiteboardsList = ({
             name: name ?? 'Whiteboard sem título',
             user_id: user.id,
             whiteboard_type: type,
-            team_id: createTeamId ?? null,
+            workspace_id: createWorkspaceId ?? null, // ✅ Renomeado
             project_id: projectId ?? null,
             status: 'active',
             collaborators: [user.id],

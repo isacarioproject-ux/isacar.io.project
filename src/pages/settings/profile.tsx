@@ -293,228 +293,148 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-4 lg:p-6">
-        {/* Breadcrumb */}
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">{t('nav.dashboard')}</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/settings">{t('settings.title')}</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{t('profile.title')}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+      <div className="min-h-screen w-full flex items-start justify-center pt-8 pb-8">
+        <div className="w-[60%] space-y-1">
+        {/* Header */}
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-semibold tracking-tight">Minhas configurações</h1>
+          <p className="text-xs text-muted-foreground">
+            Suas informações pessoais e configurações de segurança da conta.
+          </p>
+        </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Sidebar - Avatar */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t('profile.avatar')}</CardTitle>
-              <CardDescription className="text-xs">
-                {t('profile.clickToChange')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-3">
-              <div className="relative group">
-                <Avatar className="h-24 w-24 border-2 border-primary/20">
-                  <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-violet-500 text-lg font-bold text-white">
-                    {getInitials(profile.full_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <label htmlFor="avatar-upload">
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    disabled={uploadingAvatar}
-                    asChild
-                  >
-                    <span>
-                      {uploadingAvatar ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4" />
-                      )}
-                    </span>
-                  </Button>
-                </label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                  disabled={uploadingAvatar}
-                />
-              </div>
+        {/* Grid: Perfil à esquerda, Avatar à direita */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          {/* Coluna Esquerda: Perfil */}
+          <div className="space-y-1">
+            <h2 className="text-base font-medium">Perfil</h2>
+            <p className="text-xs text-muted-foreground">
+              Suas informações pessoais e configurações de segurança da conta.
+            </p>
+          </div>
 
-              <div className="text-center">
-                <p className="font-medium text-sm">{profile.full_name || t('profile.noName')}</p>
-                <p className="text-xs text-muted-foreground">{profile.email}</p>
-              </div>
+          {/* Coluna Direita: Avatar */}
+          <div className="flex flex-col items-center space-y-3">
+            <h3 className="text-sm font-medium self-center">Avatar</h3>
+            
+            <div className="relative group">
+              <Avatar className="h-[100px] w-[100px] border">
+                <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-semibold">
+                  {getInitials(profile.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <label htmlFor="avatar-upload" className="cursor-pointer">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-5 w-5 text-white" />
+                  )}
+                </div>
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={uploadingAvatar}
+              />
+            </div>
 
-              <div className="w-full space-y-1">
-                <Label htmlFor="avatar_url" className="text-xs">{t('profile.photoUrl')}</Label>
+            <p className="text-sm font-medium">{profile.full_name || 'Sem nome'}</p>
+          </div>
+        </div>
+
+          {/* Todos os inputs em sequência vertical - metade da largura, alinhado com avatar */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div></div>
+            <div className="space-y-2">
+            <div className="space-y-2">
+              <Label htmlFor="full_name" className="text-sm font-medium">Nome completo</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="avatar_url"
-                  placeholder="https://..."
-                  value={profile.avatar_url}
-                  onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })}
-                  className="text-xs h-8"
+                  id="full_name"
+                  placeholder="Seu nome completo"
+                  value={profile.full_name}
+                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                  className="pl-10"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {t('profile.pasteUrlOrUpload')}
-                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Main Content */}
-          <div className="space-y-6 lg:col-span-2">
-            {/* Informações Pessoais */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {t('profile.personalInfo')}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {t('profile.personalInfoDesc')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">{t('profile.fullName')}</Label>
-                  <Input
-                    id="full_name"
-                    placeholder={t('profile.fullNamePlaceholder')}
-                    value={profile.full_name}
-                    onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile.email}
+                  disabled
+                  className="pl-10 bg-muted"
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">{t('profile.email')}</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      className="pl-10"
-                      value={profile.email}
-                      disabled
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {t('profile.emailCannotChange')}
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_password" className="text-sm font-medium">Senha</Label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="new_password"
+                  type="password"
+                  placeholder="Insira a nova senha"
+                  value={passwordData.new}
+                  onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                  className="pl-10"
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">{t('profile.bio')}</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder={t('profile.bioPlaceholder')}
-                    rows={4}
-                    value={profile.bio}
-                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  />
-                  <p className="text-xs text-slate-500">
-                    {t('profile.maxChars', { current: profile.bio.length, max: 500 })}
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm_password" className="text-sm font-medium">Confirmar senha</Label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="confirm_password"
+                  type="password"
+                  placeholder="Digite novamente"
+                  value={passwordData.confirm}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                  className="pl-10"
+                />
+              </div>
+            </div>
 
-                <Button 
-                  onClick={handleSaveProfile} 
-                  disabled={saving}
-                  className="w-full"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('settings.saving')}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      {t('common.save')}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Alterar Senha */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Key className="h-4 w-4" />
-                  {t('profile.changePassword')}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {t('profile.changePasswordDesc')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new_password">{t('profile.newPassword')}</Label>
-                  <Input
-                    id="new_password"
-                    type="password"
-                    placeholder={t('profile.minChars')}
-                    value={passwordData.new}
-                    onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirm_password">{t('profile.confirmNewPassword')}</Label>
-                  <Input
-                    id="confirm_password"
-                    type="password"
-                    placeholder={t('profile.typeAgain')}
-                    value={passwordData.confirm}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                  />
-                </div>
-
-                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-4">
-                  <p className="text-sm text-amber-400">
-                    <strong>{t('profile.securityTip')}:</strong> {t('profile.securityTipDesc')}
-                  </p>
-                </div>
-
-                <Button 
-                  onClick={handleChangePassword} 
-                  disabled={saving || !passwordData.new || !passwordData.confirm}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('profile.changing')}
-                    </>
-                  ) : (
-                    <>
-                      <Key className="mr-2 h-4 w-4" />
-                      {t('profile.changePasswordButton')}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+            <Button 
+              onClick={async () => {
+                // Se tem senha nova, alterar senha
+                if (passwordData.new || passwordData.confirm) {
+                  await handleChangePassword()
+                } else {
+                  // Senão, apenas salvar perfil
+                  await handleSaveProfile()
+                }
+              }}
+              disabled={saving}
+              className="w-full"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Salvar alterações
+                </>
+              )}
+            </Button>
+            </div>
           </div>
         </div>
       </div>

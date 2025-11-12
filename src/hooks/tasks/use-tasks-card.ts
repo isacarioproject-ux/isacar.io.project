@@ -1,0 +1,145 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Task, TaskGroups, TaskTab } from '@/types/tasks';
+import { getTasks, getCurrentUserId } from '@/lib/tasks/tasks-storage';
+
+export function useTasksCard() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [activeTab, setActiveTab] = useState<TaskTab>('pendente');
+  const [loading, setLoading] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([
+    'hoje',
+    'em_atraso',
+    'proximo',
+    'nao_programado',
+  ]);
+
+  const loadTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const allTasks = await getTasks();
+      setTasks(allTasks);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups(prev =>
+      prev.includes(groupName)
+        ? prev.filter(g => g !== groupName)
+        : [...prev, groupName]
+    );
+  };
+
+  const isGroupExpanded = (groupName: string) => {
+    return expandedGroups.includes(groupName);
+  };
+
+  const [userId, setUserId] = useState<string>('');
+
+  useEffect(() => {
+    getCurrentUserId().then(setUserId);
+  }, []);
+
+  const getFilteredTasks = useCallback((): Task[] | TaskGroups => {
+    if (!userId) return { hoje: [], em_atraso: [], proximo: [], nao_programado: [] };
+    
+    const today = new Date().toISOString().split('T')[0];
+
+    if (activeTab === 'feito') {
+      // Aba Feito: tarefas concluídas
+      return tasks
+        .filter(
+          task =>
+            task.status === 'done' &&
+            (task.assignee_ids.includes(userId) || task.creator_id === userId)
+        )
+        .sort((a, b) => {
+          const dateA = new Date(a.completed_at || a.created_at).getTime();
+          const dateB = new Date(b.completed_at || b.created_at).getTime();
+          return dateB - dateA; // Mais recentes primeiro
+        });
+    }
+
+    if (activeTab === 'delegado') {
+      // Aba Delegado: tarefas criadas por mim mas atribuídas a outros
+      return tasks
+        .filter(
+          task =>
+            task.creator_id === userId &&
+            !task.assignee_ids.includes(userId) &&
+            task.status !== 'done'
+        )
+        .sort((a, b) => {
+          const dateA = new Date(a.due_date || '9999-12-31').getTime();
+          const dateB = new Date(b.due_date || '9999-12-31').getTime();
+          return dateA - dateB;
+        });
+    }
+
+    // Aba Pendente: agrupar por período
+    const pendingTasks = tasks.filter(
+      task =>
+        task.status !== 'done' &&
+        (task.assignee_ids.includes(userId) || task.creator_id === userId)
+    );
+
+    const groups: TaskGroups = {
+      hoje: [],
+      em_atraso: [],
+      proximo: [],
+      nao_programado: [],
+    };
+
+    pendingTasks.forEach(task => {
+      if (!task.due_date) {
+        groups.nao_programado.push(task);
+      } else if (task.due_date < today) {
+        groups.em_atraso.push(task);
+      } else if (task.due_date === today) {
+        groups.hoje.push(task);
+      } else {
+        groups.proximo.push(task);
+      }
+    });
+
+    // Ordenar cada grupo por prioridade e data
+    const sortByPriorityAndDate = (a: Task, b: Task) => {
+      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+      const priorityDiff =
+        priorityOrder[a.priority] - priorityOrder[b.priority];
+      if (priorityDiff !== 0) return priorityDiff;
+
+      const dateA = new Date(a.due_date || '9999-12-31').getTime();
+      const dateB = new Date(b.due_date || '9999-12-31').getTime();
+      return dateA - dateB;
+    };
+
+    groups.hoje.sort(sortByPriorityAndDate);
+    groups.em_atraso.sort(sortByPriorityAndDate);
+    groups.proximo.sort(sortByPriorityAndDate);
+    groups.nao_programado.sort(sortByPriorityAndDate);
+
+    return groups;
+  }, [tasks, activeTab]);
+
+  const refetch = useCallback(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  return {
+    tasks: getFilteredTasks(),
+    activeTab,
+    setActiveTab,
+    loading,
+    refetch,
+    toggleGroup,
+    isGroupExpanded,
+  };
+}

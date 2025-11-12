@@ -1,114 +1,102 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Sparkles } from 'lucide-react'
-import { getTranslatedTemplates, getCategoryLabel, PageTemplate } from '@/lib/page-templates'
-import { useI18n } from '@/hooks/use-i18n'
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search } from 'lucide-react';
+import { templates } from '@/lib/docs/templates';
+import { Template } from '@/types/docs';
 
 interface TemplateSelectorDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSelectTemplate: (template: PageTemplate) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  onTemplateSelect: (template: Template) => void;
 }
 
-export const TemplateSelectorDialog = ({
+export function TemplateSelectorDialog({
   open,
   onOpenChange,
-  onSelectTemplate,
-}: TemplateSelectorDialogProps) => {
-  const { t } = useI18n()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  projectId,
+  onTemplateSelect,
+}: TemplateSelectorDialogProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'business' | 'personal' | 'education'>('all');
 
-  const filteredTemplates = getTranslatedTemplates().filter((template) => {
+  const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory
+      template.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory || template.category === 'all';
+    return matchesSearch && matchesCategory;
+  });
 
-    return matchesSearch && matchesCategory
-  })
-
-  const categories = [
-    { id: 'all', label: t('pages.templates.all') },
-    { id: 'business', label: t('pages.templates.business') },
-    { id: 'personal', label: t('pages.templates.personal') },
-    { id: 'education', label: t('pages.templates.education') },
-  ]
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      all: 'Todos',
+      business: 'Negócios',
+      personal: 'Pessoal',
+      education: 'Educação',
+    };
+    return labels[category] || category;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[600px] p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b border-border">
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-500" />
-            {t('pages.templates.title')}
-          </DialogTitle>
-          <DialogDescription>
-            {t('pages.templates.description')}
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Escolher Template</DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecione um template para criar uma nova página
           </DialogDescription>
         </DialogHeader>
 
-        {/* Busca */}
-        <div className="px-6 py-3 border-b border-border">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('pages.templates.search')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar templates..."
+            className="pl-10"
+          />
         </div>
 
-        {/* Categorias */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="flex-1 flex flex-col">
-          <div className="px-6 py-2 border-b border-border">
-            <TabsList className="grid w-full grid-cols-4">
-              {categories.map((cat) => (
-                <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
-                  {cat.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
+        <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as any)} className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="business">Negócios</TabsTrigger>
+            <TabsTrigger value="personal">Pessoal</TabsTrigger>
+            <TabsTrigger value="education">Educação</TabsTrigger>
+          </TabsList>
 
-          <ScrollArea className="flex-1 px-6 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              {filteredTemplates.map((template) => (
+          <div className="flex-1 overflow-auto mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+              {filteredTemplates.map(template => (
                 <button
                   key={template.id}
-                  onClick={() => {
-                    onSelectTemplate(template)
-                    onOpenChange(false)
-                  }}
-                  className="group text-left p-4 border border-border rounded-lg hover:border-primary hover:bg-accent transition-all"
+                  onClick={() => onTemplateSelect(template)}
+                  className="text-left p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">
-                      {template.icon}
-                    </div>
+                    <span className="text-3xl">{template.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors">
-                        {template.name}
-                      </h4>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="truncate">{template.name}</h4>
+                        {template.category !== 'all' && (
+                          <Badge variant="secondary" className="text-xs">
+                            {getCategoryLabel(template.category)}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {template.description}
                       </p>
-                      <div className="mt-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {getCategoryLabel(template.category)}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </button>
@@ -117,12 +105,12 @@ export const TemplateSelectorDialog = ({
 
             {filteredTemplates.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
-                <p className="text-sm">Nenhum template encontrado</p>
+                Nenhum template encontrado
               </div>
             )}
-          </ScrollArea>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

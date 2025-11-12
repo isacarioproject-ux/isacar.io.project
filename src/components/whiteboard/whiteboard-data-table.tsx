@@ -28,6 +28,7 @@ interface WhiteboardDataTableProps {
   onDelete?: (board: Whiteboard) => void
   collaboratorProfiles?: Record<string, CollaboratorProfileSummary>
   teamMap?: Record<string, TeamSummary>
+  compact?: boolean
 }
 
 const statusVariant: Record<WhiteboardStatus, string> = {

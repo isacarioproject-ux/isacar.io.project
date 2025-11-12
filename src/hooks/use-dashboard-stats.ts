@@ -8,9 +8,6 @@ export interface DashboardStats {
   totalDocuments: number
   recentDocuments: number
   totalStorage: number
-  totalTeamMembers: number
-  activeMembers: number
-  pendingInvites: number
   projectsByStatus: {
     planning: number
     in_progress: number
@@ -22,7 +19,7 @@ export interface DashboardStats {
     count: number
   }[]
   recentActivity: {
-    type: 'project' | 'document' | 'team'
+    type: 'project' | 'document'
     action: 'created' | 'updated' | 'deleted'
     title: string
     timestamp: string
@@ -59,9 +56,6 @@ export function useDashboardStats(): UseDashboardStatsReturn {
           totalDocuments: 0,
           recentDocuments: 0,
           totalStorage: 0,
-          totalTeamMembers: 0,
-          activeMembers: 0,
-          pendingInvites: 0,
           projectsByStatus: {
             planning: 0,
             in_progress: 0,
@@ -89,33 +83,11 @@ export function useDashboardStats(): UseDashboardStatsReturn {
       const projects = myProjectsResult.data || []
       const projectIds = projects.map(p => p.id)
 
-      // Buscar dados em paralelo
-      const [
-        documentsResult,
-        teamMembersResult,
-        myInvitesResult,
-      ] = await Promise.all([
-        // Documents
-        supabase
-          .from('documents')
-          .select('category, file_size, created_at')
-          .eq('user_id', user.id),
-        
-        // Team members dos meus projetos
-        projectIds.length > 0
-          ? supabase
-              .from('team_members')
-              .select('status, project_id, joined_at')
-              .in('project_id', projectIds)
-          : Promise.resolve({ data: [], error: null }),
-        
-        // Meus convites pendentes
-        supabase
-          .from('team_members')
-          .select('id')
-          .eq('email', user.email || '')
-          .eq('status', 'pending'),
-      ])
+      // Buscar documentos
+      const documentsResult = await supabase
+        .from('documents')
+        .select('category, file_size, created_at')
+        .eq('user_id', user.id)
 
       if (documentsResult.error) {
         console.error('Erro ao buscar documentos:', documentsResult.error)
@@ -123,8 +95,6 @@ export function useDashboardStats(): UseDashboardStatsReturn {
       }
 
       const documents = documentsResult.data || []
-      const teamMembers = teamMembersResult.data || []
-      const myInvites = myInvitesResult.data || []
 
       // Calcular stats de projetos
       const activeProjects = projects.filter(p => p.status === 'in_progress').length
@@ -138,9 +108,6 @@ export function useDashboardStats(): UseDashboardStatsReturn {
       ).length
 
       const totalStorage = documents.reduce((sum, d) => sum + (d.file_size || 0), 0)
-
-      // Calcular stats de membros
-      const activeMembers = teamMembers.filter(m => m.status === 'active').length
 
       // Projects by status
       const projectsByStatus = {
@@ -219,9 +186,6 @@ export function useDashboardStats(): UseDashboardStatsReturn {
         totalDocuments: documents.length,
         recentDocuments,
         totalStorage,
-        totalTeamMembers: activeMembers,
-        activeMembers,
-        pendingInvites: myInvites.length,
         projectsByStatus,
         documentsByCategory,
         recentActivity: limitedActivity,
@@ -239,9 +203,6 @@ export function useDashboardStats(): UseDashboardStatsReturn {
         totalDocuments: 0,
         recentDocuments: 0,
         totalStorage: 0,
-        totalTeamMembers: 0,
-        activeMembers: 0,
-        pendingInvites: 0,
         projectsByStatus: {
           planning: 0,
           in_progress: 0,

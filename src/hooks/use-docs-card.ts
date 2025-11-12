@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { useWorkspace } from '@/contexts/workspace-context'
 
 interface Document {
   id: string
   name: string
-  file_type: string
+  file_type: 'page' | 'pdf' | 'word' | 'excel' | 'image' | 'other'
   file_size: number
   created_at: string
   file_url: string
   parent_id: string | null
   icon: string | null
+  project_id: string
 }
 
 interface DocumentWithChildren extends Document {
@@ -19,12 +21,13 @@ interface DocumentWithChildren extends Document {
 }
 
 export const useDocsCard = (projectId?: string) => {
+  const { currentWorkspace } = useWorkspace()
   const [documents, setDocuments] = useState<DocumentWithChildren[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchDocuments()
-  }, [projectId])
+  }, [projectId, currentWorkspace])
 
   const fetchDocuments = async () => {
     try {
@@ -41,13 +44,23 @@ export const useDocsCard = (projectId?: string) => {
 
       let query = supabase
         .from('documents')
-        .select('id, name, file_type, file_size, created_at, file_url, parent_id, icon')
-        .eq('user_id', user.id) // ✅ Filtrar por usuário
+        .select('id, name, file_type, file_size, created_at, file_url, parent_id, icon, project_id')
         .order('created_at', { ascending: false })
 
-      // Se projectId for especificado, filtrar por ele também
+      // Filtrar por projeto
       if (projectId) {
         query = query.eq('project_id', projectId)
+      } else {
+        query = query.is('project_id', null)
+      }
+
+      // ✅ Filtrar por workspace OU documentos pessoais
+      if (currentWorkspace) {
+        // Mostrar TODOS os documentos do workspace (RLS vai filtrar permissões)
+        query = query.eq('workspace_id', currentWorkspace.id)
+      } else {
+        // Apenas documentos pessoais (sem workspace)
+        query = query.is('workspace_id', null).eq('user_id', user.id)
       }
 
       const { data, error } = await query

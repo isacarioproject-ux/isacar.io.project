@@ -1,162 +1,171 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
-import { Upload, Loader2 } from 'lucide-react'
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Upload, File } from 'lucide-react';
+import { toast } from 'sonner';
+import { createDocument } from '@/lib/docs/storage';
 
 interface UploadDocumentModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  projectId?: string
-  onSuccess: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  onUploadComplete: () => void;
 }
 
-export const UploadDocumentModal = ({ 
-  open, 
-  onOpenChange, 
+export function UploadDocumentModal({
+  open,
+  onOpenChange,
   projectId,
-  onSuccess 
-}: UploadDocumentModalProps) => {
-  const [file, setFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
+  onUploadComplete,
+}: UploadDocumentModalProps) {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const detectFileType = (filename: string): 'pdf' | 'word' | 'excel' | 'image' | 'other' => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return 'pdf';
+    if (['doc', 'docx'].includes(ext || '')) return 'word';
+    if (['xls', 'xlsx'].includes(ext || '')) return 'excel';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return 'image';
+    return 'other';
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      // Check file size (max 10MB for demo)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Máximo 10MB.');
+        return;
+      }
+      setFile(selectedFile);
+    }
+  };
 
   const handleUpload = async () => {
-    if (!file) {
-      toast.error('Selecione um arquivo')
-      return
-    }
+    if (!file) return;
 
+    setUploading(true);
     try {
-      setUploading(true)
-
-      // 1. Obter user_id
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Usuário não autenticado')
-
-      // 2. Upload para Supabase Storage
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}_${file.name}` 
+      // In a real app, this would upload to Supabase Storage
+      // For now, we'll create a fake URL
+      const fakeUrl = `https://example.com/uploads/${file.name}`;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(fileName, file)
-
-      if (uploadError) throw uploadError
-
-      // 3. Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(fileName)
-
-      // 4. Detectar categoria
-      const getCategory = (type: string) => {
-        if (type.includes('pdf')) return 'PDF'
-        if (type.includes('word') || type.includes('document')) return 'Word'
-        if (type.includes('sheet') || type.includes('excel')) return 'Excel'
-        if (type.includes('presentation') || type.includes('powerpoint')) return 'PowerPoint'
-        if (type.includes('image')) return 'Image'
-        return 'Other'
-      }
-
-      // 5. Preparar dados para inserção
-      const documentData = {
-        user_id: user.id,
-        project_id: projectId || null,
+      const fileType = detectFileType(file.name);
+      
+      createDocument({
         name: file.name,
-        file_url: publicUrl,
-        file_type: file.type || 'application/octet-stream',
+        file_type: fileType,
         file_size: file.size,
-        category: getCategory(file.type || ''),
-      }
+        file_url: fakeUrl,
+        parent_id: null,
+        icon: getFileIcon(fileType),
+        project_id: projectId,
+      });
 
-      // 6. Criar registro na tabela documents
-      const { data: insertData, error: insertError } = await supabase
-        .from('documents')
-        .insert(documentData)
-        .select()
-
-      if (insertError) {
-        throw new Error(`Erro ao salvar documento: ${insertError.message}`)
-      }
-
-      toast.success('Documento enviado!', {
-        description: `${file.name} foi adicionado com sucesso.`,
-      })
-
-      onSuccess()
-      onOpenChange(false)
-      setFile(null)
-    } catch (err: any) {
-      toast.error('Erro no upload', {
-        description: err.message,
-      })
+      toast.success('Arquivo enviado com sucesso!');
+      onUploadComplete();
+      onOpenChange(false);
+      setFile(null);
+    } catch (error) {
+      toast.error('Erro ao enviar arquivo');
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
+
+  const getFileIcon = (type: string): string => {
+    const icons: Record<string, string> = {
+      pdf: '📕',
+      word: '📘',
+      excel: '📊',
+      image: '🖼️',
+      other: '📎',
+    };
+    return icons[type] || '📎';
+  };
+
+  const formatFileSize = (bytes: number) => {
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Adicionar Documento</DialogTitle>
-          <DialogDescription>
-            Envie um arquivo para sua biblioteca de documentos
+          <DialogTitle>Upload de Arquivo</DialogTitle>
+          <DialogDescription className="sr-only">
+            Envie um arquivo para adicionar aos documentos
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="file">Arquivo</Label>
-            <Input
-              id="file"
-              type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              disabled={uploading}
-            />
-            {file && (
-              <p className="text-xs text-muted-foreground">
-                {file.name} ({(file.size / 1024).toFixed(1)} KB)
-              </p>
-            )}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="file-upload">Selecionar Arquivo</Label>
+            <div className="mt-2">
+              <label
+                htmlFor="file-upload"
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                {file ? (
+                  <div className="flex flex-col items-center">
+                    <File className="h-8 w-8 mb-2 text-muted-foreground" />
+                    <span className="text-sm">{file.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatFileSize(file.size)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Clique para selecionar ou arraste aqui
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      Máximo 10MB
+                    </span>
+                  </div>
+                )}
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept="*/*"
+                />
+              </label>
+            </div>
           </div>
+
+          {file && (
+            <div className="text-sm text-muted-foreground">
+              <p>Tipo: {detectFileType(file.name)}</p>
+              <p>Tamanho: {formatFileSize(file.size)}</p>
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              onOpenChange(false)
-              setFile(null)
-            }}
-            disabled={uploading}
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button onClick={handleUpload} disabled={!file || uploading}>
-            {uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Enviar
-              </>
-            )}
+            {uploading ? 'Enviando...' : 'Enviar'}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

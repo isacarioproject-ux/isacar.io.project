@@ -24,9 +24,50 @@ export interface Database {
 
 export type ProjectStatus = 'Planejamento' | 'Em andamento' | 'Concluído' | 'Pausado' | 'Cancelado'
 
+export type TaskStatus = 'todo' | 'in_progress' | 'done'
+export type TaskPriority = 'low' | 'medium' | 'high'
+
+export interface ProjectTask {
+  id: string
+  project_id: string
+  user_id: string
+  title: string
+  description: string | null
+  status: TaskStatus
+  priority: TaskPriority
+  assignee_id: string | null
+  due_date: string | null
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ProjectTaskInsert {
+  project_id: string
+  user_id: string
+  title: string
+  description?: string | null
+  status?: TaskStatus
+  priority?: TaskPriority
+  assignee_id?: string | null
+  due_date?: string | null
+  position?: number
+}
+
+export interface ProjectTaskUpdate {
+  title?: string
+  description?: string | null
+  status?: TaskStatus
+  priority?: TaskPriority
+  assignee_id?: string | null
+  due_date?: string | null
+  position?: number
+}
+
 export interface Project {
   id: string
   user_id: string
+  workspace_id: string | null // ✅ Adicionado
   name: string
   description: string | null
   status: ProjectStatus
@@ -40,6 +81,7 @@ export interface Project {
 
 export interface ProjectInsert {
   user_id: string
+  workspace_id?: string | null // ✅ Adicionado
   name: string
   description?: string | null
   status?: ProjectStatus

@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { AppSidebar } from '@/components/sidebar'
+import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { GlobalSearch } from '@/components/global-search'
 import { Button } from '@/components/ui/button'
@@ -73,9 +73,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
       <div className="flex h-screen w-full">
         <AppSidebar />
-        <main className="flex flex-1 flex-col overflow-hidden">
+        <main className="flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-in-out">
           <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 lg:h-14 lg:px-4">
-            <SidebarTrigger className="-ml-1" />
+            {/* Toggle sidebar - visível apenas em mobile */}
+            <SidebarTrigger className="-ml-1 md:hidden" />
             <div className="flex flex-1 items-center justify-end gap-2">
               <Button
                 variant="outline"

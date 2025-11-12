@@ -1,34 +1,12 @@
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { 
-  Bell, 
-  Mail, 
-  MessageSquare, 
-  FolderKanban, 
-  FileText, 
-  Users, 
-  Calendar,
-  AlertCircle,
-  Save,
-  Loader2
-} from 'lucide-react'
+import { Save, Loader2 } from 'lucide-react'
 import { useI18n } from '@/hooks/use-i18n'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { Link } from 'react-router-dom'
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
 
 interface NotificationSettings {
   // Email Notifications
@@ -174,278 +152,172 @@ export default function NotificationsPage() {
   }
 
   const NotificationItem = ({ 
-    icon: Icon, 
     title, 
     description, 
     settingKey 
   }: { 
-    icon: any
     title: string
     description: string
     settingKey: keyof NotificationSettings
   }) => (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-          <Icon className="h-4 w-4 text-primary" />
-        </div>
-        <div className="space-y-0.5 flex-1 min-w-0">
-          <Label htmlFor={settingKey} className="font-medium cursor-pointer text-sm">
-            {title}
-          </Label>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
+    <div className="flex items-start justify-between gap-4 py-2">
+      <div className="space-y-0.5 flex-1 min-w-0">
+        <Label htmlFor={settingKey} className="font-medium cursor-pointer text-sm">
+          {title}
+        </Label>
+        <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
       </div>
       <Switch
         id={settingKey}
         checked={settings[settingKey]}
         onCheckedChange={(checked) => updateSetting(settingKey, checked)}
-        className="shrink-0"
+        className="shrink-0 scale-90"
       />
     </div>
   )
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center justify-between">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/">{t('nav.dashboard')}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/settings">{t('settings.title')}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{t('notifications.title')}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <Button onClick={handleSave} disabled={saving} className="h-9">
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('settings.saving')}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {t('notifications.saveChanges')}
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="min-h-screen w-full flex items-start justify-center pt-6 pb-8">
+        <div className="w-[60%] space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h1 className="text-xl font-semibold tracking-tight">{t('notifications.title')}</h1>
+              <p className="text-xs text-muted-foreground">
+                Gerencie suas preferências de notificações
+              </p>
+            </div>
+            <Button onClick={handleSave} disabled={saving} size="sm">
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-3.5 w-3.5" />
+                  Salvar
+                </>
+              )}
+            </Button>
+          </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
           {/* Email Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                {t('notifications.emailNotifications')}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {t('notifications.emailNotificationsDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">{t('notifications.emailNotifications')}</h2>
+            <div className="space-y-1">
               <NotificationItem
-                icon={FolderKanban}
                 title={t('notifications.newProjects')}
                 description={t('notifications.newProjectsDesc')}
                 settingKey="email_projects"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={FileText}
                 title={t('notifications.documents')}
                 description={t('notifications.documentsDesc')}
                 settingKey="email_documents"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={Users}
                 title={t('notifications.team')}
                 description={t('notifications.teamDesc')}
                 settingKey="email_team"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={Calendar}
                 title={t('notifications.deadlines')}
                 description={t('notifications.deadlinesDesc')}
                 settingKey="email_deadlines"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={MessageSquare}
                 title={t('notifications.mentions')}
                 description={t('notifications.mentionsDesc')}
                 settingKey="email_mentions"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={AlertCircle}
                 title={t('notifications.security')}
                 description={t('notifications.securityDesc')}
                 settingKey="email_security"
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* In-App Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                {t('notifications.appNotifications')}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {t('notifications.appNotificationsDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">{t('notifications.appNotifications')}</h2>
+            <div className="space-y-1">
               <NotificationItem
-                icon={FolderKanban}
                 title={t('notifications.projects')}
                 description={t('notifications.projectsDesc')}
                 settingKey="app_projects"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={FileText}
                 title={t('notifications.documents')}
                 description={t('notifications.documentsDesc')}
                 settingKey="app_documents"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={Users}
                 title={t('notifications.team')}
                 description={t('notifications.teamDesc')}
                 settingKey="app_team"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={Calendar}
                 title={t('notifications.deadlines')}
                 description={t('notifications.deadlinesDesc')}
                 settingKey="app_deadlines"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={MessageSquare}
                 title={t('notifications.mentions')}
                 description={t('notifications.mentionsDesc')}
                 settingKey="app_mentions"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={MessageSquare}
                 title={t('notifications.comments')}
                 description={t('notifications.commentsDesc')}
                 settingKey="app_comments"
               />
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Marketing & System */}
-        <div className="grid gap-6 lg:grid-cols-2">
           {/* Marketing */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{t('notifications.marketing')}</CardTitle>
-              <CardDescription className="text-xs">
-                {t('notifications.marketingDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">{t('notifications.marketing')}</h2>
+            <div className="space-y-1">
               <NotificationItem
-                icon={Mail}
                 title={t('notifications.newsletter')}
                 description={t('notifications.newsletterDesc')}
                 settingKey="marketing_newsletter"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={Bell}
                 title={t('notifications.productUpdates')}
                 description={t('notifications.productUpdatesDesc')}
                 settingKey="marketing_updates"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={MessageSquare}
                 title={t('notifications.tips')}
                 description={t('notifications.tipsDesc')}
                 settingKey="marketing_tips"
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* System */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{t('notifications.system')}</CardTitle>
-              <CardDescription className="text-xs">
-                {t('notifications.systemDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">{t('notifications.system')}</h2>
+            <div className="space-y-1">
               <NotificationItem
-                icon={AlertCircle}
                 title={t('notifications.maintenance')}
                 description={t('notifications.maintenanceDesc')}
                 settingKey="system_maintenance"
               />
-              <Separator />
-              
               <NotificationItem
-                icon={Bell}
                 title={t('notifications.systemUpdates')}
                 description={t('notifications.systemUpdatesDesc')}
                 settingKey="system_updates"
               />
+            </div>
+          </div>
 
-              <div className="mt-4 rounded-lg bg-amber-500/10 border border-amber-500/20 p-3">
-                <div className="flex gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm text-amber-400">{t('notifications.critical')}</p>
-                    <p className="mt-0.5 text-xs text-amber-400/80">
-                      {t('notifications.criticalDesc')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer Actions */}
-        <Card>
-          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-between pt-2 border-t">
             <div>
               <p className="font-medium text-sm">{t('notifications.disableAll')}</p>
               <p className="text-xs text-muted-foreground">
@@ -455,12 +327,12 @@ export default function NotificationsPage() {
             <Button 
               variant="destructive" 
               onClick={handleDisableAll}
-              className="h-9"
+              size="sm"
             >
-              {t('notifications.disableAllButton')}
+              Desativar tudo
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   )
