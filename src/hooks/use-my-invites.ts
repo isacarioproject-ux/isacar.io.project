@@ -32,7 +32,7 @@ export function useMyInvites(): UseMyInvitesReturn {
 
       // Buscar convites pendentes para esse email
       const { data, error: fetchError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .select('*')
         .eq('email', userEmail)
         .eq('status', 'pending')
@@ -69,7 +69,7 @@ export function useMyInvites(): UseMyInvitesReturn {
           {
             event: '*',
             schema: 'public',
-            table: 'team_members',
+            table: 'workspace_members',
             filter: `email=eq.${userEmail}`,
           },
           () => {
@@ -95,7 +95,7 @@ export function useMyInvites(): UseMyInvitesReturn {
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error: updateError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .update({
           status: 'active',
           user_id: user.id,
@@ -124,7 +124,7 @@ export function useMyInvites(): UseMyInvitesReturn {
   const declineInvite = async (inviteId: string) => {
     try {
       const { error: updateError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .update({ status: 'declined' })
         .eq('id', inviteId)
 

@@ -1,36 +1,37 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
+// Skeleton SUAVE e minimalista para cards do dashboard
 export const CardSkeleton = () => (
-  <Card className="w-full h-[500px] min-h-[360px] flex flex-col">
-    <CardHeader className="pb-3 px-4 py-3 border-b">
+  <Card className="w-full h-[280px] flex flex-col overflow-hidden border-gray-200/40 dark:border-gray-800/40">
+    {/* Header super minimalista */}
+    <CardHeader className="pb-1.5 px-3 py-2 border-b border-gray-200/20 dark:border-gray-800/20">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-6 w-6 rounded" />
-          <Skeleton className="h-5 w-32" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-4 rounded" />
+          <Skeleton className="h-3 w-24" />
         </div>
-        <div className="flex items-center gap-1">
-          <Skeleton className="h-7 w-7 rounded" />
-          <Skeleton className="h-7 w-7 rounded" />
-          <Skeleton className="h-7 w-7 rounded" />
+        <div className="flex items-center gap-0.5">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-5 w-5 rounded" />
         </div>
       </div>
     </CardHeader>
-    <CardContent className="flex-1 p-4 space-y-3">
-      {/* Linha de tabs/filtros */}
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-24" />
+    
+    {/* Conteúdo com espaçamento maior (mais suave) */}
+    <CardContent className="flex-1 p-3 space-y-2">
+      {/* Tabs muito finos */}
+      <div className="flex items-center gap-1.5 pb-1.5 border-b border-gray-200/15 dark:border-gray-800/15">
+        <Skeleton className="h-6 w-14 rounded-md" />
+        <Skeleton className="h-6 w-14 rounded-md" />
+        <Skeleton className="h-6 w-14 rounded-md" />
       </div>
       
-      {/* Conteúdo principal */}
-      <div className="space-y-2">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
+      {/* Lista com linhas mais finas e espaçadas (menos linhas) */}
+      <div className="space-y-2 pt-1">
+        <Skeleton className="h-7 w-full rounded-md" />
+        <Skeleton className="h-7 w-[92%] rounded-md" />
+        <Skeleton className="h-7 w-[96%] rounded-md" />
       </div>
     </CardContent>
   </Card>
@@ -48,6 +49,37 @@ export const StatsSkeleton = () => (
   </Card>
 )
 
+// Skeleton para tabela de documentos financeiros
+export const FinanceTableSkeleton = ({ count = 5 }: { count?: number }) => (
+  <div className="p-4 space-y-2">
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="flex items-center gap-3 p-2 rounded-md">
+        <Skeleton className="h-6 w-6 rounded flex-shrink-0" />
+        <Skeleton className="h-4 flex-1 max-w-[200px]" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-6 w-6 rounded flex-shrink-0" />
+      </div>
+    ))}
+  </div>
+)
+
+// Skeleton para header da página de finanças
+export const FinanceHeaderSkeleton = () => (
+  <div className="flex items-center justify-between gap-2 px-8 py-3 border-b">
+    <div className="flex items-center gap-2 flex-1 min-w-0">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-5 w-24 rounded-full" />
+    </div>
+    <div className="flex items-center gap-1">
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  </div>
+)
+
 export const TableSkeleton = ({ rows = 5, cols = 4 }) => (
   <div className="space-y-3">
     {Array.from({ length: rows }).map((_, i) => (
@@ -57,5 +89,70 @@ export const TableSkeleton = ({ rows = 5, cols = 4 }) => (
         ))}
       </div>
     ))}
+  </div>
+)
+
+// Skeleton minimalista para 6 cards do dashboard (grid completo)
+export const DashboardSkeleton = () => (
+  <div className="grid gap-[3px] grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr h-full w-full">
+    <CardSkeleton />
+    <CardSkeleton />
+    <CardSkeleton />
+    <CardSkeleton />
+    <CardSkeleton />
+    <CardSkeleton />
+  </div>
+)
+
+// Skeleton minimalista para sidebar (largura fixa igual AppSidebar)
+export const SidebarSkeleton = () => (
+  <aside className="hidden md:flex h-full w-64 flex-col gap-3 border-r border-gray-200/50 dark:border-gray-800/50 bg-background p-4">
+    {/* Logo/Header */}
+    <div className="flex items-center gap-2 pb-3 border-b border-gray-200/30 dark:border-gray-800/30">
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-5 w-28" />
+    </div>
+    
+    {/* Menu items */}
+    <div className="space-y-2">
+      <Skeleton className="h-9 w-full rounded-md" />
+      <Skeleton className="h-9 w-full rounded-md" />
+      <Skeleton className="h-9 w-[85%] rounded-md" />
+      <Skeleton className="h-9 w-full rounded-md" />
+      <Skeleton className="h-9 w-[90%] rounded-md" />
+      <Skeleton className="h-9 w-full rounded-md" />
+    </div>
+    
+    {/* Espaçador */}
+    <div className="flex-1" />
+    
+    {/* Bottom items */}
+    <div className="space-y-2 pt-3 border-t border-gray-200/30 dark:border-gray-800/30">
+      <Skeleton className="h-9 w-full rounded-md" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+    </div>
+  </aside>
+)
+
+// Skeleton minimalista para header principal
+export const HeaderSkeleton = () => (
+  <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 lg:h-14 lg:px-4">
+    {/* Toggle sidebar - visível apenas em mobile */}
+    <Skeleton className="h-8 w-8 rounded-md md:hidden" />
+    <div className="flex flex-1 items-center justify-end gap-2">
+      {/* Button de busca */}
+      <Skeleton className="h-8 w-auto md:w-48 lg:w-56 rounded-md" />
+      {/* ThemeToggle */}
+      <Skeleton className="h-9 w-9 rounded-md" />
+      {/* LanguageSwitcher */}
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  </header>
+)
+
+// Preload inicial - MUITO simples (apenas spinner cinza pequeno)
+export const InitialPreload = () => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600 dark:border-gray-700 dark:border-t-gray-400" />
   </div>
 )

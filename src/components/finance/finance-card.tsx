@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { useI18n } from '@/hooks/use-i18n'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -187,7 +188,7 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
         .insert({
           user_id: originalDoc.user_id,
           workspace_id: originalDoc.workspace_id,
-          name: `${name} (cópia)`,
+          name: `${name} ${t('finance.card.copy')}`,
           template_type: originalDoc.template_type,
           icon: originalDoc.icon,
           cover_image: originalDoc.cover_image,
@@ -208,11 +209,11 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
       const { data: transactions, error: transError } = await supabase
         .from('finance_transactions')
         .select('*')
-        .eq('document_id', id)
+        .eq('finance_document_id', id)
 
       if (!transError && transactions && transactions.length > 0) {
         const newTransactions = transactions.map((t: any) => ({
-          document_id: newDoc.id,
+          finance_document_id: newDoc.id,
           user_id: t.user_id,
           type: t.type,
           category: t.category,
@@ -439,10 +440,35 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
       <CardContent className="p-0 flex overflow-hidden flex-1">
         <div className="flex-1 overflow-auto">
           {loading ? (
-            <div className="p-4 space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+            <div className="space-y-2 px-2 py-1.5">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: index * 0.05,
+                    ease: "easeOut"
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-md bg-muted/30"
+                >
+                  {/* Ícone */}
+                  <Skeleton className="h-4 w-4 rounded flex-shrink-0" />
+                  
+                  {/* Nome do Documento */}
+                  <Skeleton className="h-3.5 flex-1 max-w-[120px]" />
+                  
+                  {/* Valor */}
+                  <Skeleton className="h-3.5 w-20 ml-auto" />
+                  
+                  {/* Data */}
+                  <Skeleton className="h-3 w-16" />
+                  
+                  {/* Menu */}
+                  <Skeleton className="h-5 w-5 rounded flex-shrink-0" />
+                </motion.div>
+              ))}
             </div>
           ) : documents.length === 0 ? (
             <div className="min-h-[200px] flex items-center justify-center p-4">
@@ -457,10 +483,10 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[40%]">Nome</TableHead>
-                  <TableHead className="w-[20%] text-right">Valor</TableHead>
-                  <TableHead className="w-[20%]">Data</TableHead>
-                  <TableHead className="w-[20%] text-right">Ações</TableHead>
+                  <TableHead className="w-[40%]">{t('finance.table.name')}</TableHead>
+                  <TableHead className="w-[20%] text-right">{t('finance.table.value')}</TableHead>
+                  <TableHead className="w-[20%]">{t('finance.table.date')}</TableHead>
+                  <TableHead className="w-[20%] text-right">{t('finance.table.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -548,7 +574,7 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                               }}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir
+                              {t('finance.table.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -809,8 +835,44 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                 setShowSidebar={setShowSidebar}
               />
             ) : loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <div className="space-y-2 px-2 py-1.5">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index * 0.05,
+                      ease: "easeOut"
+                    }}
+                    className="flex items-center gap-2 p-2 rounded-md bg-muted/30"
+                  >
+                    {/* Ícone */}
+                    <Skeleton className="h-5 w-5 rounded flex-shrink-0" />
+                    
+                    {/* Nome do Documento */}
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-full max-w-[200px]" />
+                      {index % 3 === 0 && (
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Valores - Desktop */}
+                    <div className="hidden md:flex items-center gap-2">
+                      <Skeleton className="h-3.5 w-20" />
+                      <Skeleton className="h-3.5 w-20" />
+                      <Skeleton className="h-3.5 w-20" />
+                    </div>
+
+                    {/* Menu */}
+                    <Skeleton className="h-6 w-6 rounded flex-shrink-0" />
+                  </motion.div>
+                ))}
               </div>
             ) : documents.length === 0 ? (
               <div className="text-center py-16 px-6">
@@ -827,12 +889,12 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                   <TableHeader className="hidden md:table-header-group">
                     <TableRow className="hover:bg-transparent border-b">
                       <TableHead className="w-[50px]"></TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead className="w-[120px]">Tipo</TableHead>
-                      <TableHead className="w-[100px]">Período</TableHead>
-                      <TableHead className="text-right w-[110px]">Receitas</TableHead>
-                      <TableHead className="text-right w-[110px]">Despesas</TableHead>
-                      <TableHead className="text-right w-[110px]">Saldo</TableHead>
+                      <TableHead>{t('finance.table.name')}</TableHead>
+                      <TableHead className="w-[120px]">{t('finance.table.type')}</TableHead>
+                      <TableHead className="w-[100px]">{t('finance.table.period')}</TableHead>
+                      <TableHead className="text-right w-[110px]">{t('finance.table.income')}</TableHead>
+                      <TableHead className="text-right w-[110px]">{t('finance.table.expenses')}</TableHead>
+                      <TableHead className="text-right w-[110px]">{t('finance.table.balance')}</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -865,14 +927,14 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                                   handleDuplicateDocument(doc.id, doc.name)
                                 }}>
                                   <Copy className="mr-2 h-4 w-4" />
-                                  Duplicar
+                                  {t('finance.card.duplicate')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={(e) => {
                                   e.stopPropagation()
                                   toast.info(t('finance.card.comingSoon'))
                                 }}>
                                   <Download className="mr-2 h-4 w-4" />
-                                  Exportar
+                                  {t('finance.export')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -883,7 +945,7 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                                   }}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  Excluir
+                                  {t('finance.table.delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -952,14 +1014,14 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                                 handleDuplicateDocument(doc.id, doc.name)
                               }}>
                                 <Copy className="mr-2 h-4 w-4" />
-                                Duplicar
+                                {t('finance.card.duplicate')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={(e) => {
                                 e.stopPropagation()
                                 toast.info(t('finance.card.comingSoon'))
                               }}>
                                 <Download className="mr-2 h-4 w-4" />
-                                Exportar
+                                {t('finance.export')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -970,7 +1032,7 @@ export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) 
                                 }}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Excluir
+                                {t('finance.table.delete')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

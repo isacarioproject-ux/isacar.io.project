@@ -93,18 +93,18 @@ export const MonthlyReportBlock = ({
 
   const chartConfig = {
     receitas: {
-      label: 'Receitas',
+      label: t('finance.charts.income'),
       color: 'hsl(var(--chart-1))',
     },
     despesas: {
-      label: 'Despesas',
+      label: t('finance.charts.expenses'),
       color: 'hsl(var(--chart-2))',
     },
   } satisfies ChartConfig
 
   const barChartConfig = {
     value: {
-      label: 'Valor',
+      label: t('finance.table.value'),
       color: 'hsl(var(--chart-3))',
     },
   } satisfies ChartConfig

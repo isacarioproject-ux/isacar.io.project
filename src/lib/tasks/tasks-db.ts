@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { Task, TaskWithDetails, Comment, Activity, User, CustomField, Checklist, Attachment } from '@/types/tasks';
+import { Task, TaskWithDetails, Comment, Activity, User, CustomField, Checklist, Attachment, TaskLink } from '@/types/tasks';
 
 // =====================================================
 // HELPER: Converter DB Task para Task do Frontend
@@ -17,7 +17,7 @@ function dbTaskToTask(dbTask: any): Task {
     created_at: dbTask.created_at,
     completed_at: dbTask.completed_at,
     assignee_ids: dbTask.assigned_to || [],
-    creator_id: dbTask.created_by,
+    created_by: dbTask.created_by, // ✅ Corrigido: usar created_by consistentemente
     tag_ids: dbTask.labels || [],
     project_id: dbTask.project_id,
     list_id: null, // Não existe na tabela atual
@@ -42,19 +42,30 @@ export async function getCurrentUserId(): Promise<string> {
 }
 
 export async function getCurrentWorkspaceId(): Promise<string> {
-  // Buscar workspace ativo do usuário
+  // Buscar workspace ativo do localStorage
+  const savedWorkspaceId = localStorage.getItem('currentWorkspaceId');
+  
+  if (savedWorkspaceId && savedWorkspaceId !== 'null') {
+    return savedWorkspaceId;
+  }
+  
+  // Se não tiver no localStorage, buscar o primeiro workspace do usuário
   const userId = await getCurrentUserId();
   
   const { data, error } = await supabase
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', userId)
-    .eq('is_active', true)
+    .eq('status', 'active')
+    .limit(1)
     .single();
 
   if (error || !data) {
-    throw new Error('Nenhum workspace ativo encontrado');
+    throw new Error('Nenhum workspace ativo encontrado. Por favor, crie ou selecione um workspace.');
   }
+
+  // Salvar no localStorage para próximas chamadas
+  localStorage.setItem('currentWorkspaceId', data.workspace_id);
 
   return data.workspace_id;
 }
@@ -193,15 +204,156 @@ export async function getTaskWithDetails(id: string): Promise<TaskWithDetails | 
     .eq('task_id', id)
     .order('created_at', { ascending: false });
 
+  // Função para formatar detalhes de atividades de forma legível
+  const formatActivityDetails = (action: string, changes: any): string => {
+    // Se não tem changes, usar mensagem padrão baseada na ação
+    if (!changes) {
+      const defaultMessages: Record<string, string> = {
+        'created': 'criou a tarefa',
+        'updated': 'atualizou a tarefa',
+        'deleted': 'excluiu a tarefa',
+        'commented': 'comentou',
+        'link_added': 'adicionou um link',
+      };
+      return defaultMessages[action] || 'realizou uma alteração';
+    }
+
+    // Se tem changes (JSONB), formatar baseado na ação
+    try {
+      const changesObj = typeof changes === 'string' ? JSON.parse(changes) : changes;
+      
+      // Se changes é um objeto muito grande (contém toda a tarefa), extrair apenas mudanças relevantes
+      if (changesObj.title && changesObj.status && changesObj.priority && changesObj.assigned_to) {
+        // É um objeto completo da tarefa, não apenas mudanças
+        // Extrair apenas o que mudou comparando com valores anteriores (se disponível)
+        const changesList: string[] = [];
+        
+        // Verificar mudanças específicas
+        if (changesObj.status) {
+          const statusLabels: Record<string, string> = {
+            'todo': 'A fazer',
+            'in_progress': 'Em progresso',
+            'review': 'Em revisão',
+            'done': 'Concluída'
+          };
+          changesList.push(`status: ${statusLabels[changesObj.status] || changesObj.status}`);
+        }
+        if (changesObj.priority) {
+          const priorityLabels: Record<string, string> = {
+            'low': 'Baixa',
+            'medium': 'Normal',
+            'high': 'Alta',
+            'urgent': 'Urgente'
+          };
+          changesList.push(`prioridade: ${priorityLabels[changesObj.priority] || changesObj.priority}`);
+        }
+        if (changesObj.due_date) {
+          changesList.push('data de vencimento');
+        }
+        if (changesObj.assigned_to && Array.isArray(changesObj.assigned_to)) {
+          changesList.push('responsáveis');
+        }
+        if (changesObj.labels && Array.isArray(changesObj.labels) && changesObj.labels.length > 0) {
+          changesList.push('etiquetas');
+        }
+        if (changesObj.title) {
+          changesList.push('título');
+        }
+        if (changesObj.description !== undefined) {
+          changesList.push('descrição');
+        }
+        
+        return changesList.length > 0 
+          ? `atualizou ${changesList.slice(0, 3).join(', ')}${changesList.length > 3 ? '...' : ''}`
+          : 'atualizou a tarefa';
+      }
+      
+      // Se é um objeto de mudanças específico, formatar baseado na ação
+      switch (action) {
+        case 'created':
+          return 'criou a tarefa';
+        case 'status_changed':
+          const status = changesObj.status || changesObj.new_status;
+          const statusLabels: Record<string, string> = {
+            'todo': 'A fazer',
+            'in_progress': 'Em progresso',
+            'review': 'Em revisão',
+            'done': 'Concluída'
+          };
+          return `alterou o status para ${statusLabels[status] || status}`;
+        case 'priority_changed':
+          const priority = changesObj.priority || changesObj.new_priority;
+          const priorityLabels: Record<string, string> = {
+            'low': 'Baixa',
+            'medium': 'Normal',
+            'high': 'Alta',
+            'urgent': 'Urgente'
+          };
+          return `definiu a prioridade como ${priorityLabels[priority] || priority}`;
+        case 'commented':
+          return 'comentou';
+        case 'link_added':
+          const linkTitle = changesObj.link || changesObj.title || 'um link';
+          return `adicionou ${linkTitle}`;
+        case 'assignee_changed':
+          return 'alterou os responsáveis';
+        case 'title_changed':
+          return 'alterou o título';
+        case 'description_changed':
+          return 'alterou a descrição';
+        case 'due_date_changed':
+          return 'alterou a data de vencimento';
+        case 'updated':
+          // Para updated, tentar extrair informações úteis
+          const updates: string[] = [];
+          if (changesObj.status) {
+            const statusLabels: Record<string, string> = {
+              'todo': 'A fazer',
+              'in_progress': 'Em progresso',
+              'review': 'Em revisão',
+              'done': 'Concluída'
+            };
+            updates.push(`status: ${statusLabels[changesObj.status] || changesObj.status}`);
+          }
+          if (changesObj.priority) {
+            const priorityLabels: Record<string, string> = {
+              'low': 'Baixa',
+              'medium': 'Normal',
+              'high': 'Alta',
+              'urgent': 'Urgente'
+            };
+            updates.push(`prioridade: ${priorityLabels[changesObj.priority] || changesObj.priority}`);
+          }
+          if (changesObj.due_date) updates.push('data');
+          if (changesObj.assigned_to) updates.push('responsáveis');
+          if (changesObj.labels) updates.push('etiquetas');
+          if (changesObj.title) updates.push('título');
+          if (changesObj.description !== undefined) updates.push('descrição');
+          
+          return updates.length > 0 
+            ? `atualizou ${updates.slice(0, 3).join(', ')}${updates.length > 3 ? '...' : ''}`
+            : 'atualizou a tarefa';
+        default:
+          return 'realizou uma alteração';
+      }
+    } catch {
+      // Se não conseguir parsear, retornar mensagem padrão
+      return 'realizou uma alteração';
+    }
+  };
+
   const activities: Activity[] = activitiesData ? activitiesData.map((a: any) => ({
     id: a.id,
     task_id: a.task_id,
     user_id: a.user_id,
     user_name: a.profiles?.full_name || 'Usuário',
     action: a.action,
-    details: a.changes ? JSON.stringify(a.changes) : '',
+    details: formatActivityDetails(a.action, a.changes),
     created_at: a.created_at,
   })) : [];
+
+  // Buscar links
+  const links = await getTaskLinks(id);
 
   return {
     ...task,
@@ -210,6 +362,7 @@ export async function getTaskWithDetails(id: string): Promise<TaskWithDetails | 
     attachments,
     comments,
     activities,
+    links,
   };
 }
 
@@ -241,13 +394,8 @@ export async function createTask(task: Omit<Task, 'id' | 'created_at'>): Promise
 
   if (error) throw error;
 
-  // Registrar atividade
-  await supabase.from('task_activities').insert({
-    task_id: data.id,
-    user_id: userId,
-    action: 'created',
-    changes: { title: task.title },
-  });
+  // Atividade será registrada automaticamente pelo trigger log_task_activity()
+  // Não precisa inserir manualmente aqui
 
   return dbTaskToTask(data);
 }
@@ -285,13 +433,9 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<Ta
 
   if (error) throw error;
 
-  // Registrar atividade
-  await supabase.from('task_activities').insert({
-    task_id: id,
-    user_id: userId,
-    action: 'updated',
-    changes: updateData,
-  });
+  // Não inserir atividade manualmente aqui
+  // O trigger log_task_activity() já registra mudanças de status e priority automaticamente
+  // Para outras mudanças, podemos adicionar lógica específica se necessário
 
   return dbTaskToTask(data);
 }
@@ -330,13 +474,7 @@ export async function addComment(taskId: string, text: string, mentions: string[
 
   if (error) throw error;
 
-  // Registrar atividade
-  await supabase.from('task_activities').insert({
-    task_id: taskId,
-    user_id: userId,
-    action: 'commented',
-    changes: { comment: text },
-  });
+  // Registrar atividade (comentários são mostrados separadamente, não precisa de atividade)
 
   return {
     id: data.id,
@@ -347,4 +485,78 @@ export async function addComment(taskId: string, text: string, mentions: string[
     created_at: data.created_at,
     mentions: data.mentions || [],
   };
+}
+
+// =====================================================
+// LINKS
+// =====================================================
+
+export async function getTaskLinks(taskId: string): Promise<TaskLink[]> {
+  const { data, error } = await supabase
+    .from('task_links')
+    .select('*')
+    .eq('task_id', taskId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return data.map((link: any) => ({
+    id: link.id,
+    task_id: link.task_id,
+    url: link.url,
+    title: link.title,
+    description: link.description,
+    favicon_url: link.favicon_url,
+    created_by: link.created_by,
+    created_at: link.created_at,
+    updated_at: link.updated_at,
+  }));
+}
+
+export async function addTaskLink(taskId: string, url: string, title?: string, description?: string): Promise<TaskLink> {
+  const userId = await getCurrentUserId();
+
+  // Tentar obter metadata da URL (opcional, pode ser feito no frontend)
+  const { data, error } = await supabase
+    .from('task_links')
+    .insert({
+      task_id: taskId,
+      url,
+      title: title || url,
+      description,
+      created_by: userId,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Registrar atividade
+  await supabase.from('task_activities').insert({
+    task_id: taskId,
+    user_id: userId,
+    action: 'link_added',
+    details: `adicionou link: ${title || url}`,
+  });
+
+  return {
+    id: data.id,
+    task_id: data.task_id,
+    url: data.url,
+    title: data.title,
+    description: data.description,
+    favicon_url: data.favicon_url,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
+}
+
+export async function deleteTaskLink(linkId: string): Promise<void> {
+  const { error } = await supabase
+    .from('task_links')
+    .delete()
+    .eq('id', linkId);
+
+  if (error) throw error;
 }

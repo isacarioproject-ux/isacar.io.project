@@ -144,3 +144,53 @@ export function TasksListSkeleton({ count = 5 }: { count?: number }) {
     </div>
   );
 }
+
+// Skeleton para o header da página de tasks
+export function TasksHeaderSkeleton() {
+  return (
+    <div className="flex items-center gap-4 px-8 py-3">
+      {/* Tabs Skeleton */}
+      <div className="flex items-center gap-0.5 bg-muted/50 rounded-md p-0.5">
+        {[1, 2, 3].map((i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <Skeleton className="h-8 w-20 rounded-sm" />
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Separador */}
+      <Skeleton className="h-6 w-px" />
+
+      {/* Seletor de Ícone */}
+      <Skeleton className="h-9 w-9 rounded-md" />
+
+      {/* Input Nome do Workspace */}
+      <Skeleton className="h-9 w-64 rounded-md" />
+
+      {/* Badge contador */}
+      <Skeleton className="h-6 w-8 rounded-full" />
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Botões de Ação */}
+      <div className="flex items-center gap-1">
+        {[1, 2, 3].map((i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}

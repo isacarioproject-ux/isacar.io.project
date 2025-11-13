@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { taskTemplates } from '@/lib/tasks/sample-tasks-data';
+import { taskTemplates } from '@/lib/tasks/task-templates';
 import { TaskTemplate } from '@/types/tasks';
 import { Search, CheckSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +35,7 @@ export function TaskTemplateSelector({ open, onClose, onSelect }: TaskTemplateSe
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[90vh] md:h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-6xl h-[90vh] md:h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
             {/* Ícone Animado */}
@@ -101,7 +101,7 @@ export function TaskTemplateSelector({ open, onClose, onSelect }: TaskTemplateSe
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                className="grid grid-cols-1 md:grid-cols-3 gap-3"
               >
                 {filteredTemplates.map((template, index) => (
                   <motion.button

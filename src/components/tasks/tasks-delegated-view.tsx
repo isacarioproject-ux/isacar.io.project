@@ -9,9 +9,10 @@ interface TasksDelegatedViewProps {
   tasks: Task[];
   onTaskClick: (taskId: string) => void;
   onUpdate: () => void;
+  variant?: 'compact' | 'table';
 }
 
-export function TasksDelegatedView({ tasks, onTaskClick, onUpdate }: TasksDelegatedViewProps) {
+export function TasksDelegatedView({ tasks, onTaskClick, onUpdate, variant = 'compact' }: TasksDelegatedViewProps) {
   const { t } = useI18n();
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
@@ -111,6 +112,7 @@ export function TasksDelegatedView({ tasks, onTaskClick, onUpdate }: TasksDelega
                     task={task}
                     onTaskClick={onTaskClick}
                     onUpdate={onUpdate}
+                    variant={variant}
                   />
                 </motion.div>
               ))}

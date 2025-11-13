@@ -40,18 +40,18 @@ export const useWhiteboardCollaborators = (whiteboardId?: string, ownerId?: stri
 
       for (const userId of collaboratorIds) {
         try {
-          // Primeiro tentar buscar da tabela team_members se existir
+          // Buscar informações do usuário da tabela profiles
           const { data: teamMember } = await supabase
-            .from('team_members')
-            .select('email, name, user_id')
-            .eq('user_id', userId)
+            .from('profiles')
+            .select('email, full_name, id')
+            .eq('id', userId)
             .maybeSingle()
 
           if (teamMember) {
             collaboratorInfos.push({
               id: userId,
               email: teamMember.email,
-              name: teamMember.name || teamMember.email,
+              name: teamMember.full_name || teamMember.email,
               role: userId === whiteboard.user_id ? 'owner' : 'editor'
             })
           } else {
@@ -107,15 +107,14 @@ export const useWhiteboardCollaborators = (whiteboardId?: string, ownerId?: stri
     if (!whiteboardId) return false
 
     try {
-      // Buscar user_id pelo email na tabela team_members
+      // Buscar user_id pelo email na tabela profiles
       const { data: teamMember } = await supabase
-        .from('team_members')
-        .select('user_id, email, name')
+        .from('profiles')
+        .select('id, email, full_name')
         .eq('email', userEmail)
-        .eq('status', 'active')
         .maybeSingle()
 
-      if (!teamMember?.user_id) {
+      if (!teamMember?.id) {
         toast.error('Usuário não encontrado ou convite ainda pendente')
         return false
       }
@@ -132,7 +131,7 @@ export const useWhiteboardCollaborators = (whiteboardId?: string, ownerId?: stri
       const currentCollaborators = whiteboard?.collaborators || []
 
       // Verificar se já é colaborador
-      if (currentCollaborators.includes(teamMember.user_id)) {
+      if (currentCollaborators.includes(teamMember.id)) {
         toast.error('Usuário já é colaborador deste whiteboard')
         return false
       }
@@ -141,14 +140,14 @@ export const useWhiteboardCollaborators = (whiteboardId?: string, ownerId?: stri
       const { error: updateError } = await supabase
         .from('whiteboards')
         .update({
-          collaborators: [...currentCollaborators, teamMember.user_id],
+          collaborators: [...currentCollaborators, teamMember.id],
           updated_at: new Date().toISOString()
         })
         .eq('id', whiteboardId)
 
       if (updateError) throw updateError
 
-      toast.success(`${teamMember.name || teamMember.email} adicionado como colaborador!`)
+      toast.success(`${teamMember.full_name || teamMember.email} adicionado como colaborador!`)
 
       // Atualizar lista local
       await fetchCollaborators()

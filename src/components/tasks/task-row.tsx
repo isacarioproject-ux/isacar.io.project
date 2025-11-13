@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Task, User } from '@/types/tasks';
 import { TaskRowActionsPopover } from '@/components/tasks/task-row-actions-popover';
+import { TaskRowInlineActions } from '@/components/tasks/task-row-inline-actions';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Calendar } from 'lucide-react';
+import { Calendar, Trash2, UserPlus, Flag, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { useI18n } from '@/hooks/use-i18n';
@@ -17,9 +18,10 @@ export interface TaskRowProps {
   onTaskClick: (taskId: string) => void;
   onUpdate: () => void;
   simplified?: boolean;
+  variant?: 'compact' | 'table';
 }
 
-export function TaskRow({ task, onTaskClick, onUpdate, simplified = false }: TaskRowProps) {
+export function TaskRow({ task, onTaskClick, onUpdate, simplified = false, variant = 'compact' }: TaskRowProps) {
   const { t } = useI18n();
   const { currentWorkspace } = useWorkspace();
   const [users, setUsers] = useState<User[]>([]);
@@ -101,9 +103,9 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false }: Tas
           {task.title}
         </div>
 
-        {/* Badges/Localização - Ocultar em cards pequenos */}
+        {/* Badges/Localização - Sempre visível em table, ocultar em cards pequenos */}
         {!simplified && (
-          <div className="hidden 2xl:flex items-center gap-0.5 mt-0.5">
+          <div className={variant === 'table' ? 'flex items-center gap-0.5 mt-0.5' : 'hidden 2xl:flex items-center gap-0.5 mt-0.5'}>
             {task.location && (
               <TooltipProvider>
                 <Tooltip>
@@ -136,12 +138,12 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false }: Tas
         )}
       </div>
 
-      {/* Responsáveis - Mostrar apenas 1 avatar */}
+      {/* Responsáveis - Sempre visível em table */}
       {!simplified && assignees.length > 0 && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="hidden lg:flex items-center gap-0.5 cursor-default">
+              <div className={variant === 'table' ? 'flex items-center gap-0.5 cursor-default' : 'hidden lg:flex items-center gap-0.5 cursor-default'}>
                 <Avatar className="size-3.5">
                   <AvatarFallback className="text-[7px]">{assignees[0].avatar || assignees[0].name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
@@ -161,13 +163,13 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false }: Tas
         </TooltipProvider>
       )}
 
-      {/* Data de Vencimento - Compacta */}
+      {/* Data de Vencimento - Sempre visível em table */}
       {!simplified && task.due_date && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div
-                className={`hidden lg:flex items-center gap-0.5 text-[10px] cursor-default ${
+                className={`${variant === 'table' ? 'flex' : 'hidden lg:flex'} items-center gap-0.5 text-[10px] cursor-default ${
                   isOverdue ? 'text-red-500 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
@@ -183,12 +185,12 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false }: Tas
         </TooltipProvider>
       )}
 
-      {/* Prioridade - Menor */}
+      {/* Prioridade - Sempre visível em table */}
       {!simplified && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="hidden xl:flex items-center text-[11px] leading-none cursor-default">
+              <div className={variant === 'table' ? 'flex items-center text-[11px] leading-none cursor-default' : 'hidden xl:flex items-center text-[11px] leading-none cursor-default'}>
                 {priorityIcons[task.priority]}
               </div>
             </TooltipTrigger>
@@ -199,10 +201,16 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false }: Tas
         </TooltipProvider>
       )}
 
-      {/* Ações - Ícone único de Settings com Popover Moderno - Sempre visível em mobile */}
-      <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center flex-shrink-0">
-        <TaskRowActionsPopover task={task} onUpdate={onUpdate} />
-      </div>
+      {/* Ações - Inline em table, popover em compact */}
+      {variant === 'table' ? (
+        // Ícones inline animados para página - Monocromático com Popovers funcionais
+        <TaskRowInlineActions task={task} onUpdate={onUpdate} />
+      ) : (
+        // Popover para card compacto
+        <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center flex-shrink-0">
+          <TaskRowActionsPopover task={task} onUpdate={onUpdate} />
+        </div>
+      )}
     </div>
   );
 }

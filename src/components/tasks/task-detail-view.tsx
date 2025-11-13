@@ -1,4 +1,4 @@
-import { updateTask, createTask, getUsers, getTasks } from '@/lib/tasks/tasks-storage';
+import { updateTask, createTask, getUsers, getTasks, getTaskWithDetails } from '@/lib/tasks/tasks-storage';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -89,12 +89,29 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(task.tag_ids || []);
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
+  const [isDueDateOpen, setIsDueDateOpen] = useState(false);
+  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
+  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
+  const [isRelationshipOpen, setIsRelationshipOpen] = useState(false);
+  const [isTagOpen, setIsTagOpen] = useState(false);
   const subtasks = allTasks.filter(t => t.parent_task_id === task.id);
 
   useEffect(() => {
-    getUsers().then(setUsers);
-    getTasks().then(setAllTasks);
-  }, []);
+    const loadData = async () => {
+      try {
+        const [usersData, tasksData] = await Promise.all([
+          getUsers(),
+          getTasks()
+        ]);
+        setUsers(usersData);
+        setAllTasks(tasksData);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    };
+    loadData();
+  }, [task.id]); // Recarregar quando a tarefa mudar
 
   // Sincronizar estados quando a tarefa mudar
   useEffect(() => {
@@ -125,29 +142,35 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
   // Auto-save with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
+      const descriptionText = descriptionBlocks.map(b => b.content).join('\n');
       if (
         title !== task.title ||
-        description !== task.description ||
+        descriptionText !== task.description ||
         status !== task.status ||
         priority !== task.priority ||
-        JSON.stringify(assigneeIds) !== JSON.stringify(task.assignee_ids)
+        JSON.stringify(assigneeIds) !== JSON.stringify(task.assignee_ids) ||
+        JSON.stringify(selectedTags) !== JSON.stringify(task.tag_ids)
       ) {
         handleSave();
       }
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [title, description, status, priority, assigneeIds]);
+  }, [title, descriptionBlocks, status, priority, assigneeIds, selectedTags]);
 
   const handleSave = async () => {
+    // Converter blocks de volta para string
+    const descriptionText = descriptionBlocks.map(b => b.content).join('\n');
+    
     const updates: Partial<Task> = {
       title,
-      description,
+      description: descriptionText,
       status,
       priority,
       start_date: startDate?.toISOString().split('T')[0] || null,
       due_date: dueDate?.toISOString().split('T')[0] || null,
       assignee_ids: assigneeIds,
+      tag_ids: selectedTags,
       custom_fields: customFields,
     };
 
@@ -169,7 +192,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         start_date: null,
         completed_at: null,
         assignee_ids: task.assignee_ids?.length > 0 ? [task.assignee_ids[0]] : [],
-        creator_id: task.creator_id,
+        created_by: task.created_by,
         tag_ids: [],
         project_id: task.project_id,
         list_id: task.list_id,
@@ -184,6 +207,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
       const updatedTasks = await getTasks();
       setAllTasks(updatedTasks);
       
+      // Atualizar a tarefa atual para incluir a nova subtarefa
       toast.success('Sub-tarefa criada');
       onUpdate();
     } catch (error) {
@@ -236,7 +260,12 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         {/* 1. Status */}
         <div className="flex items-center gap-2 w-full md:w-auto">
           <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">{t('tasks.detail.status')}</span>
-          <StatusSelector value={status} onChange={handleStatusChange} />
+          <StatusSelector 
+            value={status} 
+            onChange={handleStatusChange}
+            open={undefined}
+            onOpenChange={undefined}
+          />
         </div>
 
         {/* 2. Datas */}
@@ -246,7 +275,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
             <span className="text-gray-500 dark:text-gray-400">{t('tasks.detail.dates')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 flex-1 md:flex-none">
                   {startDate ? format(startDate, 'dd/MM/yy') : t('tasks.detail.startDate')}
@@ -259,12 +288,13 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
                   onSelect={(date: Date | undefined) => {
                     setStartDate(date);
                     handleSave();
+                    setIsStartDateOpen(false);
                   }}
                 />
               </PopoverContent>
             </Popover>
             <span className="text-gray-400">→</span>
-            <Popover>
+            <Popover open={isDueDateOpen} onOpenChange={setIsDueDateOpen}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 flex-1 md:flex-none">
                   {dueDate ? format(dueDate, 'dd/MM/yy') : t('tasks.detail.dueDate')}
@@ -277,6 +307,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
                   onSelect={(date: Date | undefined) => {
                     setDueDate(date);
                     handleSave();
+                    setIsDueDateOpen(false);
                   }}
                 />
               </PopoverContent>
@@ -295,7 +326,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
                 </AvatarFallback>
               </Avatar>
             ))}
-            <Popover>
+            <Popover open={isAssigneeOpen} onOpenChange={setIsAssigneeOpen}>
               <PopoverTrigger asChild>
                 <button className="size-6 rounded-full border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
                   <Plus className="size-3" />
@@ -306,11 +337,19 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
                   {users.map(user => (
                     <div
                       key={user.id}
-                      onClick={() => toggleAssignee(user.id)}
+                      onClick={() => {
+                        toggleAssignee(user.id);
+                        handleSave();
+                      }}
                       className="w-full flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer"
                     >
                       <Checkbox checked={(assigneeIds || []).includes(user.id)} />
-                      <span className="text-sm">{user.name}</span>
+                      <Avatar className="size-5">
+                        <AvatarFallback className="text-xs">
+                          {user.avatar || user.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm dark:text-white">{user.name}</span>
                     </div>
                   ))}
                 </div>
@@ -322,7 +361,15 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         {/* 4. Prioridade */}
         <div className="flex items-center gap-2 w-full md:w-auto">
           <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">{t('tasks.detail.priority')}</span>
-          <PrioritySelector value={priority} onChange={(p) => setPriority(p)} />
+          <PrioritySelector 
+            value={priority} 
+            onChange={(p) => {
+              setPriority(p);
+              handleSave();
+            }}
+            onOpenChange={setIsPriorityOpen}
+            open={isPriorityOpen}
+          />
         </div>
       </div>
 
@@ -362,10 +409,14 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         </div>
         <RelationshipSelector 
           taskId={task.id}
-          onAdd={(relatedTaskId, type) => {
+          onAdd={async (relatedTaskId, type) => {
+            // TODO: Salvar relacionamento no banco
+            // Por enquanto apenas mostra mensagem
             toast.success(`Relacionamento "${type}" adicionado`);
-            // TODO: Salvar no banco
+            setIsRelationshipOpen(false);
           }}
+          open={isRelationshipOpen}
+          onOpenChange={setIsRelationshipOpen}
         />
       </div>
 
@@ -407,6 +458,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
             setSelectedTags(newTags);
             await updateTask(task.id, { tag_ids: newTags });
             onUpdate();
+            setIsTagOpen(false);
           }}
           onRemove={async (tag) => {
             const newTags = selectedTags.filter(t => t !== tag);
@@ -414,6 +466,8 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
             await updateTask(task.id, { tag_ids: newTags });
             onUpdate();
           }}
+          open={isTagOpen}
+          onOpenChange={setIsTagOpen}
         />
       </div>
 

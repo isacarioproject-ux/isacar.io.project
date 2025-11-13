@@ -149,7 +149,7 @@ export const AddTransactionDrawer = ({
               </SelectTrigger>
               <SelectContent>
                 {categories.length === 0 ? (
-                  <SelectItem value="Geral" disabled>
+                  <SelectItem value={t('finance.table.general')} disabled>
                     {t('finance.table.noCategory')}
                   </SelectItem>
                 ) : (

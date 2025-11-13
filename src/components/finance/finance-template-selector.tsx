@@ -78,14 +78,14 @@ export const FinanceTemplateSelector = ({
             <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1.5">
                 <FolderKanban className="h-3.5 w-3.5" />
-                Vincular a Projeto (opcional)
+                {t('finance.templates.linkProject')}
               </Label>
               <Select value={selectedProjectId} onValueChange={onProjectChange}>
                 <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Nenhum projeto" />
+                  <SelectValue placeholder={t('finance.templates.noProject')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum projeto</SelectItem>
+                  <SelectItem value="">{t('finance.templates.noProject')}</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}

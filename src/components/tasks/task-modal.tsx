@@ -36,7 +36,6 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMaximized, setIsMaximized] = useState(false);
   const [showSubtasks, setShowSubtasks] = useState(false);
-  const [showLinks, setShowLinks] = useState(false);
   const [showActivitySidebar, setShowActivitySidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -57,14 +56,22 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
     // Simular loading
     setLoading(true);
     
-    // Carregar tarefa com delay para mostrar skeleton
-    setTimeout(() => {
-      const taskData = getTaskWithDetails(taskId);
-      if (taskData) {
-        setTask(taskData);
+    // Carregar tarefa de forma assíncrona
+    const loadTask = async () => {
+      try {
+        const taskData = await getTaskWithDetails(taskId);
+        if (taskData) {
+          setTask(taskData);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar tarefa:', error);
+        toast.error(t('tasks.modal.loadError'));
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 300);
+    };
+
+    loadTask();
 
     // Carregar lista de IDs de tarefas para navegação
     getTasks().then(allTasks => {
@@ -74,32 +81,41 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
     }).catch(console.error);
   }, [taskId]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (!taskId) return;
-    const taskData = getTaskWithDetails(taskId);
-    if (taskData) {
-      setTask(taskData);
+    try {
+      const taskData = await getTaskWithDetails(taskId);
+      if (taskData) {
+        setTask(taskData);
+      }
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa:', error);
+      toast.error(t('tasks.modal.updateError'));
     }
-    onUpdate();
   };
 
-  const handleNavigate = (direction: 'prev' | 'next') => {
+  const handleNavigate = async (direction: 'prev' | 'next') => {
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
     if (newIndex >= 0 && newIndex < allTaskIds.length) {
       const newTaskId = allTaskIds[newIndex];
-      const taskData = getTaskWithDetails(newTaskId);
-      if (taskData) {
-        setTask(taskData);
-        setCurrentIndex(newIndex);
+      try {
+        const taskData = await getTaskWithDetails(newTaskId);
+        if (taskData) {
+          setTask(taskData);
+          setCurrentIndex(newIndex);
+        }
+      } catch (error) {
+        console.error('Erro ao navegar para tarefa:', error);
       }
     }
   };
 
   const handleDelete = () => {
     if (!task) return;
-    if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
+    if (confirm(t('tasks.modal.deleteConfirm'))) {
       deleteTask(task.id);
-      toast.success('Tarefa excluída');
+      toast.success(t('tasks.modal.deleteSuccess'));
       onClose();
       onUpdate();
     }
@@ -387,92 +403,26 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
             "flex-shrink-0 border-l flex flex-col",
             isMobile ? "absolute inset-0 z-10 w-full bg-white dark:bg-black" : "w-80"
           )}>
-            {/* Tabs Atividade/Links */}
-            <div className="flex border-b dark:border-gray-800 bg-white dark:bg-black">
-              {isMobile && (
+            {/* Sidebar com Tabs integradas */}
+            {isMobile && (
+              <div className="p-2 border-b dark:border-gray-800">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="size-10"
+                  className="size-8"
                   onClick={() => setShowActivitySidebar(false)}
                 >
                   <X className="size-4" />
                 </Button>
-              )}
-              <button 
-                onClick={() => setShowLinks(false)}
-                className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  !showLinks 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                Atividade
-              </button>
-              <button 
-                onClick={() => setShowLinks(true)}
-                className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  showLinks 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                Links
-              </button>
-            </div>
-
-            {/* Content */}
-            {!showLinks ? (
-              <TaskActivitySidebar
-                taskId={task.id}
-                comments={task.comments}
-                activities={task.activities}
-                onUpdate={handleRefresh}
-              />
-            ) : (
-              <div className="flex-1 flex flex-col bg-white dark:bg-black">
-                {/* Links Header */}
-                <div className="p-4 border-b dark:border-gray-800 flex items-center justify-between">
-                  <h3 className="font-medium dark:text-white">Links</h3>
-                  <div className="flex gap-1">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <Grid3x3 className="size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('tasks.modal.gridView')}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <List className="size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('tasks.modal.listView')}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-                {/* Links Content */}
-                <div className="flex-1 p-4">
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    <p className="text-sm">Nenhum link adicionado</p>
-                  </div>
-                </div>
-                {/* Add Link Button */}
-                <div className="p-4 border-t dark:border-gray-800">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" className="w-full" size="sm">
-                        <LinkIcon className="size-4 mr-2" />
-                        {t('tasks.modal.addLink')}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('tasks.modal.addLink')}</TooltipContent>
-                  </Tooltip>
-                </div>
               </div>
             )}
+            <TaskActivitySidebar
+              taskId={task.id}
+              comments={task.comments || []}
+              activities={task.activities || []}
+              links={task.links || []}
+              onUpdate={handleRefresh}
+            />
           </div>
           )}
         </div>

@@ -74,7 +74,7 @@ export const FINANCE_BLOCKS_REGISTRY: FinanceBlockDefinition[] = [
   // ===== BLOCOS DE PLANEJAMENTO =====
   {
     type: 'budget-tracker',
-    name: 'Acompanhamento de Orçamento',
+    name: 'Gerenciar Orçamento',
     description: 'Defina e acompanhe metas de gastos',
     icon: Target,
     category: 'planning',

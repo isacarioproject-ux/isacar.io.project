@@ -10,6 +10,8 @@ import { Task } from '@/types/tasks';
 interface RelationshipSelectorProps {
   taskId: string;
   onAdd: (taskId: string, type: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const relationTypes = [
@@ -21,7 +23,7 @@ const relationTypes = [
   { value: 'child_of', label: 'Filho de' },
 ];
 
-export function RelationshipSelector({ taskId, onAdd }: RelationshipSelectorProps) {
+export function RelationshipSelector({ taskId, onAdd, open, onOpenChange }: RelationshipSelectorProps) {
   const [selectedType, setSelectedType] = useState('relates_to');
   const [searchQuery, setSearchQuery] = useState('');
   const [allTasks, setAllTasks] = useState<Task[]>([]);
@@ -49,34 +51,25 @@ export function RelationshipSelector({ taskId, onAdd }: RelationshipSelectorProp
   const handleAdd = (selectedTaskId: string) => {
     onAdd(selectedTaskId, selectedType);
     setSearchQuery('');
-    toast.success('Relacionamento adicionado');
+    onOpenChange?.(false);
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium">
           + Adicionar relacionamento
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-4" align="start">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold dark:text-gray-200">Adicionar relacionamento</h4>
-            <Link2 className="size-4 text-gray-500" />
-          </div>
-
-          {/* Tipo de relacionamento */}
+      <PopoverContent className="w-72 p-2" align="start">
           <div className="space-y-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">
-              Tipo de relacionamento
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {relationTypes.map((type) => (
+          {/* Tipo de relacionamento - Compacto */}
+          <div className="flex flex-wrap gap-1">
+            {relationTypes.slice(0, 3).map((type) => (
                 <button
                   key={type.value}
                   onClick={() => setSelectedType(type.value)}
-                  className={`px-3 py-2 text-sm rounded-md border transition-colors ${
+                className={`px-2 py-1 text-xs rounded border transition-colors ${
                     selectedType === type.value
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -85,43 +78,37 @@ export function RelationshipSelector({ taskId, onAdd }: RelationshipSelectorProp
                   {type.label}
                 </button>
               ))}
-            </div>
           </div>
 
-          {/* Buscar tarefa */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">
-              Buscar tarefa
-            </label>
+          {/* Buscar tarefa - Compacto */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-gray-400" />
               <Input
-                placeholder="Digite o nome da tarefa"
+              placeholder="Buscar tarefa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+              className="pl-7 h-8 text-sm"
               />
             </div>
             
-            {/* Lista de tarefas */}
-            <div className="max-h-48 overflow-y-auto space-y-1 border dark:border-gray-700 rounded-md p-2">
+          {/* Lista de tarefas - Compacta */}
+          <div className="max-h-40 overflow-y-auto space-y-0.5">
               {filteredTasks.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  Nenhuma tarefa encontrada
+              <p className="text-xs text-gray-500 text-center py-2">
+                Nenhuma tarefa
                 </p>
               ) : (
-                filteredTasks.slice(0, 10).map(task => (
+              filteredTasks.slice(0, 5).map(task => (
                   <button
                     key={task.id}
                     onClick={() => handleAdd(task.id)}
-                    className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-sm transition-colors"
+                  className="w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-xs transition-colors truncate"
+                  title={task.title}
                   >
-                    <div className="font-medium dark:text-gray-200">{task.title}</div>
-                    <div className="text-xs text-gray-500">ID: {task.id}</div>
+                  {task.title}
                   </button>
                 ))
               )}
-            </div>
           </div>
         </div>
       </PopoverContent>

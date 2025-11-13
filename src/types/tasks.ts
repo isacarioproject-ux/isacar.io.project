@@ -51,6 +51,18 @@ export interface Activity {
   created_at: string;
 }
 
+export interface TaskLink {
+  id: string;
+  task_id: string;
+  url: string;
+  title?: string;
+  description?: string;
+  favicon_url?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CustomField {
   id: string;
   name: string;
@@ -70,7 +82,7 @@ export interface Task {
   created_at: string;
   completed_at: string | null;
   assignee_ids: string[];
-  creator_id: string;
+  created_by: string; // ✅ Corrigido: usar created_by (consistente com o banco)
   tag_ids: string[];
   project_id: string | null;
   list_id: string | null;
@@ -86,6 +98,7 @@ export interface TaskWithDetails extends Task {
   attachments: Attachment[];
   comments: Comment[];
   activities: Activity[];
+  links?: TaskLink[];
 }
 
 export interface TaskGroups {

@@ -105,7 +105,7 @@ export const BudgetManager = ({
           *,
           category:finance_categories(id, name, icon)
         `)
-        .eq('document_id', documentId)
+        .eq('finance_document_id', documentId)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -124,11 +124,17 @@ export const BudgetManager = ({
     if (!newBudget.categoryId || !newBudget.amount) return
 
     try {
+      const category = categories.find((c) => c.id === newBudget.categoryId)
+      if (!category) return
+
       const { error } = await supabase.from('finance_budgets').insert({
-        document_id: documentId,
+        finance_document_id: documentId,
         category_id: newBudget.categoryId,
-        amount: parseFloat(newBudget.amount),
-        spent: 0,
+        category_name: category.name,
+        planned_amount: parseFloat(newBudget.amount),
+        spent_amount: 0,
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
       })
 
       if (error) throw error
@@ -262,7 +268,7 @@ export const BudgetManager = ({
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm font-medium truncate">
-                            {budget.category_name || 'Categoria'}
+                            {budget.category_name || t('finance.budget.category')}
                           </h3>
                           <div className="flex items-center gap-2 mt-0.5">
                             <StatusIcon className={cn('h-3 w-3', status.color)} />

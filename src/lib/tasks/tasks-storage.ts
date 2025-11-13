@@ -7,22 +7,11 @@ const STORAGE_KEYS = {
   ACTIVITIES: 'tasks_activities',
   USERS: 'tasks_users',
   CURRENT_USER: 'current_user_id',
-  USE_SUPABASE: 'use_supabase', // Flag para controlar se usa Supabase
 };
 
-// Verificar se deve usar Supabase
+// SEMPRE usar Supabase - removido sistema de fallback
 const shouldUseSupabase = (): boolean => {
-  const flag = localStorage.getItem(STORAGE_KEYS.USE_SUPABASE);
-  return flag === 'true';
-};
-
-// Habilitar/desabilitar Supabase
-export const enableSupabase = () => {
-  localStorage.setItem(STORAGE_KEYS.USE_SUPABASE, 'true');
-};
-
-export const disableSupabase = () => {
-  localStorage.setItem(STORAGE_KEYS.USE_SUPABASE, 'false');
+  return true;
 };
 
 // Current user ID
@@ -123,26 +112,36 @@ export const getTaskWithDetails = async (id: string): Promise<TaskWithDetails | 
     attachments: [],
     comments,
     activities,
+    links: [],
   };
 };
 
 export const createTask = async (task: Partial<Task>): Promise<Task> => {
   if (shouldUseSupabase()) {
     try {
-      const { id, created_at, ...taskData } = task;
+      // Remover campos que não devem ser enviados para o insert
+      const { id, created_at, location, workspace, ...taskData } = task;
       const createdTask = await TasksDB.createTask(taskData as any);
-      console.log('Task created in Supabase:', createdTask);
+      console.log('✅ Task criada no Supabase:', createdTask);
       return createdTask;
-    } catch (error) {
-      console.error('Error creating task in Supabase:', error);
+    } catch (error: any) {
+      console.error('❌ Erro ao criar task no Supabase:', error);
+      
+      // Mensagem de erro mais amigável
+      if (error?.message?.includes('workspace')) {
+        throw new Error('Por favor, selecione um workspace antes de criar uma tarefa.');
+      }
+      
       throw error;
     }
   }
   
   // Fallback para localStorage
+  const userId = await getCurrentUserId();
   const fullTask: Task = {
     id: task.id || `task-${Date.now()}`,
     created_at: task.created_at || new Date().toISOString(),
+    created_by: task.created_by || userId,
     ...task,
   } as Task;
   
@@ -150,8 +149,7 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
   tasks.push(fullTask);
   saveTasks(tasks);
   
-  // Log activity
-  const userId = await getCurrentUserId();
+  // Log activity (reutilizar userId já declarado)
   logActivity({
     id: `activity-${Date.now()}`,
     task_id: fullTask.id,
@@ -306,6 +304,38 @@ export const logActivity = (activity: Activity) => {
   const activities = getActivities();
   activities.push(activity);
   saveActivities(activities);
+};
+
+// =====================================================
+// LINKS
+// =====================================================
+
+export const addTaskLink = async (taskId: string, url: string, title?: string, description?: string) => {
+  if (shouldUseSupabase()) {
+    try {
+      return await TasksDB.addTaskLink(taskId, url, title, description);
+    } catch (error) {
+      console.error('Error adding link in Supabase:', error);
+      throw error;
+    }
+  }
+  
+  // Fallback para localStorage (não implementado ainda)
+  throw new Error('Links não suportados em modo offline');
+};
+
+export const deleteTaskLink = async (linkId: string) => {
+  if (shouldUseSupabase()) {
+    try {
+      return await TasksDB.deleteTaskLink(linkId);
+    } catch (error) {
+      console.error('Error deleting link in Supabase:', error);
+      throw error;
+    }
+  }
+  
+  // Fallback para localStorage (não implementado ainda)
+  throw new Error('Links não suportados em modo offline');
 };
 
 // Helper functions

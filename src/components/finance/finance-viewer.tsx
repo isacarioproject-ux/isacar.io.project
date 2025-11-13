@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import {
   ArrowLeft, Calendar, TrendingUp, TrendingDown, DollarSign, Plus,
-  BarChart3, Download, Layers, Target, X, Search
+  BarChart3, Download, Layers, Target, X, Search, ImagePlus
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -46,6 +46,7 @@ import { FINANCE_BLOCKS_REGISTRY, getBlocksByCategory } from '@/lib/finance-bloc
 import { useFinanceBlocks } from '@/hooks/use-finance-blocks'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { FinanceDock } from './finance-dock'
+import { FinanceCoverSelector } from './finance-cover-selector'
 import {
   Dialog,
   DialogContent,
@@ -58,19 +59,29 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface FinanceViewerProps {
   docId: string
   onBack: () => void
   showSidebar?: boolean
   setShowSidebar?: (show: boolean) => void
+  onCoverChange?: (coverUrl: string | null) => void
+  currentCover?: string | null
 }
 
 export const FinanceViewer = ({ 
   docId, 
   onBack,
   showSidebar: externalShowSidebar,
-  setShowSidebar: externalSetShowSidebar
+  setShowSidebar: externalSetShowSidebar,
+  onCoverChange,
+  currentCover: externalCurrentCover
 }: FinanceViewerProps) => {
   const { t } = useI18n()
   const [loading, setLoading] = useState(true)
@@ -184,6 +195,11 @@ export const FinanceViewer = ({
   const blockIds = useMemo(() => blocks.map((b) => b.id), [blocks])
 
   const fetchDocument = async () => {
+    if (!docId) {
+      toast.error('ID do documento não fornecido')
+      return
+    }
+
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -192,20 +208,27 @@ export const FinanceViewer = ({
         .eq('id', docId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching document:', error)
+        throw error
+      }
 
       if (data) {
         setFinanceDoc(data)
         setTitle(data.name)
         setDescription(data.description || '')
         setIconEmoji(data.icon)
-        setCoverImg(data.cover_image)
+        // Usar capa externa se fornecida, senão usar a do documento
+        setCoverImg(externalCurrentCover !== undefined ? externalCurrentCover : data.cover_image)
         setReferenceMonth(data.reference_month)
         setReferenceYear(data.reference_year)
+      } else {
+        toast.error('Documento não encontrado')
       }
     } catch (err: any) {
+      console.error('Error in fetchDocument:', err)
       toast.error('Erro ao carregar documento', {
-        description: err.message,
+        description: err.message || 'Tente novamente mais tarde',
       })
     } finally {
       setLoading(false)
@@ -213,6 +236,8 @@ export const FinanceViewer = ({
   }
 
   const fetchTransactions = async () => {
+    if (!docId) return
+
     try {
       // Tentar carregar do cache primeiro se estiver offline
       if (!navigator.onLine) {
@@ -230,7 +255,10 @@ export const FinanceViewer = ({
         .eq('finance_document_id', docId)
         .order('transaction_date', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching transactions:', error)
+        throw error
+      }
 
       // Cachear dados para uso offline
       if (data) {
@@ -357,6 +385,8 @@ export const FinanceViewer = ({
   }
 
   const saveDocument = async () => {
+    if (!docId || !financeDoc) return
+    
     setSaving(true)
     try {
       const { error } = await supabase
@@ -372,7 +402,24 @@ export const FinanceViewer = ({
         .eq('id', docId)
 
       if (error) throw error
+
+      // Atualizar estado local
+      setFinanceDoc({
+        ...financeDoc,
+        name: title,
+        description: description || null,
+        icon: iconEmoji,
+        cover_image: coverImg,
+        reference_month: referenceMonth,
+        reference_year: referenceYear,
+      })
+
+      // Notificar mudança de capa se callback fornecido
+      if (onCoverChange) {
+        onCoverChange(coverImg)
+      }
     } catch (err: any) {
+      console.error('Error saving document:', err)
       toast.error('Erro ao salvar', {
         description: err.message,
       })
@@ -381,21 +428,30 @@ export const FinanceViewer = ({
     }
   }
 
+  // Sincronizar capa externa
+  useEffect(() => {
+    if (externalCurrentCover !== undefined) {
+      setCoverImg(externalCurrentCover)
+    }
+  }, [externalCurrentCover])
+
   // Fetch inicial
   useEffect(() => {
+    if (docId) {
     fetchDocument()
     fetchTransactions()
     fetchCategories()
+    }
   }, [docId])
 
   // Auto-save ao alterar
   useEffect(() => {
-    if (!document) return
+    if (!financeDoc || !docId) return
     const timeout = setTimeout(() => {
       saveDocument()
     }, 1000)
     return () => clearTimeout(timeout)
-  }, [title, description, iconEmoji, coverImg, referenceMonth, referenceYear])
+  }, [title, description, iconEmoji, coverImg, referenceMonth, referenceYear, financeDoc, docId])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -462,15 +518,33 @@ export const FinanceViewer = ({
 
           {/* Capa (se existir) */}
           {coverImg && (
-            <div className="relative -mx-4 sm:-mx-6 md:-mx-8 lg:-mx-12 mb-6 h-32 sm:h-48 md:h-56 overflow-hidden group">
-              <img src={coverImg} alt="Capa" className="w-full h-full object-cover" />
+            <div className="relative -mx-4 sm:-mx-6 md:-mx-8 lg:-mx-12 -mt-4 sm:-mt-6 md:-mt-8 lg:-mt-12 mb-6 h-32 sm:h-48 md:h-56 overflow-hidden group">
+              {coverImg.startsWith('linear-gradient') || coverImg.startsWith('radial-gradient') ? (
+                <div 
+                  className="w-full h-full"
+                  style={{ background: coverImg }}
+                />
+              ) : coverImg.startsWith('#') ? (
+                <div 
+                  className="w-full h-full"
+                  style={{ backgroundColor: coverImg }}
+                />
+              ) : (
+                <img src={coverImg} alt={t('finance.viewer.coverAlt')} className="w-full h-full object-cover" />
+              )}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => setCoverImg(null)}
+                  onClick={async () => {
+                    if (onCoverChange) {
+                      onCoverChange(null)
+                    }
+                    setCoverImg(null)
+                    await saveDocument()
+                  }}
                 >
-                  Remover capa
+                  {t('finance.viewer.removeCover')}
                 </Button>
               </div>
             </div>
@@ -487,7 +561,7 @@ export const FinanceViewer = ({
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Sem título"
+            placeholder={t('finance.viewer.titlePlaceholder')}
             className="text-2xl sm:text-3xl md:text-4xl font-bold border-none px-0 mb-2 sm:mb-3 focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/30"
           />
 
@@ -497,7 +571,7 @@ export const FinanceViewer = ({
               <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               {referenceMonth && referenceYear && `${referenceMonth}/${referenceYear}`}
               {!referenceMonth && referenceYear && `${referenceYear}`}
-              {referenceMonth && !referenceYear && `Mês ${referenceMonth}`}
+              {referenceMonth && !referenceYear && `${t('finance.viewer.month')} ${referenceMonth}`}
             </div>
           )}
 
@@ -505,7 +579,7 @@ export const FinanceViewer = ({
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Adicionar descrição..."
+            placeholder={t('finance.viewer.descriptionPlaceholder')}
             className="mb-4 sm:mb-6 border-none px-0 text-sm sm:text-base focus-visible:ring-0 bg-transparent text-muted-foreground placeholder:text-muted-foreground/30"
           />
 
@@ -514,7 +588,7 @@ export const FinanceViewer = ({
             <div className="p-3 sm:p-4 rounded-lg bg-card border border-border/50 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-600" />
-                <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Receitas</p>
+                <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">{t('finance.charts.income')}</p>
               </div>
               <p className="text-sm sm:text-lg md:text-xl font-bold text-green-600">
                 {formatCurrency(Number(financeDoc?.total_income || 0))}
@@ -524,7 +598,7 @@ export const FinanceViewer = ({
             <div className="p-3 sm:p-4 rounded-lg bg-card border border-border/50 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <TrendingDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-600" />
-                <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Despesas</p>
+                <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">{t('finance.charts.expenses')}</p>
               </div>
               <p className="text-sm sm:text-lg md:text-xl font-bold text-red-600">
                 {formatCurrency(Number(financeDoc?.total_expenses || 0))}
@@ -534,7 +608,7 @@ export const FinanceViewer = ({
             <div className="p-3 sm:p-4 rounded-lg bg-card border border-border/50 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <DollarSign className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-foreground" />
-                <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Saldo</p>
+                <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">{t('finance.charts.balance')}</p>
               </div>
               <p
                 className={cn(
@@ -571,7 +645,7 @@ export const FinanceViewer = ({
                 className="h-8 px-3"
               >
                 <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="hidden sm:inline text-xs">Nova</span>
+                <span className="hidden sm:inline text-xs">{t('finance.dock.new')}</span>
               </Button>
 
               {/* Gráficos - Mobile apenas */}
@@ -582,7 +656,7 @@ export const FinanceViewer = ({
                 className="h-8 px-3"
               >
                 <BarChart3 className="h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="hidden sm:inline text-xs">Gráficos</span>
+                <span className="hidden sm:inline text-xs">{t('finance.dock.charts')}</span>
               </Button>
 
               {/* Exportar - Mobile apenas */}
@@ -590,17 +664,17 @@ export const FinanceViewer = ({
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 px-3">
                     <Download className="h-3.5 w-3.5 sm:mr-1.5" />
-                    <span className="hidden sm:inline text-xs">Exportar</span>
+                    <span className="hidden sm:inline text-xs">{t('finance.dock.export')}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleExport('transactions')}>
                     <Download className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-xs">Exportar Transações (CSV)</span>
+                    <span className="text-xs">{t('finance.export.transactions')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleExport('summary')}>
                     <Download className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-xs">Exportar Resumo (CSV)</span>
+                    <span className="text-xs">{t('finance.export.summary')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -615,11 +689,16 @@ export const FinanceViewer = ({
           >
             <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
               {!blocksLoading && blocks.map((block) => {
-                // Budget Tracker (componente legado)
+                // Budget Tracker
                 if (block.block_type === 'budget-tracker') {
                   return (
                     <SortableBlock key={block.id} id={block.id}>
-                      <div className="mb-6">
+                      <FinanceBlockWrapper
+                        type="budget-tracker"
+                        blockId={block.id}
+                        onRemove={() => removeBlock(block.id)}
+                        className="mb-6"
+                      >
                         <BudgetTracker
                           documentId={docId}
                           month={new Date().getMonth() + 1}
@@ -630,7 +709,7 @@ export const FinanceViewer = ({
                             fetchDocument()
                           }}
                         />
-                      </div>
+                      </FinanceBlockWrapper>
                     </SortableBlock>
                   )
                 }
@@ -843,13 +922,13 @@ export const FinanceViewer = ({
           )}>
             {/* Header da sidebar - compacto */}
             <div className="px-3 py-2 border-b flex items-center justify-between flex-shrink-0">
-              <h3 className="text-xs font-semibold">Elementos</h3>
+              <h3 className="text-xs font-semibold">{t('finance.sidebar.elements')}</h3>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowSidebar(false)}
                 className="h-6 w-6 md:invisible"
-                title="Fechar"
+                title={t('finance.viewer.close')}
               >
                 <Layers className="h-3 w-3" />
               </Button>
@@ -864,10 +943,10 @@ export const FinanceViewer = ({
                 if (blocks.length === 0) return null
 
                 const categoryNames: Record<string, string> = {
-                  data: 'Dados',
-                  analysis: 'Análise',
-                  planning: 'Planejamento',
-                  tools: 'Ferramentas',
+                  data: t('finance.sidebar.data'),
+                  analysis: t('finance.sidebar.analysis'),
+                  planning: t('finance.sidebar.planning'),
+                  tools: t('finance.sidebar.tools'),
                 }
 
                 return (
@@ -898,7 +977,7 @@ export const FinanceViewer = ({
                               <p className="text-[10px] font-medium group-hover:text-primary transition-colors leading-tight line-clamp-2">
                                 {block.name}
                                 {!block.implemented && (
-                                  <span className="block text-[9px] text-muted-foreground">(Breve)</span>
+                                  <span className="block text-[9px] text-muted-foreground">{t('finance.sidebar.comingSoon')}</span>
                                 )}
                               </p>
                             </div>
@@ -1012,7 +1091,7 @@ export const FinanceViewer = ({
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">PDF</span>
+                <span className="bg-background px-2 text-muted-foreground">{t('finance.export.pdf')}</span>
               </div>
             </div>
             

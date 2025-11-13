@@ -13,7 +13,7 @@ export interface Database {
         Insert: DocumentInsert
         Update: DocumentUpdate
       }
-      team_members: {
+      workspace_members: {
         Row: TeamMember
         Insert: TeamMemberInsert
         Update: TeamMemberUpdate

@@ -23,7 +23,7 @@ export function useAllTeamMembers() {
 
         // Buscar todos os membros que o usuário convidou ou que estão na mesma organização
         const { data, error: fetchError } = await supabase
-          .from('team_members')
+          .from('workspace_members')
           .select('id, name, email, status')
           .or(`invited_by.eq.${user.id},user_id.eq.${user.id}`)
           .order('email', { ascending: true })
@@ -57,7 +57,7 @@ export function useAllTeamMembers() {
         {
           event: '*',
           schema: 'public',
-          table: 'team_members',
+          table: 'workspace_members',
         },
         () => {
           fetchAllMembers()

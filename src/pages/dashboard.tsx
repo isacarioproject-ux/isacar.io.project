@@ -5,7 +5,7 @@ import { FinanceCard } from '@/components/finance/finance-card'
 import { TasksCard } from '@/components/tasks/tasks-card'
 import { RecentCard } from '@/components/recent/recent-card'
 import { EmpresaCard } from '@/components/empresa/empresa-card'
-import { CardSkeleton } from '@/components/loading-skeleton'
+import { DashboardSkeleton } from '@/components/loading-skeleton'
 import { DraggableCardWrapper } from '@/components/draggable-card-wrapper'
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
 import { useI18n } from '@/hooks/use-i18n'
@@ -88,11 +88,7 @@ export default function DashboardPage() {
             ) : null}
 
             {loading ? (
-              <div className="grid gap-[3px] grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 justify-items-center">
-                <CardSkeleton />
-                <CardSkeleton />
-                <CardSkeleton />
-              </div>
+              <DashboardSkeleton />
             ) : stats ? (
               <>
                 {/* Cards de Gestão com Drag & Drop */}

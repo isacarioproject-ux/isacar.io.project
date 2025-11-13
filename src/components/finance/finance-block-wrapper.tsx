@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { FinanceBlockType } from '@/types/finance-blocks'
 import { getBlockDefinition } from '@/lib/finance-blocks-registry'
 import { useSortableHandle } from './sortable-block'
+import { useI18n } from '@/hooks/use-i18n'
 
 interface FinanceBlockWrapperProps {
   type: FinanceBlockType
@@ -32,6 +33,7 @@ export const FinanceBlockWrapper = ({
   className,
   blockId,
 }: FinanceBlockWrapperProps) => {
+  const { t } = useI18n()
   const definition = getBlockDefinition(type)
   const dragContext = useSortableHandle()
   const dragButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -104,7 +106,7 @@ export const FinanceBlockWrapper = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">{isCollapsed ? "Expandir bloco" : "Recolher bloco"}</p>
+              <p className="text-xs">{isCollapsed ? t('finance.blocks.expand') : t('finance.blocks.collapse')}</p>
             </TooltipContent>
           </Tooltip>
 

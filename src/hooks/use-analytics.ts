@@ -124,7 +124,7 @@ export function useAnalytics(): UseAnalyticsReturn {
           .order('created_at', { ascending: true }),
 
         supabase
-          .from('team_members')
+          .from('workspace_members')
           .select('id, status, joined_at, created_at')
           .gte('created_at', start.toISOString())
           .lte('created_at', end.toISOString())

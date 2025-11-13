@@ -8,6 +8,7 @@ import {
   ModalTitle,
 } from '@/components/ui/modal' // Drawer em mobile, Dialog em desktop
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Popover,
   PopoverContent,
@@ -43,10 +44,13 @@ export const CategoriesManager = ({
   const [loading, setLoading] = useState(false)
   const [newCategory, setNewCategory] = useState({
     name: '',
+    description: '',
     type: 'expense' as 'income' | 'expense',
     color: '#ef4444',
     icon: '💰',
   })
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', description: '' })
 
   // Ícones disponíveis
   const availableIcons = [
@@ -102,6 +106,7 @@ export const CategoriesManager = ({
         user_id: user.id,
         workspace_id: currentWorkspace?.id || null,
         name: newCategory.name.trim(),
+        description: newCategory.description.trim() || null,
         type: newCategory.type,
         color: newCategory.color,
         icon: newCategory.icon || null,
@@ -111,6 +116,7 @@ export const CategoriesManager = ({
 
       setNewCategory({
         name: '',
+        description: '',
         type: 'expense',
         color: '#ef4444',
         icon: '💰',
@@ -153,16 +159,16 @@ export const CategoriesManager = ({
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
       <ModalContent 
-        className="max-w-3xl max-h-[85vh] p-0"
+        className="max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col"
         drawerProps={{
-          className: "h-[96vh]"
+          className: "h-[96vh] flex flex-col"
         }}
       >
-        <ModalHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b">
+        <ModalHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0">
           <ModalTitle className="text-base font-semibold">{t('finance.categories.title')}</ModalTitle>
         </ModalHeader>
 
-        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[calc(96vh-80px)]">
+        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 space-y-4 sm:space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Form nova categoria */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
@@ -194,19 +200,29 @@ export const CategoriesManager = ({
                   </PopoverContent>
                 </Popover>
 
+                <div className="flex-1 space-y-1.5">
                 <Input
                   placeholder={t('finance.categories.namePlaceholder')}
                   value={newCategory.name}
                   onChange={(e) =>
                     setNewCategory({ ...newCategory, name: e.target.value })
                   }
-                  className="flex-1 h-9"
+                    className="h-9"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newCategory.name.trim()) {
                       handleAddCategory()
                     }
                   }}
                 />
+                  <Input
+                    placeholder={t('finance.categories.descriptionPlaceholder')}
+                    value={newCategory.description}
+                    onChange={(e) =>
+                      setNewCategory({ ...newCategory, description: e.target.value })
+                    }
+                    className="h-8 text-xs"
+                  />
+                </div>
               </div>
               
               <div className="flex gap-2">
@@ -248,10 +264,28 @@ export const CategoriesManager = ({
 
           {/* Loading State */}
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-                <p className="text-sm text-muted-foreground">{t('finance.categories.loading')}</p>
+            <div className="space-y-6 py-4">
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-32" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <Skeleton className="h-10 w-10 rounded flex-shrink-0" />
+                    <Skeleton className="h-4 flex-1 max-w-[200px]" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-32" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <Skeleton className="h-10 w-10 rounded flex-shrink-0" />
+                    <Skeleton className="h-4 flex-1 max-w-[200px]" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded flex-shrink-0" />
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
@@ -275,24 +309,144 @@ export const CategoriesManager = ({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2">
+              <div className="space-y-2">
                 {incomeCategories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="group relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md border bg-card hover:bg-accent/50 transition-colors"
+                    className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg border bg-card hover:bg-accent/30 transition-all"
                   >
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-                      {cat.icon && <span className="text-sm sm:text-base flex-shrink-0">{cat.icon}</span>}
-                      <span className="text-xs sm:text-sm truncate">{cat.name}</span>
+                    {editingCategory === cat.id ? (
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={editForm.name}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="h-8 text-sm"
+                          autoFocus
+                        />
+                        <Input
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          placeholder={t('finance.categories.descriptionPlaceholder')}
+                          className="h-7 text-xs"
+                        />
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs"
+                            onClick={async () => {
+                              if (!editingCategory) return
+                              try {
+                                const { error } = await supabase
+                                  .from('finance_categories')
+                                  .update({
+                                    name: editForm.name.trim(),
+                                    description: editForm.description.trim() || null,
+                                  })
+                                  .eq('id', editingCategory)
+
+                                if (error) throw error
+
+                                toast.success(t('finance.categories.updated'))
+                                setEditingCategory(null)
+                                fetchCategories()
+                                onUpdate()
+                              } catch (err: any) {
+                                toast.error(t('finance.categories.errorUpdate'), {
+                                  description: err.message,
+                                })
+                              }
+                            }}
+                          >
+                            {t('common.save')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs"
+                            onClick={() => setEditingCategory(null)}
+                          >
+                            {t('common.cancel')}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 flex-shrink-0"
+                            >
+                              {cat.icon && <span className="text-lg">{cat.icon}</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2" align="start">
+                            <div className="grid grid-cols-8 gap-1">
+                              {availableIcons.map((icon) => (
+                                <button
+                                  key={icon}
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('finance_categories')
+                                        .update({ icon })
+                                        .eq('id', cat.id)
+
+                                      if (error) throw error
+
+                                      toast.success(t('finance.categories.iconUpdated'))
+                                      fetchCategories()
+                                      onUpdate()
+                                    } catch (err: any) {
+                                      toast.error(t('finance.categories.errorUpdate'), {
+                                        description: err.message,
+                                      })
+                                    }
+                                  }}
+                                  className="h-8 w-8 flex items-center justify-center rounded hover:bg-accent transition-colors"
+                                  type="button"
+                                >
+                                  <span className="text-base">{icon}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium truncate">{cat.name}</span>
+                          </div>
+                          {cat.description && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {cat.description}
+                            </p>
+                          )}
                     </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => {
+                              setEditingCategory(cat.id)
+                              setEditForm({ name: cat.name, description: cat.description || '' })
+                            }}
+                          >
+                            <Smile className="h-3.5 w-3.5" />
+                          </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-5 w-5 sm:h-6 sm:w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            className="h-7 w-7"
                       onClick={() => handleDeleteCategory(cat.id)}
                     >
-                      <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            <Trash2 className="h-3.5 w-3.5" />
                     </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -318,24 +472,144 @@ export const CategoriesManager = ({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2">
+              <div className="space-y-2">
                 {expenseCategories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="group relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md border bg-card hover:bg-accent/50 transition-colors"
+                    className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg border bg-card hover:bg-accent/30 transition-all"
                   >
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-                      {cat.icon && <span className="text-sm sm:text-base flex-shrink-0">{cat.icon}</span>}
-                      <span className="text-xs sm:text-sm truncate">{cat.name}</span>
+                    {editingCategory === cat.id ? (
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={editForm.name}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="h-8 text-sm"
+                          autoFocus
+                        />
+                        <Input
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          placeholder={t('finance.categories.descriptionPlaceholder')}
+                          className="h-7 text-xs"
+                        />
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs"
+                            onClick={async () => {
+                              if (!editingCategory) return
+                              try {
+                                const { error } = await supabase
+                                  .from('finance_categories')
+                                  .update({
+                                    name: editForm.name.trim(),
+                                    description: editForm.description.trim() || null,
+                                  })
+                                  .eq('id', editingCategory)
+
+                                if (error) throw error
+
+                                toast.success(t('finance.categories.updated'))
+                                setEditingCategory(null)
+                                fetchCategories()
+                                onUpdate()
+                              } catch (err: any) {
+                                toast.error(t('finance.categories.errorUpdate'), {
+                                  description: err.message,
+                                })
+                              }
+                            }}
+                          >
+                            {t('common.save')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs"
+                            onClick={() => setEditingCategory(null)}
+                          >
+                            {t('common.cancel')}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 flex-shrink-0"
+                            >
+                              {cat.icon && <span className="text-lg">{cat.icon}</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2" align="start">
+                            <div className="grid grid-cols-8 gap-1">
+                              {availableIcons.map((icon) => (
+                                <button
+                                  key={icon}
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('finance_categories')
+                                        .update({ icon })
+                                        .eq('id', cat.id)
+
+                                      if (error) throw error
+
+                                      toast.success(t('finance.categories.iconUpdated'))
+                                      fetchCategories()
+                                      onUpdate()
+                                    } catch (err: any) {
+                                      toast.error(t('finance.categories.errorUpdate'), {
+                                        description: err.message,
+                                      })
+                                    }
+                                  }}
+                                  className="h-8 w-8 flex items-center justify-center rounded hover:bg-accent transition-colors"
+                                  type="button"
+                                >
+                                  <span className="text-base">{icon}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium truncate">{cat.name}</span>
+                          </div>
+                          {cat.description && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {cat.description}
+                            </p>
+                          )}
                     </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => {
+                              setEditingCategory(cat.id)
+                              setEditForm({ name: cat.name, description: cat.description || '' })
+                            }}
+                          >
+                            <Smile className="h-3.5 w-3.5" />
+                          </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-5 w-5 sm:h-6 sm:w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            className="h-7 w-7"
                       onClick={() => handleDeleteCategory(cat.id)}
                     >
-                      <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            <Trash2 className="h-3.5 w-3.5" />
                     </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

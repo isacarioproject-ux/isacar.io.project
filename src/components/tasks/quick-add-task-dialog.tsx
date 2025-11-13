@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -41,7 +41,9 @@ interface QuickAddTaskDialogProps {
   onClose: () => void;
   onCreateTask: (taskData: any) => void;
   onCreateAndOpen?: (taskData: any) => void;
+  onCreateReminder?: (reminderData: any) => void;
   defaultGroup?: string;
+  initialTab?: 'tarefa' | 'lembrete';
 }
 
 export function QuickAddTaskDialog({ 
@@ -49,11 +51,13 @@ export function QuickAddTaskDialog({
   onClose, 
   onCreateTask,
   onCreateAndOpen,
-  defaultGroup 
+  onCreateReminder,
+  defaultGroup,
+  initialTab = 'tarefa'
 }: QuickAddTaskDialogProps) {
   const { t } = useI18n();
   const { currentWorkspace } = useWorkspace();
-  const [activeTab, setActiveTab] = useState<'tarefa' | 'lembrete'>('tarefa');
+  const [activeTab, setActiveTab] = useState<'tarefa' | 'lembrete'>(initialTab);
   const [taskName, setTaskName] = useState('');
   const [selectedList, setSelectedList] = useState('lista-pessoal');
   const [taskType, setTaskType] = useState('tarefa');
@@ -69,6 +73,13 @@ export function QuickAddTaskDialog({
   const [descriptionBlocks, setDescriptionBlocks] = useState<Block[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+
+  // Atualizar tab quando initialTab mudar
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   const statusColors = {
     'PENDENTE': 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
@@ -245,6 +256,7 @@ export function QuickAddTaskDialog({
         </div>
 
         {/* Content */}
+        {activeTab === 'tarefa' ? (
         <div className="p-4 space-y-4">
           {/* Selects Row - Only for Tarefa */}
           {activeTab === 'tarefa' && (
@@ -375,30 +387,10 @@ export function QuickAddTaskDialog({
             </div>
           )}
 
-          {/* Lembrete Options */}
-          {activeTab === 'lembrete' && (
-            <div>
-              <h3 className="text-sm font-medium mb-3 dark:text-white">Delegar lembrete</h3>
-              <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <Calendar className="size-4" />
-                  <span className="text-sm">Hoje</span>
-                </button>
-                <button className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <span className="text-sm">🔔</span>
-                  <span className="text-sm">Para mim</span>
-                </button>
-                <button className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <span className="text-sm">🔔</span>
-                  <span className="text-sm">Notifique-me</span>
-                </button>
-              </div>
-            </div>
-          )}
 
-          {/* Task/Reminder Name Input */}
+          {/* Task Name Input */}
           <Input
-            placeholder={activeTab === 'lembrete' ? t('tasks.reminder.name') : t('tasks.quickAdd.taskName')}
+            placeholder={t('tasks.quickAdd.taskName')}
             value={taskName}
             onChange={(e) => setTaskName(e.target.value)}
             className="text-base border-none px-0 focus-visible:ring-0 placeholder:text-gray-500"
@@ -833,6 +825,12 @@ export function QuickAddTaskDialog({
             </div>
           )}
         </div>
+        ) : (
+          <ReminderTab onCreateReminder={(data) => {
+            onCreateReminder?.(data);
+            onClose();
+          }} />
+        )}
 
         {/* Footer - Only for Tarefa */}
         {activeTab === 'tarefa' && (

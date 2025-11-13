@@ -10,9 +10,10 @@ interface TasksListViewProps {
   onTaskClick: (taskId: string) => void;
   onUpdate: () => void;
   loading?: boolean;
+  variant?: 'compact' | 'table';
 }
 
-export function TasksListView({ tasks, onTaskClick, onUpdate, loading = false }: TasksListViewProps) {
+export function TasksListView({ tasks, onTaskClick, onUpdate, loading = false, variant = 'compact' }: TasksListViewProps) {
   const { t } = useI18n();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -28,6 +29,7 @@ export function TasksListView({ tasks, onTaskClick, onUpdate, loading = false }:
 
   return (
     <div className="space-y-1">
+      
       {tasks.length > 0 ? (
         tasks.map((task, index) => (
           <motion.div
@@ -40,6 +42,7 @@ export function TasksListView({ tasks, onTaskClick, onUpdate, loading = false }:
               task={task}
               onTaskClick={onTaskClick}
               onUpdate={onUpdate}
+              variant={variant}
             />
           </motion.div>
         ))

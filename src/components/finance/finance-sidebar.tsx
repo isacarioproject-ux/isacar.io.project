@@ -152,8 +152,6 @@ export const FinanceSidebar = ({
                 </div>
               </div>
 
-              <Separator />
-
               {/* Seção: Visualizações */}
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -185,8 +183,6 @@ export const FinanceSidebar = ({
                 </div>
               </div>
 
-              <Separator />
-
               {/* Seção: Outros */}
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -217,8 +213,6 @@ export const FinanceSidebar = ({
                   ))}
                 </div>
               </div>
-
-              <Separator />
 
               {/* Gerenciar Categorias */}
               <div className="space-y-2">

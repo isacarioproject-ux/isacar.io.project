@@ -5,13 +5,12 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@/components/ui/modal'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { FinanceTransaction, FinanceCategory } from '@/types/finance'
-import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Maximize2, Minimize2, X } from 'lucide-react'
+import { TrendingUp, TrendingDown, PieChart, BarChart3, Maximize2, Minimize2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { useI18n } from '@/hooks/use-i18n'
 
 interface FinanceChartsProps {
@@ -148,7 +147,7 @@ export const FinanceCharts = ({
       <ModalContent
         className={cn(
           "p-0 [&>button]:hidden",
-          isFullscreen ? "max-w-[100vw] h-[100vh] rounded-none" : "max-w-5xl max-h-[90vh]"
+          isFullscreen ? "max-w-[100vw] h-[100vh] rounded-none" : "max-w-4xl max-h-[90vh]"
         )}
         drawerProps={{
           className: 'h-[96vh]',
@@ -197,66 +196,24 @@ export const FinanceCharts = ({
         </div>
 
         <div className={cn(
-          "px-3 sm:px-4 md:px-6 py-4 space-y-6",
+          "px-3 sm:px-4 md:px-6 py-4",
           isFullscreen ? "overflow-y-auto h-[calc(100vh-60px)]" : "overflow-y-auto sm:overflow-y-visible max-h-[calc(90vh-80px)]"
         )}>
-          {/* Resumo Geral - escondido em mobile */}
-          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/20">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                  {t('finance.charts.income')}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(totals.income)}
-              </p>
-            </div>
-
-            <div className="p-4 border rounded-lg bg-red-50 dark:bg-red-950/20">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="h-4 w-4 text-red-600" />
-                <span className="text-xs font-medium text-red-700 dark:text-red-400">
-                  {t('finance.charts.expenses')}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(totals.expenses)}
-              </p>
-            </div>
-
-            <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
-                  {t('finance.charts.balance')}
-                </span>
-              </div>
-              <p
-                className={cn(
-                  'text-2xl font-bold',
-                  totals.balance >= 0 ? 'text-green-600' : 'text-red-600'
-                )}
-              >
-                {formatCurrency(totals.balance)}
-              </p>
-            </div>
-          </div>
-
+          {/* Grid de Gráficos - Vertical em mobile, Horizontal em desktop */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {/* Gráfico de Despesas */}
           {expenseChartData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
+              <div className="flex flex-col gap-2 p-3 md:p-4 border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-red-600" />
+                  <h3 className="text-sm font-semibold">
                   {t('finance.charts.expensesByCategory')}
-                </CardTitle>
-                <CardDescription>
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">
                   {t('finance.charts.expensesDistribution')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px] sm:h-[280px]">
+                </p>
+                <div className="h-[180px] sm:h-[200px] md:h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
                       <Pie
@@ -265,7 +222,7 @@ export const FinanceCharts = ({
                         cy="50%"
                         labelLine={false}
                         label={({ name, percentage }) => `${name} (${percentage}%)`}
-                        outerRadius={window.innerWidth < 640 ? 60 : 80}
+                        outerRadius={60}
                         fill="#8884d8"
                         dataKey="value"
                       >
@@ -276,32 +233,31 @@ export const FinanceCharts = ({
                       <Tooltip content={<CustomTooltip />} />
                       <Legend 
                         verticalAlign="bottom" 
-                        height={36}
+                        height={32}
                         formatter={(value, entry: any) => (
-                          <span className="text-xs">{value}</span>
+                          <span className="text-[10px]">{value}</span>
                         )}
+                        wrapperStyle={{ fontSize: '10px' }}
                       />
                     </RechartsPie>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
           )}
 
           {/* Gráfico de Receitas */}
           {incomeChartData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
+              <div className="flex flex-col gap-2 p-3 md:p-4 border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-600" />
+                  <h3 className="text-sm font-semibold">
                   {t('finance.charts.incomeByCategory')}
-                </CardTitle>
-                <CardDescription>
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">
                   {t('finance.charts.incomeDistribution')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px] sm:h-[280px]">
+                </p>
+                <div className="h-[180px] sm:h-[200px] md:h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
                       <Pie
@@ -310,7 +266,7 @@ export const FinanceCharts = ({
                         cy="50%"
                         labelLine={false}
                         label={({ name, percentage }) => `${name} (${percentage}%)`}
-                        outerRadius={window.innerWidth < 640 ? 60 : 80}
+                        outerRadius={60}
                         fill="#8884d8"
                         dataKey="value"
                       >
@@ -321,17 +277,18 @@ export const FinanceCharts = ({
                       <Tooltip content={<CustomTooltip />} />
                       <Legend 
                         verticalAlign="bottom" 
-                        height={36}
+                        height={32}
                         formatter={(value, entry: any) => (
-                          <span className="text-xs">{value}</span>
+                          <span className="text-[10px]">{value}</span>
                         )}
+                        wrapperStyle={{ fontSize: '10px' }}
                       />
                     </RechartsPie>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
           )}
+          </div>
 
           {/* Empty State */}
           {categoryData.length === 0 && (

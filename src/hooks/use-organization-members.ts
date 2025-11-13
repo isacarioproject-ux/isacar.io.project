@@ -28,7 +28,7 @@ export function useOrganizationMembers(): UseOrganizationMembersReturn {
 
       // Buscar TODOS os membros que o usuário convidou (sem filtro de projeto)
       const { data, error: fetchError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .select('*')
         .or(`invited_by.eq.${user.id},user_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
@@ -57,7 +57,7 @@ export function useOrganizationMembers(): UseOrganizationMembersReturn {
         {
           event: '*',
           schema: 'public',
-          table: 'team_members',
+          table: 'workspace_members',
         },
         () => {
           fetchMembers()
@@ -76,7 +76,7 @@ export function useOrganizationMembers(): UseOrganizationMembersReturn {
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error: insertError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .insert({
           project_id: projectId || null, // ✅ Opcional - convite de organização
           email,
@@ -100,7 +100,7 @@ export function useOrganizationMembers(): UseOrganizationMembersReturn {
   const updateMember = async (id: string, data: Partial<TeamMember>) => {
     try {
       const { error: updateError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .update(data)
         .eq('id', id)
 
@@ -124,7 +124,7 @@ export function useOrganizationMembers(): UseOrganizationMembersReturn {
   const removeMember = async (id: string) => {
     try {
       const { error: deleteError } = await supabase
-        .from('team_members')
+        .from('workspace_members')
         .delete()
         .eq('id', id)
 

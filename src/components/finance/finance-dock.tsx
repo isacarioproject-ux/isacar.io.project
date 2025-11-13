@@ -5,6 +5,7 @@ import { Plus, Search, Filter, BarChart3, Download, Layers } from 'lucide-react'
 import { FilterState } from './transaction-filters'
 import { FinanceCategory } from '@/types/finance'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/hooks/use-i18n'
 
 interface FinanceDockProps {
   onAddTransaction: () => void
@@ -35,6 +36,7 @@ export const FinanceDock = ({
   showFilters,
   onToggleFilters,
 }: FinanceDockProps) => {
+  const { t } = useI18n()
   const activeFiltersCount = Object.entries(filters).filter(
     ([key, value]) => key !== 'search' && value !== 'all' && value !== ''
   ).length
@@ -67,7 +69,7 @@ export const FinanceDock = ({
               <Plus className="h-5 w-5" />
             </button>
           </DockIcon>
-          <DockLabel>Nova</DockLabel>
+          <DockLabel>{t('finance.dock.new')}</DockLabel>
         </DockItem>
 
         {/* Buscar */}
@@ -80,7 +82,7 @@ export const FinanceDock = ({
               <Search className="h-5 w-5" />
             </button>
           </DockIcon>
-          <DockLabel>Buscar</DockLabel>
+          <DockLabel>{t('finance.dock.search')}</DockLabel>
         </DockItem>
 
         {/* Filtros - controla o Popover da página */}
@@ -98,7 +100,7 @@ export const FinanceDock = ({
               )}
             </button>
           </DockIcon>
-          <DockLabel>Filtros</DockLabel>
+          <DockLabel>{t('finance.dock.filters')}</DockLabel>
         </DockItem>
 
         {/* Gráficos */}
@@ -116,7 +118,7 @@ export const FinanceDock = ({
               <BarChart3 className="h-5 w-5" />
             </button>
           </DockIcon>
-          <DockLabel>Gráficos</DockLabel>
+          <DockLabel>{t('finance.dock.charts')}</DockLabel>
         </DockItem>
 
         {/* Exportar */}
@@ -129,7 +131,7 @@ export const FinanceDock = ({
               <Download className="h-5 w-5" />
             </button>
           </DockIcon>
-          <DockLabel>Exportar</DockLabel>
+          <DockLabel>{t('finance.dock.export')}</DockLabel>
         </DockItem>
 
         {/* Elementos */}
@@ -142,7 +144,7 @@ export const FinanceDock = ({
               <Layers className="h-5 w-5" />
             </button>
           </DockIcon>
-          <DockLabel>Blocos</DockLabel>
+          <DockLabel>{t('finance.dock.blocks')}</DockLabel>
         </DockItem>
       </Dock>
     </div>

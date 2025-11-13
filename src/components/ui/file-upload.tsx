@@ -82,18 +82,18 @@ export function FileUpload({
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+          'border-2 border-dashed rounded-lg p-4 text-center transition-colors',
           isDragging
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
             : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
         )}
       >
-        <Upload className="size-10 mx-auto mb-4 text-gray-400" />
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          Arraste arquivos aqui ou clique para selecionar
+        <Upload className="size-6 mx-auto mb-2 text-gray-400" />
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+          Arraste ou clique para selecionar
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-          Máximo {maxFiles} arquivos, até {maxSize}MB cada
+        <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">
+          Máx. {maxFiles} arquivos, {maxSize}MB cada
         </p>
         <input
           type="file"

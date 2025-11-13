@@ -31,6 +31,8 @@ import {
   CreditCard,
   LogOut,
   ChevronUp,
+  CheckSquare,
+  Wallet,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
@@ -49,6 +51,16 @@ export function AppSidebar() {
       title: t('nav.dashboard'),
       icon: LayoutDashboard,
       href: '/dashboard',
+    },
+    {
+      title: 'Meu trabalho',
+      icon: CheckSquare,
+      href: '/meu-trabalho',
+    },
+    {
+      title: 'Minha finança',
+      icon: Wallet,
+      href: '/minha-financa',
     },
   ]
 

@@ -7,6 +7,8 @@ import { i18n } from '@/lib/i18n';
 interface PrioritySelectorProps {
   value: TaskPriority;
   onChange: (priority: TaskPriority) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const priorityConfig: Record<TaskPriority, { label: string; icon: string; color: string }> = {
@@ -16,12 +18,12 @@ const priorityConfig: Record<TaskPriority, { label: string; icon: string; color:
   low: { label: 'Baixa', icon: '⚪', color: 'text-gray-600 dark:text-gray-400' },
 };
 
-export function PrioritySelector({ value, onChange }: PrioritySelectorProps) {
+export function PrioritySelector({ value, onChange, open, onOpenChange }: PrioritySelectorProps) {
   const t = i18n.translate.bind(i18n);
   const current = priorityConfig[value] || priorityConfig['medium'];
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <button className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           <Flag className={cn('size-4', current.color)} />
@@ -33,7 +35,10 @@ export function PrioritySelector({ value, onChange }: PrioritySelectorProps) {
           {(Object.entries(priorityConfig) as [TaskPriority, typeof priorityConfig[TaskPriority]][]).map(([priority, config]) => (
             <button
               key={priority}
-              onClick={() => onChange(priority)}
+              onClick={() => {
+                onChange(priority);
+                onOpenChange?.(false);
+              }}
               className={cn(
                 'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-800',
                 value === priority && 'bg-gray-100 dark:bg-gray-800'
@@ -49,7 +54,13 @@ export function PrioritySelector({ value, onChange }: PrioritySelectorProps) {
             </button>
           ))}
           <div className="border-t dark:border-gray-700 my-1" />
-          <button className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button 
+            onClick={() => {
+              onChange('medium');
+              onOpenChange?.(false);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
             <X className="size-4" />
             Limpar
           </button>

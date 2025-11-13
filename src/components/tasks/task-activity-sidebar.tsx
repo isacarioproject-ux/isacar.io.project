@@ -1,12 +1,12 @@
-import { addComment, getCurrentUserId } from '@/lib/tasks/tasks-storage';
+import { addComment, getCurrentUserId, addTaskLink, deleteTaskLink } from '@/lib/tasks/tasks-storage';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Comment, Activity } from '@/types/tasks';
+import { Comment, Activity, TaskLink } from '@/types/tasks';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { AtSign, Paperclip, Send, Smile } from 'lucide-react';
+import { AtSign, Paperclip, Send, Smile, Link2, Plus, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '@/hooks/use-i18n';
 
@@ -14,6 +14,7 @@ interface TaskActivitySidebarProps {
   taskId: string;
   comments: Comment[];
   activities: Activity[];
+  links?: TaskLink[];
   onUpdate: () => void;
 }
 
@@ -21,21 +22,25 @@ export function TaskActivitySidebar({
   taskId,
   comments,
   activities,
+  links = [],
   onUpdate,
 }: TaskActivitySidebarProps) {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<'atividade' | 'comentarios'>('atividade');
+  const [activeTab, setActiveTab] = useState<'atividade' | 'comentarios' | 'links'>('atividade');
   const [commentText, setCommentText] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
 
   const handleSendComment = async () => {
     if (!commentText.trim()) return;
 
+    try {
     const userId = await getCurrentUserId();
     const newComment: Comment = {
       id: `comment-${Date.now()}`,
       task_id: taskId,
       user_id: userId,
-      user_name: 'Kleove (você)',
+        user_name: 'Você',
       text: commentText,
       created_at: new Date().toISOString(),
       mentions: [],
@@ -45,6 +50,54 @@ export function TaskActivitySidebar({
     setCommentText('');
     toast.success(t('tasks.activity.commentAdded'));
     onUpdate();
+    } catch (error) {
+      console.error('Erro ao adicionar comentário:', error);
+      toast.error('Erro ao adicionar comentário');
+    }
+  };
+
+  const handleAddLink = async () => {
+    if (!linkUrl.trim()) {
+      toast.error('Digite uma URL válida');
+      return;
+    }
+
+    try {
+      // Validar URL
+      let url = linkUrl.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = `https://${url}`;
+      }
+
+      await addTaskLink(taskId, url, linkTitle || undefined);
+      setLinkUrl('');
+      setLinkTitle('');
+      toast.success('Link adicionado');
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao adicionar link:', error);
+      toast.error('Erro ao adicionar link');
+    }
+  };
+
+  const handleDeleteLink = async (linkId: string) => {
+    try {
+      await deleteTaskLink(linkId);
+      toast.success('Link removido');
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao remover link:', error);
+      toast.error('Erro ao remover link');
+    }
+  };
+
+  const getDomainFromUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.replace('www.', '');
+    } catch {
+      return url;
+    }
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -74,11 +127,14 @@ export function TaskActivitySidebar({
       <div className="p-4 border-b dark:border-gray-800 bg-white dark:bg-black">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="w-full">
-            <TabsTrigger value="atividade" className="flex-1">
+            <TabsTrigger value="atividade" className="flex-1 text-xs">
               {t('tasks.activity.title')}
             </TabsTrigger>
-            <TabsTrigger value="comentarios" className="flex-1">
+            <TabsTrigger value="comentarios" className="flex-1 text-xs">
               {t('tasks.activity.comments')} ({(comments || []).length})
+            </TabsTrigger>
+            <TabsTrigger value="links" className="flex-1 text-xs">
+              Links ({(links || []).length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -169,10 +225,69 @@ export function TaskActivitySidebar({
             )}
           </>
         )}
+
+        {activeTab === 'links' && (
+          <>
+            {(links || []).map((link, index) => (
+              <motion.div
+                key={link.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 border dark:border-gray-700"
+              >
+                <div className="flex-1 min-w-0">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Link2 className="size-4 text-gray-400 flex-shrink-0" />
+                        <p className="text-sm font-medium dark:text-gray-100 truncate">
+                          {link.title || getDomainFromUrl(link.url)}
+                        </p>
+                        <ExternalLink className="size-3 text-gray-400 flex-shrink-0" />
+                      </div>
+                      {link.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                          {link.description}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 truncate">
+                        {getDomainFromUrl(link.url)}
+                      </p>
+                    </div>
+                  </a>
+                </div>
+                <button
+                  onClick={() => handleDeleteLink(link.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                >
+                  <X className="size-4 text-red-500" />
+                </button>
+              </motion.div>
+            ))}
+            {(links || []).length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center text-gray-500 dark:text-gray-400 py-8"
+              >
+                <Link2 className="size-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum link adicionado</p>
+              </motion.div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Comment Input */}
+      {/* Input Footer - Comentário ou Link */}
       <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-black">
+        {activeTab === 'comentarios' ? (
+          <>
         <div className="flex gap-2 mb-2">
           <Input
             placeholder={t('tasks.activity.writeComment')}
@@ -224,6 +339,44 @@ export function TaskActivitySidebar({
             </Button>
           </motion.div>
         </div>
+          </>
+        ) : activeTab === 'links' ? (
+          <div className="space-y-2">
+            <Input
+              placeholder="https://exemplo.com"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddLink();
+                }
+              }}
+              className="text-sm"
+            />
+            <Input
+              placeholder="Título (opcional)"
+              value={linkTitle}
+              onChange={(e) => setLinkTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddLink();
+                }
+              }}
+              className="text-sm"
+            />
+            <Button
+              size="sm"
+              onClick={handleAddLink}
+              disabled={!linkUrl.trim()}
+              className="w-full"
+            >
+              <Plus className="size-4 mr-1" />
+              Adicionar Link
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

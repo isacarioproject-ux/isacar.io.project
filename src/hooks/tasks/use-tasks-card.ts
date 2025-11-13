@@ -18,8 +18,16 @@ export function useTasksCard() {
     try {
       const allTasks = await getTasks();
       setTasks(allTasks);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading tasks:', error);
+      
+      // Se o erro for de workspace não encontrado, mostrar mensagem específica
+      if (error?.message?.includes('workspace')) {
+        console.warn('⚠️ Nenhum workspace ativo. As tasks não serão carregadas até que um workspace seja selecionado.');
+      }
+      
+      // Continuar com array vazio para não quebrar a UI
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -58,7 +66,7 @@ export function useTasksCard() {
         .filter(
           task =>
             task.status === 'done' &&
-            (task.assignee_ids.includes(userId) || task.creator_id === userId)
+            (task.assignee_ids.includes(userId) || task.created_by === userId)
         )
         .sort((a, b) => {
           const dateA = new Date(a.completed_at || a.created_at).getTime();
@@ -72,7 +80,7 @@ export function useTasksCard() {
       return tasks
         .filter(
           task =>
-            task.creator_id === userId &&
+            task.created_by === userId &&
             !task.assignee_ids.includes(userId) &&
             task.status !== 'done'
         )
@@ -87,7 +95,7 @@ export function useTasksCard() {
     const pendingTasks = tasks.filter(
       task =>
         task.status !== 'done' &&
-        (task.assignee_ids.includes(userId) || task.creator_id === userId)
+        (task.assignee_ids.includes(userId) || task.created_by === userId)
     );
 
     const groups: TaskGroups = {

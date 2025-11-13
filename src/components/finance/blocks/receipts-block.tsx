@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Upload, FileText, Image as ImageIcon, Trash2, Download, Eye } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -115,7 +116,7 @@ export const ReceiptsBlock = ({
           })
 
         if (uploadError) {
-          toast.error(`Erro ao fazer upload de ${file.name}`, {
+          toast.error(`${t('finance.receipts.uploadError')} ${file.name}`, {
             description: uploadError.message,
           })
           continue
@@ -139,7 +140,7 @@ export const ReceiptsBlock = ({
             .from('finance-receipts')
             .remove([storagePath])
 
-          toast.error(`Erro ao salvar ${file.name}`, {
+          toast.error(`${t('finance.receipts.saveError')} ${file.name}`, {
             description: dbError.message,
           })
           continue
@@ -202,8 +203,20 @@ export const ReceiptsBlock = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+      <div className="space-y-4">
+        <Skeleton className="h-32 w-full rounded-lg" />
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+              <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
+              <div className="flex-1 space-y-1">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+              <Skeleton className="h-8 w-8 rounded flex-shrink-0" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

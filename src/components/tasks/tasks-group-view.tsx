@@ -18,6 +18,7 @@ interface TasksGroupViewProps {
   onUpdate: () => void;
   isGroupExpanded: (groupName: string) => boolean;
   toggleGroup: (groupName: string) => void;
+  variant?: 'compact' | 'table';
 }
 
 const getGroupLabel = (t: any, key: string) => {
@@ -43,6 +44,7 @@ export function TasksGroupView({
   onUpdate,
   isGroupExpanded,
   toggleGroup,
+  variant = 'compact',
 }: TasksGroupViewProps) {
   const { t } = useI18n();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -55,11 +57,7 @@ export function TasksGroupView({
 
   const handleCreateTask = async (taskData: any) => {
     try {
-      const { createTask, getCurrentUserId, enableSupabase } = await import('@/lib/tasks/tasks-storage');
-      
-      // Habilitar Supabase se ainda não estiver
-      enableSupabase();
-      console.log('✅ Supabase habilitado');
+      const { createTask, getCurrentUserId } = await import('@/lib/tasks/tasks-storage');
       
       const userId = await getCurrentUserId();
       console.log('👤 User ID:', userId);
@@ -80,7 +78,7 @@ export function TasksGroupView({
         start_date: null,
         completed_at: null,
         assignee_ids: [userId],
-        creator_id: userId,
+        created_by: userId,
         tag_ids: taskData.tags || [],
         project_id: null,
         list_id: taskData.list || 'lista-pessoal',
@@ -110,6 +108,7 @@ export function TasksGroupView({
 
   return (
     <div className="space-y-1">
+      
       {(Object.keys(groups) as Array<keyof TaskGroups>).map(groupKey => {
         const tasks = groups[groupKey];
         const isExpanded = isGroupExpanded(groupKey);
@@ -179,6 +178,7 @@ export function TasksGroupView({
                       task={task}
                       onTaskClick={onTaskClick}
                       onUpdate={onUpdate}
+                      variant={variant}
                     />
                   </motion.div>
                 ))}

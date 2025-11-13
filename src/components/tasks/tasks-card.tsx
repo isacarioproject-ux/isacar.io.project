@@ -10,6 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ResizableCard } from '@/components/ui/resizable-card';
 import { useTasksCard } from '@/hooks/tasks/use-tasks-card';
 import { TasksGroupView } from '@/components/tasks/tasks-group-view';
@@ -17,9 +22,10 @@ import { TasksListView } from '@/components/tasks/tasks-list-view';
 import { TasksDelegatedView } from '@/components/tasks/tasks-delegated-view';
 import { TaskModal } from '@/components/tasks/task-modal';
 import { TaskTemplateSelector } from '@/components/tasks/task-template-selector';
+import { QuickAddTaskDialog } from '@/components/tasks/quick-add-task-dialog';
 import { TasksExpandedView } from '@/components/tasks/tasks-expanded-view';
 import { TasksCardSkeleton, TasksListSkeleton } from '@/components/tasks/tasks-card-skeleton';
-import { MoreVertical, Plus, X, CheckSquare, Settings, Maximize2, GripVertical, Sparkles } from 'lucide-react';
+import { MoreVertical, Plus, X, CheckSquare, Settings, Maximize2, GripVertical, Sparkles, Bell } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { TaskGroups, Task, TaskTemplate } from '@/types/tasks';
@@ -48,6 +54,9 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
   const [isExpandedViewOpen, setIsExpandedViewOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickAddInitialTab, setQuickAddInitialTab] = useState<'tarefa' | 'lembrete'>('tarefa');
+  const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
 
   // Calcular total de tarefas para animação
   const totalTasks = Object.values(tasks).flat().length;
@@ -80,7 +89,7 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
       created_at: new Date().toISOString(),
       completed_at: null,
       assignee_ids: [userId],
-      creator_id: userId,
+      created_by: userId,
       tag_ids: [],
       project_id: null,
       list_id: null,
@@ -106,7 +115,7 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
           created_at: new Date().toISOString(),
           completed_at: null,
           assignee_ids: [userId],
-          creator_id: userId,
+          created_by: userId,
           tag_ids: [],
           project_id: null,
           list_id: null,
@@ -122,6 +131,49 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
     toast.success('Tarefa criada com sucesso!');
     refetch();
     handleTaskClick(newTask.id);
+  };
+
+  const handleQuickAddTask = async (taskData: any) => {
+    try {
+      const userId = await getCurrentUserId();
+      
+      // Converter prioridade do dialog para o formato do banco
+      let priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium';
+      if (taskData.priority === 'urgente') priority = 'urgent';
+      else if (taskData.priority === 'alta') priority = 'high';
+      else if (taskData.priority === 'normal') priority = 'medium';
+      else if (taskData.priority === 'baixa') priority = 'low';
+      
+      const newTask: any = {
+        title: taskData.title,
+        description: taskData.description || '',
+        status: 'todo' as const,
+        priority,
+        due_date: taskData.selectedDateTag ? taskData.selectedDateTag.toISOString() : null,
+        start_date: null,
+        completed_at: null,
+        assignee_ids: [userId],
+        created_by: userId,
+        tag_ids: taskData.tags || [],
+        project_id: null,
+        list_id: taskData.list || 'lista-pessoal',
+        parent_task_id: null,
+        custom_fields: [],
+      };
+      
+      const createdTask = await createTask(newTask);
+      toast.success('Tarefa criada com sucesso!');
+      refetch();
+    } catch (error) {
+      console.error('Erro ao criar tarefa:', error);
+      toast.error('Erro ao criar tarefa: ' + (error as Error).message);
+    }
+  };
+
+  const handleQuickAddReminder = async (reminderData: any) => {
+    // O ReminderTab já cria o lembrete no Supabase com todas as funcionalidades avançadas
+    // Este handler apenas atualiza a UI
+    refetch();
   };
 
   // Atalhos de teclado
@@ -210,7 +262,58 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
             {/* Botões com Micro-interações - Sempre visíveis em mobile */}
             <TooltipProvider>
             <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-              {/* Botão Adicionar com rotação */}
+              {/* Botão Adicionar com Popover */}
+              <Popover open={isAddPopoverOpen} onOpenChange={setIsAddPopoverOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                        >
+                          <motion.div
+                            whileHover={{ rotate: 90 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                          >
+                            <Plus className="size-3.5" />
+                          </motion.div>
+                        </Button>
+                      </motion.div>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t('tasks.card.addTask')}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-52 p-1" align="end">
+                  <button
+                    onClick={() => {
+                      setQuickAddInitialTab('tarefa');
+                      setIsQuickAddOpen(true);
+                      setIsAddPopoverOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded hover:bg-muted transition-colors"
+                  >
+                    <CheckSquare className="size-4" />
+                    <span>{t('tasks.group.addTask')}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setQuickAddInitialTab('lembrete');
+                      setIsQuickAddOpen(true);
+                      setIsAddPopoverOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded hover:bg-muted transition-colors"
+                  >
+                    <Bell className="size-4" />
+                    <span>{t('tasks.group.addReminder')}</span>
+                  </button>
+                </PopoverContent>
+              </Popover>
+
+              {/* Botão Templates */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -220,17 +323,12 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
                       className="h-7 w-7"
                       onClick={() => setIsTemplateSelectorOpen(true)}
                     >
-                      <motion.div
-                        whileHover={{ rotate: 90 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        <Plus className="size-3.5" />
-                      </motion.div>
+                      <Sparkles className="size-3.5" />
                     </Button>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('tasks.card.addTask')}</p>
+                  <p>Templates</p>
                 </TooltipContent>
               </Tooltip>
               
@@ -414,6 +512,15 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
           // TODO: Implementar toggle
           refetch();
         }}
+      />
+
+      {/* Quick Add Dialog */}
+      <QuickAddTaskDialog
+        open={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        onCreateTask={handleQuickAddTask}
+        onCreateReminder={handleQuickAddReminder}
+        initialTab={quickAddInitialTab}
       />
     </>
   );

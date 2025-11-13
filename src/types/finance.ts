@@ -42,6 +42,7 @@ export interface FinanceCategory {
   user_id: string
   workspace_id: string | null
   name: string
+  description?: string | null
   type: 'income' | 'expense'
   color: string | null
   icon: string | null
