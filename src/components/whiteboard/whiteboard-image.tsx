@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
 import Draggable from 'react-draggable'
 import { Button } from '@/components/ui/button'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, Maximize2 } from 'lucide-react'
 import { WhiteboardItem } from '@/types/whiteboard'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import { useI18n } from '@/hooks/use-i18n'
 
 interface Props {
   item: WhiteboardItem
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export const WhiteboardImage = ({ item, onUpdate, onDelete }: Props) => {
+  const { t } = useI18n()
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
   
@@ -58,17 +61,24 @@ export const WhiteboardImage = ({ item, onUpdate, onDelete }: Props) => {
       handle=".drag-handle"
       nodeRef={nodeRef}
     >
-      <div 
+      <motion.div 
         ref={nodeRef}
         className="absolute cursor-move group"
         style={{ width, height }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
       >
-        <div 
+        <motion.div 
           className={cn(
-            "drag-handle w-full h-full rounded-lg relative transition-all",
-            "hover:shadow-lg",
+            "drag-handle w-full h-full rounded-lg relative transition-all duration-200",
             !imageLoaded && "border border-dashed border-muted-foreground/30"
           )}
+          whileHover={{ 
+            scale: 1.02,
+            boxShadow: "0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+          }}
+          whileTap={{ scale: 0.98 }}
         >
           {!imageLoaded && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
@@ -79,8 +89,8 @@ export const WhiteboardImage = ({ item, onUpdate, onDelete }: Props) => {
           {imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
               <div className="text-center text-xs text-muted-foreground">
-                <p>Erro ao carregar</p>
-                <p className="text-[10px] mt-1">imagem</p>
+                <p>{t('whiteboard.imageError')}</p>
+                <p className="text-[10px] mt-1">{t('whiteboard.imageErrorSub')}</p>
               </div>
             </div>
           )}
@@ -90,33 +100,45 @@ export const WhiteboardImage = ({ item, onUpdate, onDelete }: Props) => {
               src={item.imageUrl}
               alt="Whiteboard"
               className={cn(
-                "w-full h-full object-contain rounded-lg transition-opacity",
+                "w-full h-full object-contain rounded-lg transition-opacity duration-300",
                 imageLoaded ? "opacity-100" : "opacity-0"
               )}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
           )}
-        </div>
+        </motion.div>
         
-        <Button 
-          size="icon" 
-          variant="ghost" 
-          className="absolute -top-2 -right-2 h-6 w-6 sm:h-5 sm:w-5 bg-background hover:bg-destructive/10 hover:text-destructive shadow-sm sm:opacity-0 sm:group-hover:opacity-100 transition-opacity touch-auto" 
-          onClick={() => onDelete(item.id)}
+        {/* Botão X - Invisível por padrão, aparece no hover/touch */}
+        <motion.div
+          className="absolute -top-2 -right-2 z-10"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
-          <X className="h-4 w-4 sm:h-3 sm:w-3" />
-        </Button>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-6 w-6 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200" 
+            onClick={() => onDelete(item.id)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </motion.div>
 
-        {/* Resize handle - visível sempre no mobile, hover no desktop */}
-        <div
+        {/* Resize handle - Invisível por padrão, aparece no hover/touch */}
+        <motion.div
           onPointerDown={onResizeStart}
-          className="absolute -bottom-2 -right-2 h-6 w-6 sm:h-4 sm:w-4 bg-primary rounded-full cursor-se-resize shadow-lg ring-2 ring-background sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center touch-auto"
-          title="Redimensionar"
+          className="absolute -bottom-2 -right-2 z-10"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
-          <div className="h-1.5 w-1.5 bg-background rounded-full" />
-        </div>
-      </div>
+          <div className="h-7 w-7 rounded-full bg-primary/90 hover:bg-primary text-white shadow-md cursor-se-resize opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
+            <Maximize2 className="h-3 w-3" />
+          </div>
+        </motion.div>
+      </motion.div>
     </Draggable>
   )
 }

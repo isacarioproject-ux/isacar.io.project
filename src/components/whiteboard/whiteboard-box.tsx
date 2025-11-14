@@ -1,6 +1,6 @@
 import Draggable from 'react-draggable'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { X, Maximize2 } from 'lucide-react'
 import { WhiteboardItem } from '@/types/whiteboard'
 import { useRef } from 'react'
 
@@ -52,26 +52,31 @@ export const WhiteboardBox = ({ item, onUpdate, onDelete }: Props) => {
       handle=".drag-handle"
       nodeRef={nodeRef}
     >
-      <div ref={nodeRef} className="absolute cursor-move">
+      <div ref={nodeRef} className="absolute cursor-move group">
         <div 
-          className="drag-handle border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors relative"
+          className="drag-handle border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 hover:bg-primary/10 transition-all duration-200 relative"
           style={{ width: item.width || 200, height: item.height || 150 }}
         >
+          {/* Botão X - superior esquerdo */}
           <Button 
             size="icon" 
             variant="ghost" 
-            className="absolute top-1 right-1 h-5 w-5 hover:bg-destructive/10 hover:text-destructive" 
-            onClick={() => onDelete(item.id)}
+            className="absolute -top-2 -left-2 h-6 w-6 md:h-7 md:w-7 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200" 
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(item.id)
+            }}
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
           </Button>
 
-          {/* Resize handle */}
+          {/* Resize handle - inferior direito */}
           <div
             onPointerDown={onResizeStart}
-            className="absolute -bottom-1 -right-1 h-3 w-3 bg-primary rounded-sm cursor-se-resize shadow ring-2 ring-background"
-            title="Redimensionar"
-          />
+            className="absolute -bottom-2 -right-2 h-6 w-6 md:h-7 md:w-7 rounded-full bg-primary/90 hover:bg-primary text-white shadow-md cursor-se-resize opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center"
+          >
+            <Maximize2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+          </div>
         </div>
       </div>
     </Draggable>

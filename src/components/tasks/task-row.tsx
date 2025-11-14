@@ -178,14 +178,14 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false, varia
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Data de vencimento: {new Date(task.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-              {isOverdue && <p className="text-red-500 font-semibold mt-1">⚠️ Atrasada</p>}
+              <p>{t('tasks.dueDate')}: {new Date(task.due_date).toLocaleDateString()}</p>
+              {isOverdue && <p className="text-red-500 font-semibold mt-1">{t('tasks.overdue')}</p>}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
 
-      {/* Prioridade - Sempre visível em table */}
+      {/* Priority - Always visible in table */}
       {!simplified && (
         <TooltipProvider>
           <Tooltip>
@@ -195,7 +195,7 @@ export function TaskRow({ task, onTaskClick, onUpdate, simplified = false, varia
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Prioridade: {priorityLabels[task.priority]}</p>
+              <p>{t('tasks.priority.label')}: {priorityLabels[task.priority]}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

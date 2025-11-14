@@ -329,8 +329,8 @@ export function EmpresaExpandedView({ open, onClose }: EmpresaExpandedViewProps)
                                 ? t('dashboard.management.allStatuses')
                                 : {
                                     active: t('dashboard.management.status.active'),
-                                    draft: t('dashboard.management.status.draft') ?? 'Rascunho',
-                                    archived: t('dashboard.management.status.archived') ?? 'Arquivado',
+                                    draft: t('company.draft'),
+                                    archived: t('company.archived'),
                                   }[statusFilter]}
                             </Button>
                           </DropdownMenuTrigger>
@@ -346,10 +346,10 @@ export function EmpresaExpandedView({ open, onClose }: EmpresaExpandedViewProps)
                               {t('dashboard.management.status.active')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusFilterChange('draft')} className="text-xs">
-                              {t('dashboard.management.status.draft') ?? 'Rascunho'}
+                              {t('company.draft')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusFilterChange('archived')} className="text-xs">
-                              {t('dashboard.management.status.archived') ?? 'Arquivado'}
+                              {t('company.archived')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

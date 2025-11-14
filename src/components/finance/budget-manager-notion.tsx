@@ -151,6 +151,7 @@ export const BudgetManagerNotion = ({
   const [expenseEntries, setExpenseEntries] = useState<ExpenseEntry[]>([])
   const [reserveEntries, setReserveEntries] = useState<ReserveEntry[]>([])
   const [metaEntries, setMetaEntries] = useState<MetaEntry[]>([])
+  const [financeGoals, setFinanceGoals] = useState<any[]>([]) // Metas da tabela finance_goals
   
   // Estado para mês/ano atual
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1)
@@ -225,10 +226,13 @@ export const BudgetManagerNotion = ({
           date: r.date || new Date().toISOString().split('T')[0]
         })))
         
-        // Carregar metas e investimentos do template_config
+        // Carregar metas da tabela finance_goals (nova integração)
+        await fetchFinanceGoals()
+        
+        // Carregar metas antigas do template_config (para compatibilidade)
         const metas = config.metas || []
         const metasDoMes = metas.filter((m: any) => m.month === month && m.year === year)
-        setMetaEntries(metasDoMes.map((m: any) => ({
+        const legacyMetas = metasDoMes.map((m: any) => ({
           id: m.id || Date.now().toString() + Math.random(),
           name: m.name,
           type: m.type || 'meta',
@@ -236,10 +240,32 @@ export const BudgetManagerNotion = ({
           date: m.date || new Date(year, month - 1, 1).toISOString().split('T')[0],
           month: m.month,
           year: m.year
-        })))
+        }))
+        
+        setMetaEntries(legacyMetas)
       }
     } catch (err: any) {
       console.error('Error fetching document data:', err)
+    }
+  }
+
+  // Carregar metas da tabela finance_goals
+  const fetchFinanceGoals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('finance_goals')
+        .select('*')
+        .eq('finance_document_id', currentDocumentId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      
+      if (data) {
+        setFinanceGoals(data)
+        console.log('🎯 Metas carregadas do GoalsBlock:', data)
+      }
+    } catch (err: any) {
+      console.error('Error fetching finance goals:', err)
     }
   }
 
@@ -1958,6 +1984,109 @@ export const BudgetManagerNotion = ({
                       </span>
                     </div>
                   </div>
+
+                  {/* Nova seção: Metas do GoalsBlock */}
+                  {financeGoals.length > 0 && (
+                    <div className="mt-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <Target className="h-4 w-4 text-purple-600" />
+                          Metas Financeiras (GoalsBlock)
+                        </h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {financeGoals.length} meta{financeGoals.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {financeGoals.map((goal) => {
+                          // Calcular gastos da categoria no mês atual
+                          const spent = transactions
+                            .filter(t => {
+                              if (t.type !== 'expense' || t.status !== 'completed') return false
+                              const transactionDate = new Date(t.transaction_date)
+                              return transactionDate.getMonth() === currentMonth - 1 && 
+                                     transactionDate.getFullYear() === currentYear &&
+                                     t.category === goal.category
+                            })
+                            .reduce((sum, t) => sum + Number(t.amount), 0)
+                          
+                          const percentage = (spent / goal.target_amount) * 100
+                          const isOverBudget = percentage >= 100
+                          const isWarning = percentage >= 80 && percentage < 100
+
+                          return (
+                            <motion.div
+                              key={goal.id}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                                    {goal.category}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 dark:text-purple-300">
+                                    {goal.period === 'monthly' ? 'Mensal' : 'Anual'}
+                                  </Badge>
+                                  {isOverBudget && (
+                                    <span className="text-red-500">⚠</span>
+                                  )}
+                                  {isWarning && !isOverBudget && (
+                                    <TrendingUp className="h-3 w-3 text-yellow-500" />
+                                  )}
+                                </div>
+                                <span className="text-xs font-mono text-purple-800 dark:text-purple-200">
+                                  {formatCurrency(goal.target_amount)}
+                                </span>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground">
+                                    Gasto: {formatCurrency(spent)}
+                                  </span>
+                                  <span className={`font-medium ${
+                                    isOverBudget ? 'text-red-600' : 
+                                    isWarning ? 'text-yellow-600' : 
+                                    'text-green-600'
+                                  }`}>
+                                    {percentage.toFixed(0)}%
+                                  </span>
+                                </div>
+                                
+                                <div className="w-full bg-purple-200 dark:bg-purple-900/50 rounded-full h-1.5">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(percentage, 100)}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    className={`h-full rounded-full ${
+                                      isOverBudget ? 'bg-red-500' : 
+                                      isWarning ? 'bg-yellow-500' : 
+                                      'bg-green-500'
+                                    }`}
+                                  />
+                                </div>
+                                
+                                {isOverBudget && (
+                                  <p className="text-xs text-red-600 font-medium mt-1">
+                                    Excedido em {formatCurrency(spent - goal.target_amount)}
+                                  </p>
+                                )}
+                              </div>
+                            </motion.div>
+                          )
+                        })}
+                      </div>
+                      
+                      <div className="mt-3 p-2 bg-purple-100 dark:bg-purple-950/30 rounded text-center">
+                        <p className="text-xs text-purple-700 dark:text-purple-300">
+                          💡 Essas metas são sincronizadas com o bloco "Metas Financeiras" do documento
+                        </p>
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           </ResizablePanel>

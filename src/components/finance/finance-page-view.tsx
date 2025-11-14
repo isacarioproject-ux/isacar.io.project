@@ -49,6 +49,7 @@ import { FinanceViewer } from './finance-viewer'
 import { CategoriesManager } from './categories-manager'
 import { BudgetManagerNotion } from './budget-manager-notion'
 import { supabase } from '@/lib/supabase'
+import { createDefaultBlocksForDocument } from '@/lib/finance-blocks-utils'
 import {
   Tooltip,
   TooltipContent,
@@ -256,6 +257,10 @@ export const FinancePageView = () => {
       if (newDoc) {
         setSelectedDocId(newDoc.id)
         refetch()
+        
+        // Criar blocos padrão automaticamente para o novo documento
+        await createDefaultBlocksForDocument(newDoc.id)
+        
         toast.success(`${template.name} ${t('finance.card.created')}`)
       }
     } catch (err: any) {

@@ -88,10 +88,10 @@ export function QuickAddTaskDialog({
   };
 
   const priorityConfig = {
-    'urgente': { label: 'Prioridade urgente', color: 'text-red-500', icon: '🚩' },
-    'alta': { label: 'Prioridade alta', color: 'text-orange-500', icon: '🚩' },
-    'normal': { label: 'Prioridade normal', color: 'text-blue-500', icon: '🚩' },
-    'baixa': { label: 'Prioridade baixa', color: 'text-gray-500', icon: '🚩' }
+    'urgente': { label: t('tasks.priorityUrgent'), color: 'text-red-500', icon: '🚩' },
+    'alta': { label: t('tasks.priorityHigh'), color: 'text-orange-500', icon: '🚩' },
+    'normal': { label: t('tasks.priorityNormal'), color: 'text-blue-500', icon: '🚩' },
+    'baixa': { label: t('tasks.priorityLow'), color: 'text-gray-500', icon: '🚩' }
   };
 
   // Verificar se há conteúdo preenchido
@@ -710,13 +710,13 @@ export function QuickAddTaskDialog({
                   ) : (
                     <>
                       <Flag className="size-3" />
-                      Prioridade
+                      {t('tasks.priority.label')}
                     </>
                   )}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-2" align="start">
-                <div className="mb-2 px-2 text-xs text-gray-500">Prioridade da tarefa</div>
+                <div className="mb-2 px-2 text-xs text-gray-500">{t('tasks.priorityDescription')}</div>
                 <button 
                   onClick={() => setPriority('urgente')}
                   className="flex items-center gap-2 w-full px-2 py-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"

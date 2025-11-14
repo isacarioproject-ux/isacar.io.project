@@ -54,7 +54,7 @@ import {
   Layers, // Toggle sidebar
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { useFinanceCard } from '@/hooks/use-finance-card'
 import { toast } from 'sonner'
@@ -102,9 +102,10 @@ const getDocumentIcon = (type: string) => {
   }
 }
 
-export const FinanceCard = ({ workspaceId, dragHandleProps }: FinanceCardProps) => {
+export function FinanceCard({ workspaceId, dragHandleProps }: FinanceCardProps) {
   const { t } = useI18n()
   const { currentWorkspace } = useWorkspace()
+  const dateFnsLocale = useDateFnsLocale()
   const [cardName, setCardName] = useState(() => {
     const saved = localStorage.getItem('finance-card-name')
     return saved || t('finance.card.finances')

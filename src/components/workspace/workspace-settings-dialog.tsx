@@ -49,7 +49,7 @@ import { toast } from 'sonner'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { WorkspaceMemberWithUser, WorkspaceInvite } from '@/types/workspace'
 import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 
 interface WorkspaceSettingsDialogProps {
   open: boolean
@@ -62,6 +62,7 @@ export const WorkspaceSettingsDialog = ({
 }: WorkspaceSettingsDialogProps) => {
   const { t } = useI18n()
   const { currentWorkspace, refreshWorkspaces } = useWorkspace()
+  const dateFnsLocale = useDateFnsLocale()
 
   const [activeTab, setActiveTab] = useState('general')
   
@@ -573,9 +574,9 @@ export const WorkspaceSettingsDialog = ({
                           <div>
                             <p className="text-sm font-medium">{invite.email}</p>
                             <p className="text-xs text-muted-foreground">
-                              Expira em {formatDistanceToNow(new Date(invite.expires_at), {
+                              {t('workspace.expiresIn')} {formatDistanceToNow(new Date(invite.expires_at), {
                                 addSuffix: true,
-                                locale: ptBR,
+                                locale: dateFnsLocale,
                               })}
                             </p>
                           </div>

@@ -315,7 +315,12 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || uploadingImage) return // Prevenir uploads múltiplos
+
+    // Reset input imediatamente para prevenir resubmissões
+    if (imageInputRef.current) {
+      imageInputRef.current.value = ''
+    }
 
     // Validar tipo de arquivo
     if (!file.type.startsWith('image/')) {
@@ -333,26 +338,26 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
       return
     }
 
-    setUploadingImage(true)
-    const imageUrl = await uploadImage(file)
-    
-    if (imageUrl) {
-      addItem({
-        id: nanoid(),
-        type: 'image',
-        position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 },
-        imageUrl,
-        width: 200,
-        height: 200
-      })
-      toast.success('Imagem adicionada com sucesso!')
-    }
-    
-    setUploadingImage(false)
-    
-    // Reset input
-    if (imageInputRef.current) {
-      imageInputRef.current.value = ''
+    try {
+      setUploadingImage(true)
+      const imageUrl = await uploadImage(file)
+      
+      if (imageUrl) {
+        addItem({
+          id: nanoid(),
+          type: 'image',
+          position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 },
+          imageUrl,
+          width: 200,
+          height: 200
+        })
+        toast.success('Imagem adicionada com sucesso!')
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error)
+      toast.error('Erro ao fazer upload da imagem')
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -391,9 +396,9 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
   }
 
   const handlePointerMove = (clientX: number, clientY: number) => {
-    if (!canvasRef.current) return
+    if (!containerRef.current) return
 
-    const rect = canvasRef.current.getBoundingClientRect()
+    const rect = containerRef.current.getBoundingClientRect()
     const x = (clientX - rect.left - pan.x) / zoom
     const y = (clientY - rect.top - pan.y) / zoom
     updateCursor(x, y)
@@ -447,9 +452,9 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
       setIsPanning(true)
       setPanStart({ x: e.clientX, y: e.clientY })
     } else if (selectedTool === 'pen') {
-      const rect = canvasRef.current?.getBoundingClientRect()
+      const rect = containerRef.current?.getBoundingClientRect()
       if (!rect) return
-      if (!canvasRef.current) return
+      if (!containerRef.current) return
       const x = (e.clientX - rect.left - pan.x) / zoom
       const y = (e.clientY - rect.top - pan.y) / zoom
       if (penMode === 'erase') {
@@ -496,7 +501,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
       setIsPanning(true)
       setPanStart({ x: touch.clientX, y: touch.clientY })
     } else if (selectedTool === 'pen') {
-      const rect = canvasRef.current?.getBoundingClientRect()
+      const rect = containerRef.current?.getBoundingClientRect()
       if (!rect) return
       const x = (touch.clientX - rect.left - pan.x) / zoom
       const y = (touch.clientY - rect.top - pan.y) / zoom
@@ -1029,8 +1034,8 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "transition-all p-0 flex flex-col [&>button]:hidden",
-        fullscreen ? "max-w-[100vw] h-[100vh] w-[100vw] rounded-none" : "max-w-7xl h-[90vh]"
+        "transition-all p-0 flex flex-col [&>button]:hidden !max-w-none !w-auto !h-auto",
+        fullscreen ? "!max-w-[100vw] !h-[100vh] !w-[100vw] rounded-none" : "!max-w-[90vw] !w-[90vw] !h-[85vh]"
       )}>
         {/* DialogTitle para acessibilidade - sempre presente */}
         <DialogTitle className="sr-only">{whiteboardName || 'Whiteboard'}</DialogTitle>
@@ -2100,7 +2105,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                 <MenubarMenu>
                   <MenubarTrigger className="gap-1 px-2 py-1.5 text-xs">
                     <TextCursorInput className="h-3 w-3" />
-                    <span className="hidden sm:inline font-medium">Fonte</span>
+                    <span className="hidden sm:inline font-medium">{t('whiteboard.font')}</span>
                   </MenubarTrigger>
                   <MenubarContent side="top" align="center" sideOffset={10} className="min-w-[12rem] px-1.5 py-1.5" data-text-menubar="true">
                     <MenubarRadioGroup
@@ -2122,7 +2127,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                 <MenubarMenu>
                   <MenubarTrigger className="gap-1 px-2 py-1.5 text-xs">
                     <Bold className="h-3 w-3" />
-                    <span className="hidden sm:inline font-medium">Peso</span>
+                    <span className="hidden sm:inline font-medium">{t('whiteboard.weight')}</span>
                   </MenubarTrigger>
                   <MenubarContent side="top" align="center" sideOffset={10} className="min-w-[10rem] px-1.5 py-1.5" data-text-menubar="true">
                     <MenubarRadioGroup
@@ -2146,7 +2151,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                 <MenubarMenu>
                   <MenubarTrigger className="gap-1 px-2 py-1.5 text-xs">
                     <CaseSensitive className="h-3 w-3" />
-                    <span className="hidden sm:inline font-medium">Tamanho</span>
+                    <span className="hidden sm:inline font-medium">{t('whiteboard.size')}</span>
                   </MenubarTrigger>
                   <MenubarContent side="top" align="center" sideOffset={10} className="min-w-[9rem] px-1.5 py-1.5" data-text-menubar="true">
                     <MenubarRadioGroup

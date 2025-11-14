@@ -44,7 +44,7 @@ const FuturisticToolbar = ({ tools, activeTool, onToolSelect, rightSlot }: Props
 
   return (
     <TooltipProvider delayDuration={120}>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 scale-[0.4] md:scale-[0.5] lg:scale-[0.6] origin-bottom">
+      <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 z-50 scale-[0.4] md:scale-[0.5] lg:scale-[0.6] origin-bottom">
         <div className="relative flex items-center justify-center gap-3 bg-white/80 dark:bg-black/80 backdrop-blur-2xl rounded-full px-8 py-4 shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
         
           {/* Active Indicator Glow */}

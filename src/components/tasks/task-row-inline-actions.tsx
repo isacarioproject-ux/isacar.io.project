@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, UserPlus, Calendar, Flag, Check, CheckCircle2 } from 'lucide-react';
 import { updateTask, deleteTask, getUsers } from '@/lib/tasks/tasks-storage';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale';
 import { toast } from 'sonner';
 import { useI18n } from '@/hooks/use-i18n';
 import { useWorkspace } from '@/contexts/workspace-context';
@@ -22,6 +22,7 @@ interface TaskRowInlineActionsProps {
 export function TaskRowInlineActions({ task, onUpdate }: TaskRowInlineActionsProps) {
   const { t } = useI18n();
   const { currentWorkspace } = useWorkspace();
+  const dateFnsLocale = useDateFnsLocale();
   const [users, setUsers] = useState<User[]>([]);
   const [showAssignee, setShowAssignee] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -164,7 +165,7 @@ export function TaskRowInlineActions({ task, onUpdate }: TaskRowInlineActionsPro
                   setShowCalendar(false);
                 }
               }}
-              locale={ptBR}
+              locale={dateFnsLocale}
               className="rounded-md border-0"
             />
             <div className="p-3 border-t dark:border-gray-700 space-y-1">
@@ -216,7 +217,7 @@ export function TaskRowInlineActions({ task, onUpdate }: TaskRowInlineActionsPro
           </PopoverContent>
         </Popover>
 
-        {/* Prioridade */}
+        {/* Priority */}
         <Popover open={showPriority} onOpenChange={setShowPriority}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -238,14 +239,14 @@ export function TaskRowInlineActions({ task, onUpdate }: TaskRowInlineActionsPro
           <PopoverContent className="w-56 p-2" align="start" side="left">
             <div className="space-y-1">
               <div className="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                Prioridade
+                {t('tasks.priority.label')}
               </div>
               {(['urgent', 'high', 'medium', 'low'] as const).map((priority) => {
                 const labels: Record<string, string> = {
-                  urgent: 'Urgente',
-                  high: 'Alta',
-                  medium: 'Média',
-                  low: 'Baixa',
+                  urgent: t('tasks.priority.urgent'),
+                  high: t('tasks.priority.high'),
+                  medium: t('tasks.priority.medium'),
+                  low: t('tasks.priority.low'),
                 };
                 const colors: Record<string, string> = {
                   urgent: 'text-red-500',
@@ -259,7 +260,7 @@ export function TaskRowInlineActions({ task, onUpdate }: TaskRowInlineActionsPro
                     onClick={(e) => {
                       e.stopPropagation();
                       updateTask(task.id, { priority });
-                      toast.success(`Prioridade definida: ${labels[priority]}`);
+                      toast.success(`${t('tasks.prioritySet')}: ${labels[priority]}`);
                       onUpdate();
                       setShowPriority(false);
                     }}

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { motion } from 'framer-motion'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,17 +73,26 @@ export const DocumentCard = ({
   onDelete,
 }: DocumentCardProps) => {
   return (
-    <Card className="group hover:shadow-lg transition-all hover-lift">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <Card className="group cursor-pointer">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <div
+          <motion.div
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
               getCategoryColor(document.category)
             )}
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            transition={{ duration: 0.2 }}
           >
             {getCategoryIcon(document.category)}
-          </div>
+          </motion.div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <CardTitle className="line-clamp-1 text-sm">
@@ -153,5 +163,6 @@ export const DocumentCard = ({
         </CardContent>
       )}
     </Card>
+    </motion.div>
   )
 }

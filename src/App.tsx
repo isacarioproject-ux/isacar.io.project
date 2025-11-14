@@ -14,6 +14,7 @@ const AuthPage = lazy(() => import('@/pages/auth'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const MyWorkPage = lazy(() => import('@/pages/my-work'))
 const MyFinancePage = lazy(() => import('@/pages/my-finance'))
+const MyCompanyPage = lazy(() => import('@/pages/my-company'))
 const ProfilePage = lazy(() => import('@/pages/settings/profile'))
 const NotificationsPage = lazy(() => import('@/pages/settings/notifications'))
 const PreferencesPage = lazy(() => import('@/pages/settings/preferences'))
@@ -52,6 +53,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/meu-trabalho" element={<MyWorkPage />} />
           <Route path="/minha-financa" element={<MyFinancePage />} />
+          <Route path="/minha-empresa" element={<MyCompanyPage />} />
           
           {/* Settings Routes */}
           <Route path="/settings/profile" element={<ProfilePage />} />

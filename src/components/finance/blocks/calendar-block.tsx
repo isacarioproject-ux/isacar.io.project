@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-reac
 import { FinanceTransaction } from '@/types/finance'
 import { FinanceBlockProps } from '@/types/finance-blocks'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 import { useI18n } from '@/hooks/use-i18n'
 
 interface CalendarBlockProps extends FinanceBlockProps {
@@ -21,10 +21,9 @@ interface CalendarBlockProps extends FinanceBlockProps {
  * Bloco de calendário financeiro
  * Visualiza transações por dia em um calendário mensal
  */
-export const CalendarBlock = ({
-  transactions,
-}: CalendarBlockProps) => {
+export function CalendarBlock({ transactions }: CalendarBlockProps) {
   const { t } = useI18n()
+  const dateFnsLocale = useDateFnsLocale()
   const [currentDate, setCurrentDate] = useState(new Date())
 
   // Calcular dias do mês
@@ -90,7 +89,7 @@ export const CalendarBlock = ({
       {/* Header com navegação */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">
-          {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
+          {format(currentDate, 'MMMM yyyy', { locale: dateFnsLocale })}
         </h3>
         
         <div className="flex items-center gap-2">
@@ -207,7 +206,7 @@ export const CalendarBlock = ({
                 <PopoverContent className="w-80">
                   <div className="space-y-3">
                     <h4 className="font-semibold text-sm">
-                      {format(day, "d 'de' MMMM", { locale: ptBR })}
+                      {format(day, "d 'de' MMMM", { locale: dateFnsLocale })}
                     </h4>
                     
                     <div className="space-y-2 max-h-60 overflow-y-auto">

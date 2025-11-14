@@ -45,7 +45,7 @@ export const FINANCE_BLOCKS_REGISTRY: FinanceBlockDefinition[] = [
     icon: Repeat,
     category: 'data',
     color: '#8b5cf6',
-    defaultVisible: false,
+    defaultVisible: true,
     implemented: true, // ✅ Implementado
   },
 

@@ -1,0 +1,112 @@
+{
+  "project_name": "Isacar.io - Finance Management Platform",
+  "tech_stack": {
+    "frontend": {
+      "framework": "React 18.3.1",
+      "language": "TypeScript",
+      "build_tool": "Vite 5.4.10",
+      "ui_library": "Radix UI",
+      "styling": "Tailwind CSS",
+      "animations": "Framer Motion 11.18.2",
+      "routing": "React Router DOM 7.9.4",
+      "i18n": "react-i18next 16.2.4",
+      "forms": "react-hook-form 7.66.0",
+      "charts": "Recharts 2.15.4",
+      "date_handling": "date-fns 4.1.0",
+      "drag_and_drop": "@dnd-kit/core 6.3.1",
+      "notifications": "sonner 2.0.7"
+    },
+    "backend": {
+      "database": "Supabase (PostgreSQL)",
+      "authentication": "Supabase Auth",
+      "real_time": "Supabase Realtime"
+    },
+    "features": {
+      "pwa": "Vite PWA Plugin",
+      "offline_support": "Service Worker with Workbox",
+      "export": "jsPDF, html2pdf.js, html2canvas",
+      "theme": "next-themes (dark/light mode)"
+    }
+  },
+  "main_features": [
+    {
+      "name": "Finance Management",
+      "description": "Complete financial management system with transactions, budgets, and recurring bills",
+      "components": [
+        "TransactionTable - Inline editable transaction table",
+        "BudgetTracker - Budget tracking with inline editing",
+        "RecurringBillsBlock - Recurring bills management with calendar picker",
+        "QuickExpenseBlock - Quick expense entry form",
+        "FinanceCharts - Financial data visualization",
+        "CategorySummaryBlock - Category-based expense summary",
+        "MonthlyReportBlock - Monthly financial reports",
+        "CalendarBlock - Transaction calendar view",
+        "ReceiptsBlock - Receipt management",
+        "GoalsBlock - Financial goals tracking"
+      ]
+    },
+    {
+      "name": "Task Management",
+      "description": "Task and project management system with reminders and notifications",
+      "components": [
+        "TasksCard - Task list component",
+        "ReminderTab - Advanced reminder system with geolocation",
+        "TaskDetailView - Task details and editing",
+        "QuickAddTaskDialog - Quick task creation"
+      ]
+    },
+    {
+      "name": "Authentication & Workspace",
+      "description": "Multi-user system with workspace management",
+      "components": [
+        "AuthProvider - Authentication context",
+        "WorkspaceProvider - Workspace management",
+        "SubscriptionProvider - Subscription management"
+      ]
+    },
+    {
+      "name": "UI Components",
+      "description": "Reusable UI components built with Radix UI and Tailwind",
+      "components": [
+        "Dialog, Popover, Select, Calendar, Button, Input, Table, Card, Badge, Skeleton",
+        "Sidebar navigation",
+        "Command menu (CMDK)",
+        "Drag and drop sortable blocks"
+      ]
+    }
+  ],
+  "key_characteristics": {
+    "inline_editing": "Notion/Excel-style inline editing in tables",
+    "responsive_design": "Mobile-first responsive design",
+    "internationalization": "Multi-language support (pt-BR, en, es)",
+    "offline_support": "Service worker with caching strategies",
+    "real_time_updates": "Supabase realtime subscriptions",
+    "modern_ux": "Framer Motion animations, skeleton loaders",
+    "accessibility": "Radix UI components with ARIA support",
+    "type_safety": "Full TypeScript implementation"
+  },
+  "recent_work": {
+    "component": "RecurringBillsBlock",
+    "improvements": [
+      "Inline editing for name, amount, due_day, and category",
+      "Modern calendar picker with Popover for due day selection",
+      "Local state management to prevent unnecessary page reloads",
+      "Sequential creation order (new items appear at bottom)",
+      "Optimized updates without full data reloads",
+      "Mobile-responsive calendar with max-width constraints",
+      "Event propagation fixes to prevent page reloads"
+    ]
+  },
+  "testing_requirements": {
+    "type": "frontend",
+    "framework": "React testing library or Playwright",
+    "focus_areas": [
+      "Inline editing functionality",
+      "Form submissions and validation",
+      "Calendar picker interactions",
+      "State management and updates",
+      "Mobile responsiveness",
+      "Event handling and page reload prevention"
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useI18n } from '@/hooks/use-i18n'
 
 interface Props {
   zoom: number
@@ -10,19 +11,20 @@ interface Props {
 }
 
 export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onZoomReset }: Props) => {
+  const { t } = useI18n();
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-3 left-3 z-50 scale-[0.15] md:scale-[0.2] origin-bottom-left"
+      className="fixed bottom-16 md:bottom-2 left-2 z-40 scale-[0.7] origin-bottom-left"
     >
-      <div className="flex flex-col gap-0.5 bg-background/95 backdrop-blur-sm border rounded-md shadow-lg p-0.5">
+      <div className="flex flex-col gap-1 bg-background/80 backdrop-blur-sm border rounded-md shadow-md p-1">
         <Button
           size="icon"
           variant="ghost"
           onClick={onZoomIn}
-          className="h-6 w-6 p-0"
-          title="Aumentar Zoom (+)"
+          className="h-5 w-5 p-0 hover:bg-muted/60"
+          title={t('whiteboard.zoomIn')}
         >
           <ZoomIn className="h-3 w-3" />
         </Button>
@@ -30,26 +32,12 @@ export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onZoomReset }: Props) 
         <Button
           size="icon"
           variant="ghost"
-          onClick={onZoomReset}
-          className="h-6 w-6 p-0"
-          title="Resetar Zoom (100%)"
-        >
-          <RotateCcw className="h-3 w-3" />
-        </Button>
-        
-        <Button
-          size="icon"
-          variant="ghost"
           onClick={onZoomOut}
-          className="h-6 w-6 p-0"
-          title="Diminuir Zoom (-)"
+          className="h-5 w-5 p-0 hover:bg-muted/60"
+          title={t('whiteboard.zoomOut')}
         >
           <ZoomOut className="h-3 w-3" />
         </Button>
-        
-        <div className="text-center text-[10px] font-medium py-0.5 border-t">
-          {Math.round(zoom * 100)}%
-        </div>
       </div>
     </motion.div>
   )

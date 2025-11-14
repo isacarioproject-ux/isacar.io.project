@@ -30,17 +30,21 @@ export const WhiteboardPen = ({ item, onUpdate, onDelete, onSelect, isSelected }
   const strokeWidth = item.strokeWidth ?? 2
   const nodeRef = useRef<HTMLDivElement | null>(null)
 
-  // calcular bbox simples
+  // calcular bbox com padding adequado
   const xs = points.map(p => p.x)
   const ys = points.map(p => p.y)
   const minX = Math.min(0, ...xs)
   const minY = Math.min(0, ...ys)
   const maxX = Math.max(0, ...xs)
   const maxY = Math.max(0, ...ys)
-  const width = Math.max(20, maxX - minX + 20)
-  const height = Math.max(20, maxY - minY + 20)
+  const padding = 15
+  const width = Math.max(40, maxX - minX + padding * 2)
+  const height = Math.max(40, maxY - minY + padding * 2)
 
-  const path = points.map(p => `${p.x - minX + 10},${p.y - minY + 10}`).join(' ')
+  const path = points.map(p => `${p.x - minX + padding},${p.y - minY + padding}`).join(' ')
+
+  // Se não há pontos suficientes, não renderiza
+  if (points.length < 2) return null
 
   return (
     <Draggable
@@ -49,9 +53,9 @@ export const WhiteboardPen = ({ item, onUpdate, onDelete, onSelect, isSelected }
       handle=".drag-handle"
       nodeRef={nodeRef}
     >
-      <div ref={nodeRef} className="absolute" style={{ width, height }}>
+      <div ref={nodeRef} className="absolute group" style={{ width, height }}>
         <svg
-          className="drag-handle cursor-move"
+          className="drag-handle cursor-move hover:bg-primary/5 rounded transition-colors"
           width={width}
           height={height}
           viewBox={`0 0 ${width} ${height}`}
@@ -62,14 +66,15 @@ export const WhiteboardPen = ({ item, onUpdate, onDelete, onSelect, isSelected }
         >
           {isSelected && (
             <rect
-              x={0}
-              y={0}
-              width={width}
-              height={height}
+              x={2}
+              y={2}
+              width={width - 4}
+              height={height - 4}
               className="stroke-primary/60"
               strokeDasharray="4 4"
               fill="transparent"
               strokeWidth={1}
+              rx={4}
             />
           )}
           <polyline
@@ -80,14 +85,22 @@ export const WhiteboardPen = ({ item, onUpdate, onDelete, onSelect, isSelected }
             strokeLinejoin="round"
           />
         </svg>
-        <Button 
-          size="icon" 
-          variant="ghost" 
-          className="absolute -top-2 -right-2 h-5 w-5 bg-background hover:bg-destructive/10 hover:text-destructive shadow-sm" 
-          onClick={() => onDelete(item.id)}
-        >
-          <X className="h-3 w-3" />
-        </Button>
+        
+        {/* Botão X posicionado corretamente no canto superior direito */}
+        <div className="absolute -top-2 -right-2 z-10">
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-6 w-6 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 md:h-7 md:w-7" 
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(item.id)
+            }}
+            aria-label="Excluir desenho"
+          >
+            <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
+          </Button>
+        </div>
       </div>
     </Draggable>
   )

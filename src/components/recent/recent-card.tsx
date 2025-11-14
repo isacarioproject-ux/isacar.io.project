@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { getActivities } from '@/lib/tasks/tasks-storage';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { Activity } from '@/types/tasks';
+import { useI18n } from '@/hooks/use-i18n';
 
 interface RecentCardProps {
   className?: string;
@@ -23,6 +24,7 @@ interface RecentCardProps {
 }
 
 export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
+  const { t } = useI18n();
   const [isExpandedViewOpen, setIsExpandedViewOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const activities = getActivities();
@@ -106,7 +108,7 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
                   </motion.div>
                 )}
                 <Input
-                  defaultValue="Recente"
+                  defaultValue={t('recent.title')}
                   className="text-sm font-semibold bg-transparent border-none focus:border-border focus:ring-1 focus:ring-ring h-7 px-2 w-full max-w-[160px] sm:max-w-[200px] truncate"
                 />
               </div>
@@ -159,8 +161,8 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
                   >
                     <Clock className="size-12 mx-auto mb-3 opacity-50" />
                   </motion.div>
-                  <p className="text-sm">Nenhuma atividade recente</p>
-                  <p className="text-xs mt-1">Suas atividades aparecerão aqui</p>
+                  <p className="text-sm">{t('recent.noActivity')}</p>
+                  <p className="text-xs mt-1">{t('recent.activitiesHere')}</p>
                 </div>
               </motion.div>
             ) : (

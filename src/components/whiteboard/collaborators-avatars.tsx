@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/hooks/use-i18n'
 
 interface Collaborator {
   id: string
@@ -29,6 +30,7 @@ export function CollaboratorsAvatars({
   size = 'md',
   className 
 }: CollaboratorsAvatarsProps) {
+  const { t } = useI18n();
   const visibleCollaborators = collaborators.slice(0, maxVisible)
   const remainingCount = Math.max(0, collaborators.length - maxVisible)
 
@@ -57,7 +59,7 @@ export function CollaboratorsAvatars({
             <TooltipContent side="bottom" className="text-xs">
               <p className="font-medium">{collab.name || collab.email}</p>
               {collab.online && (
-                <p className="text-green-500">● Online</p>
+                <p className="text-green-500">● {t('common.online')}</p>
               )}
             </TooltipContent>
           </Tooltip>
@@ -77,7 +79,7 @@ export function CollaboratorsAvatars({
               </Avatar>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              <p>{remainingCount} colaborador(es) a mais</p>
+              <p>{remainingCount} {t('whiteboard.moreCollaborators')}</p>
             </TooltipContent>
           </Tooltip>
         )}

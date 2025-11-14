@@ -48,7 +48,7 @@ import {
   GripVertical,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 import { useDocsCard } from '@/hooks/use-docs-card'
 import { useI18n } from '@/hooks/use-i18n'
 import { toast } from 'sonner'
@@ -94,6 +94,8 @@ const formatFileSize = (bytes: number) => {
 
 export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, onDuplicate, onDelete }: DocsCardProps) => {
   const { t } = useI18n()
+  // const { currentWorkspace } = useWorkspace() // TODO: Fix import
+  const dateFnsLocale = useDateFnsLocale()
   const [cardName, setCardName] = useState(() => {
     const saved = localStorage.getItem('docs-card-name')
     return saved || defaultName

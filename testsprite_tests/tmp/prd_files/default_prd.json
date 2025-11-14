@@ -1,0 +1,51 @@
+{
+  "title": "Isacar.io Finance Management Platform",
+  "description": "Complete financial management system with transactions, budgets, recurring bills, and analytics",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "title": "Recurring Bills Management",
+      "description": "Users should be able to manage recurring bills with inline editing, calendar picker for due dates, and add/delete functionality without page reloads",
+      "acceptance_criteria": [
+        "User can add a new recurring bill",
+        "User can edit bill name, amount, due day, and category inline",
+        "User can select due day using calendar picker",
+        "User can delete recurring bills",
+        "No page reloads occur during any interaction",
+        "New bills appear at the bottom in creation order",
+        "Calendar picker is visible and functional on mobile"
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "title": "Inline Editing",
+      "description": "All editable fields should support inline editing similar to Notion/Excel",
+      "acceptance_criteria": [
+        "Clicking on a field enters edit mode",
+        "Changes are saved on blur or Enter key",
+        "Escape key cancels editing",
+        "No page reloads during editing"
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "title": "Mobile Responsiveness",
+      "description": "All components should be fully responsive and functional on mobile devices",
+      "acceptance_criteria": [
+        "Calendar picker is accessible on mobile",
+        "All interactive elements are properly sized for touch",
+        "Layout adapts correctly to small screens"
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "title": "State Management",
+      "description": "Application should use efficient state management without unnecessary data reloads",
+      "acceptance_criteria": [
+        "Local state is updated immediately after operations",
+        "No unnecessary API calls during interactions",
+        "Optimistic updates are applied correctly"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import Draggable from 'react-draggable'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { X, Maximize2 } from 'lucide-react'
 import { WhiteboardItem } from '@/types/whiteboard'
 import { cn } from '@/lib/utils'
 import { useRef } from 'react'
@@ -62,29 +62,34 @@ export const WhiteboardCircle = ({ item, onUpdate, onDelete }: Props) => {
       handle=".drag-handle"
       nodeRef={nodeRef}
     >
-      <div ref={nodeRef} className="absolute cursor-move" style={{ width: radius * 2, height: radius * 2 }}>
+      <div ref={nodeRef} className="absolute cursor-move group">
         <div 
           className={cn(
-            "drag-handle rounded-full border-2 relative transition-all hover:scale-105",
+            "drag-handle border-2 rounded-full transition-all duration-200 relative",
             shapeColors[item.shapeColor || 'blue']
           )}
           style={{ width: radius * 2, height: radius * 2 }}
         >
+          {/* Botão X - superior esquerdo */}
           <Button 
             size="icon" 
             variant="ghost" 
-            className="absolute -top-2 -right-2 h-5 w-5 bg-background hover:bg-destructive/10 hover:text-destructive shadow-sm" 
-            onClick={() => onDelete(item.id)}
+            className="absolute -top-2 -left-2 h-6 w-6 md:h-7 md:w-7 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200" 
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(item.id)
+            }}
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
           </Button>
 
-          {/* Resize handle */}
+          {/* Resize handle - inferior direito */}
           <div
             onPointerDown={onResizeStart}
-            className="absolute -bottom-1 -right-1 h-3 w-3 bg-primary rounded-sm cursor-se-resize shadow ring-2 ring-background"
-            title="Redimensionar"
-          />
+            className="absolute -bottom-2 -right-2 h-6 w-6 md:h-7 md:w-7 rounded-full bg-primary/90 hover:bg-primary text-white shadow-md cursor-se-resize opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center"
+          >
+            <Maximize2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+          </div>
         </div>
       </div>
     </Draggable>

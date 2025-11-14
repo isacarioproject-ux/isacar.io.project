@@ -5,6 +5,7 @@ import {
   FinanceDocumentBlock,
   FinanceBlockType,
 } from '@/types/finance-blocks'
+import { ensureDefaultBlocks } from '@/lib/finance-blocks-utils'
 
 /**
  * Hook para gerenciar blocos de um documento financeiro
@@ -25,7 +26,15 @@ export function useFinanceBlocks(documentId: string) {
 
       if (error) throw error
 
-      setBlocks(data || [])
+      let blocks = data || []
+
+      // Se não há blocos, criar os padrão automaticamente
+      if (blocks.length === 0) {
+        const defaultBlocks = await ensureDefaultBlocks(documentId)
+        blocks = [...blocks, ...(defaultBlocks || [])]
+      }
+
+      setBlocks(blocks)
     } catch (err: any) {
       console.error('Erro ao carregar blocos:', err)
       toast.error('Erro ao carregar blocos', {

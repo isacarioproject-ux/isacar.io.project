@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function TaskModalSkeleton() {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header Skeleton */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b dark:border-gray-800">
         <div className="flex items-center gap-4">

@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3005/auth",
+  "loginUser": "kleovekleh@gmail.com",
+  "loginPassword": "24948180@Kk",
+  "executionArgs": {
+    "projectName": "isacar-io",
+    "projectPath": "C:\\Isacar.dev\\app.isacar.dev",
+    "testIds": [],
+    "additionalInstruction": "Focus on testing the RecurringBillsBlock component. The delete functionality has been fixed with optimistic UI updates and functional state updates. Test all CRUD operations (create, read, update, delete), inline editing, calendar picker, event handling to ensure no page reloads, mobile responsiveness, and accessibility features. Verify that the component is properly integrated and visible in the finance page.",
+    "envs": {
+      "API_KEY": "sk-user-8lG_QtFSGeYU8Y5eDewtE_ckIHsFTIvXflPVIyHXsMCWa5JUb8M4NeXWPddZlj15w3CUOxQcFWh8HChIFknHLh45Xb4OeuxAeX3WC6VFteyYZrlGLu_JNm09i1z6bHK5xCA"
+    }
+  },
+  "proxy": "http://896d5775-25f6-40ab-a4c1-1935544f8da5:c61jHh64eNQzFJMq4azfHWO1TeuLSr7K@tun.testsprite.com:8080"
+}

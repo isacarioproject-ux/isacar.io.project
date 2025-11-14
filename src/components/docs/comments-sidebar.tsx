@@ -23,7 +23,7 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useI18n } from '@/hooks/use-i18n'
 import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 
 interface Comment {
   id: string
@@ -45,6 +45,7 @@ interface CommentsSidebarProps {
 
 export const CommentsSidebar = ({ docId, open, onClose }: CommentsSidebarProps) => {
   const { t } = useI18n()
+  const dateFnsLocale = useDateFnsLocale()
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -280,7 +281,7 @@ const CommentItem = ({ comment, replies, currentUserId, onReply, onResolve, onDe
             <span className="text-[10px] text-muted-foreground">
               {formatDistanceToNow(new Date(comment.created_at), {
                 addSuffix: true,
-                locale: ptBR,
+                locale: useDateFnsLocale(),
               })}
             </span>
             {comment.is_resolved && (

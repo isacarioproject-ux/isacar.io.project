@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { WhiteboardItem } from '@/types/whiteboard'
 import { useCallback, useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '@/hooks/use-i18n'
+import { motion } from 'framer-motion'
 
 interface Props {
   item: WhiteboardItem
@@ -93,13 +94,31 @@ export const WhiteboardText = ({
   return (
     <Draggable
       position={item.position}
-      onStop={(e, data) => onUpdate(item.id, { position: { x: data.x, y: data.y } })}
+      onStart={(e) => {
+        // Prevenir ativação do menubar durante drag
+        e.stopPropagation()
+      }}
+      onDrag={(e) => {
+        // Manter foco durante drag sem ativar menubar
+        e.stopPropagation()
+      }}
+      onStop={(e, data) => {
+        e.stopPropagation()
+        onUpdate(item.id, { position: { x: data.x, y: data.y } })
+      }}
       handle=".drag-handle"
       cancel=".whiteboard-text-interactive"
       nodeRef={nodeRef}
     >
-      <div ref={nodeRef} className="absolute flex items-center gap-2 cursor-move" onPointerDown={handleSelect}>
-        <div className="drag-handle flex-1">
+      <div ref={nodeRef} className="absolute flex items-center gap-2 group">
+        <div className="flex-1 relative">
+          {/* Área de drag (borda esquerda) quando não está editando */}
+          {!isEditing && (
+            <div 
+              className="drag-handle absolute -left-2 top-0 bottom-0 w-3 rounded-l border border-transparent hover:border-primary/30 hover:bg-primary/10 cursor-move opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 md:opacity-0 transition-all duration-200"
+              onClick={handleSelect}
+            />
+          )}
           {isEditing ? (
             <Input
               ref={inputRef}
@@ -114,7 +133,7 @@ export const WhiteboardText = ({
           ) : (
             <button
               type="button"
-              className="whiteboard-text-interactive w-60 min-h-[40px] rounded border border-transparent px-2 text-left transition hover:border-border/60 focus-visible:border-primary/40 focus-visible:outline-none"
+              className="whiteboard-text-interactive w-60 min-h-[40px] rounded border border-transparent px-2 text-left transition hover:border-border/60 focus-visible:border-primary/40 focus-visible:outline-none relative z-10"
               style={{ fontFamily, fontWeight, fontSize }}
               onClick={startEditing}
             >
@@ -122,14 +141,21 @@ export const WhiteboardText = ({
             </button>
           )}
         </div>
-        <Button 
-          size="icon" 
-          variant="ghost" 
-          className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive" 
-          onClick={() => onDelete(item.id)}
+        <motion.div
+          className="flex-shrink-0"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
-          <X className="h-3 w-3" />
-        </Button>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-6 w-6 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 md:opacity-0 transition-all duration-200" 
+            onClick={() => onDelete(item.id)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </motion.div>
       </div>
     </Draggable>
   )

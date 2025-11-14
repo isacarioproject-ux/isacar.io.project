@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { motion } from 'framer-motion'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,14 +42,26 @@ interface MemberCardProps {
 
 export const MemberCard = ({ member, onChangeRole, onRemove }: MemberCardProps) => {
   return (
-    <Card>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      whileHover={{ y: -2, scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+    >
+      <Card>
       <CardContent className="flex items-center gap-4 p-4">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={member.avatar_url} alt={member.name} />
-          <AvatarFallback className="text-sm">
-            {getInitials(member.name || member.email)}
-          </AvatarFallback>
-        </Avatar>
+        <motion.div
+          whileHover={{ scale: 1.05, rotate: 2 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={member.avatar_url} alt={member.name} />
+            <AvatarFallback className="text-sm">
+              {getInitials(member.name || member.email)}
+            </AvatarFallback>
+          </Avatar>
+        </motion.div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="font-medium text-sm truncate">
@@ -93,5 +106,6 @@ export const MemberCard = ({ member, onChangeRole, onRemove }: MemberCardProps) 
         )}
       </CardContent>
     </Card>
+    </motion.div>
   )
 }

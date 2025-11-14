@@ -27,7 +27,7 @@ import { supabase } from '@/lib/supabase'
 import { FinanceBlockProps } from '@/types/finance-blocks'
 import { useI18n } from '@/hooks/use-i18n'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 
 interface RecurringBill {
   id: string
@@ -64,9 +64,13 @@ export const RecurringBillsBlock = ({
   onRefresh,
 }: RecurringBillsBlockProps) => {
   const { t } = useI18n()
+  const dateFnsLocale = useDateFnsLocale()
   const [bills, setBills] = useState<RecurringBill[]>([])
   const [loading, setLoading] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [saving, setSaving] = useState<{rowId: string, field: string} | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{rowId: string, field: string} | null>(null)
@@ -75,7 +79,9 @@ export const RecurringBillsBlock = ({
   const [calendarOpen, setCalendarOpen] = useState<{rowId: string} | null>(null)
 
   useEffect(() => {
-    loadBills()
+    if (documentId) {
+      loadBills()
+    }
   }, [documentId])
 
   useEffect(() => {
@@ -96,7 +102,13 @@ export const RecurringBillsBlock = ({
         .order('created_at', { ascending: true }) // Ordenar por data de criação para manter sequência
 
       if (error) throw error
-      setBills(data || [])
+      
+      // Remover duplicatas caso existam
+      const uniqueBills = (data || []).filter((bill, index, self) => 
+        index === self.findIndex((b) => b.id === bill.id)
+      )
+      
+      setBills(uniqueBills)
     } catch (err: any) {
       console.error('Error loading bills:', err)
       toast.error(t('finance.recurringBills.errorLoad'), {
@@ -111,9 +123,22 @@ export const RecurringBillsBlock = ({
     e.preventDefault()
     e.stopPropagation()
     setEditingCell({ rowId, field })
-    setEditingValue(String(currentValue || ''))
+    
+    // Para o campo amount, se o valor for 0.01 (valor padrão), deixar vazio para edição
+    if (field === 'amount') {
+      const amount = Number(currentValue) || 0
+      if (amount === 0.01) {
+        setEditingValue('')
+      } else {
+        // Formatar o valor removendo formatação de moeda
+        setEditingValue(String(amount).replace('.', ','))
+      }
+    } else {
+      setEditingValue(String(currentValue || ''))
+    }
+    
     if (field === 'category') {
-      setSelectOpen({ field })
+      setSelectOpen({ field: 'category' })
     } else if (field === 'due_day') {
       setCalendarOpen({ rowId })
     }
@@ -129,14 +154,25 @@ export const RecurringBillsBlock = ({
       return
     }
 
+    setSaving({ rowId, field })
+
     const updateData: any = {}
     
     if (field === 'name') {
-      updateData.name = editingValue.trim()
+      const trimmedName = editingValue.trim()
+      if (!trimmedName) {
+        toast.error(t('finance.recurringBills.billName'))
+        setSaving(null)
+        setEditingCell(null)
+        setEditingValue('')
+        return
+      }
+      updateData.name = trimmedName
     } else if (field === 'amount') {
       const value = parseFloat(editingValue.replace(',', '.')) || 0
       if (value <= 0) {
         toast.error(t('finance.quickExpense.invalidValue'))
+        setSaving(null)
         setEditingCell(null)
         setEditingValue('')
         return
@@ -147,6 +183,7 @@ export const RecurringBillsBlock = ({
       const day = parseInt(editingValue) || 1
       if (day < 1 || day > 31) {
         toast.error(t('finance.recurringBills.invalidDay'))
+        setSaving(null)
         setEditingCell(null)
         setEditingValue('')
         setCalendarOpen(null)
@@ -166,29 +203,35 @@ export const RecurringBillsBlock = ({
       if (error) throw error
       
       // Atualizar estado local sem recarregar tudo
-      setBills(bills.map(b => 
+      setBills(prevBills => prevBills.map(b => 
         b.id === rowId ? { ...b, ...updateData } : b
       ))
       
       toast.success(t('finance.recurringBills.updated'))
     } catch (err: any) {
+      console.error('Error updating recurring bill:', err)
       toast.error(t('finance.recurringBills.errorUpdate'), {
-        description: err.message,
+        description: err.message || t('finance.recurringBills.errorUpdate'),
       })
+    } finally {
+      setSaving(null)
+      setEditingCell(null)
+      setEditingValue('')
+      setSelectOpen(null)
+      setCalendarOpen(null)
     }
-    
-    setEditingCell(null)
-    setEditingValue('')
-    setSelectOpen(null)
-    setCalendarOpen(null)
   }
 
   const handleAddNew = async () => {
+    if (adding) return // Prevenir múltiplos cliques
+    
+    setAdding(true)
     // Criar nova conta com valores padrão
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         toast.error(t('finance.goals.userNotAuthenticated'))
+        setAdding(false)
         return
       }
 
@@ -199,7 +242,7 @@ export const RecurringBillsBlock = ({
           finance_document_id: documentId,
           name: '',
           amount: 0.01, // Valor mínimo para não violar constraint
-          due_day: 5,
+          due_day: new Date().getDate(), // Dia atual como padrão
           category: categories[0] || '',
           paid: false,
           auto_create: false,
@@ -210,7 +253,7 @@ export const RecurringBillsBlock = ({
       if (error) throw error
       
       // Adicionar à lista local no final (sequência de criação)
-      setBills([...bills, data])
+      setBills(prevBills => [...prevBills, data])
       
       // Entrar em modo de edição para o nome
       setEditingCell({ rowId: data.id, field: 'name' })
@@ -218,57 +261,86 @@ export const RecurringBillsBlock = ({
       
       toast.success(t('finance.recurringBills.added'))
     } catch (err: any) {
+      console.error('Error adding recurring bill:', err)
       toast.error(t('finance.recurringBills.errorAdd'), {
-        description: err.message,
+        description: err.message || t('finance.recurringBills.errorAdd'),
       })
+    } finally {
+      setAdding(false)
     }
   }
 
   const togglePaid = async (id: string) => {
-    try {
-      const bill = bills.find(b => b.id === id)
-      if (!bill) return
+    const bill = bills.find(b => b.id === id)
+    if (!bill) return
 
-      const newPaidStatus = !bill.paid
+    const newPaidStatus = !bill.paid
+    
+    // Atualização otimista
+    setBills(prevBills => prevBills.map(b => 
+      b.id === id ? { ...b, paid: newPaidStatus } : b
+    ))
+    
+    try {
       const { error } = await supabase
         .from('recurring_bills')
         .update({ paid: newPaidStatus })
         .eq('id', id)
 
-      if (error) throw error
-      
-      // Atualizar estado local
-      setBills(bills.map(b => 
-        b.id === id ? { ...b, paid: newPaidStatus } : b
-      ))
+      if (error) {
+        // Reverter atualização otimista em caso de erro
+        setBills(prevBills => prevBills.map(b => 
+          b.id === id ? { ...b, paid: bill.paid } : b
+        ))
+        throw error
+      }
       
       toast.success(t('finance.recurringBills.updated'))
     } catch (err: any) {
+      console.error('Error toggling paid status:', err)
       toast.error(t('finance.recurringBills.errorUpdate'), {
-        description: err.message,
+        description: err.message || t('finance.recurringBills.errorUpdate'),
       })
     }
   }
 
   const deleteBill = async (id: string) => {
-    if (!confirm(t('finance.table.deleteConfirm'))) return
+    if (deleting === id) return // Prevenir múltiplos cliques
+    
+    // Confirmar deleção
+    if (!window.confirm(t('finance.table.deleteConfirm'))) return
 
+    setDeleting(id)
+    
     try {
+      // Atualização otimista do estado local primeiro
+      const billToDelete = bills.find(b => b.id === id)
+      setBills(prevBills => prevBills.filter(b => b.id !== id))
+      
+      // Deletar do Supabase
       const { error } = await supabase
         .from('recurring_bills')
         .delete()
         .eq('id', id)
 
-      if (error) throw error
-      
-      // Remover do estado local
-      setBills(bills.filter(b => b.id !== id))
+      if (error) {
+        // Reverter atualização otimista em caso de erro
+        if (billToDelete) {
+          setBills(prevBills => [...prevBills, billToDelete].sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          ))
+        }
+        throw error
+      }
       
       toast.success(t('finance.recurringBills.removed'))
     } catch (err: any) {
+      console.error('Error deleting recurring bill:', err)
       toast.error(t('finance.recurringBills.errorRemove'), {
-        description: err.message,
+        description: err.message || t('finance.recurringBills.errorRemove'),
       })
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -283,7 +355,7 @@ export const RecurringBillsBlock = ({
 
   // Skeleton
   if (isInitializing) {
-    return (
+  return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -301,7 +373,7 @@ export const RecurringBillsBlock = ({
               <TableHead className="h-8 text-xs text-right">
                 <Skeleton className="h-3 w-24 ml-auto" />
               </TableHead>
-              <TableHead className="h-8 text-xs hidden md:table-cell">
+              <TableHead className="h-8 text-xs">
                 <Skeleton className="h-3 w-16" />
               </TableHead>
               <TableHead className="h-8 text-xs hidden lg:table-cell">
@@ -348,66 +420,66 @@ export const RecurringBillsBlock = ({
     >
       {/* Alertas de Vencimento */}
       <AnimatePresence>
-        {(overdueBills.length > 0 || upcomingBills.length > 0) && (
+      {(overdueBills.length > 0 || upcomingBills.length > 0) && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             className="space-y-2"
           >
-            {overdueBills.length > 0 && (
+          {overdueBills.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="p-3 border border-red-200 bg-red-50 dark:bg-red-950/20 rounded-lg"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-semibold text-red-900 dark:text-red-100">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm font-semibold text-red-900 dark:text-red-100">
                     {overdueBills.length} {t('finance.recurringBills.overdue')}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {overdueBills.map((bill) => (
-                    <div key={bill.id} className="flex items-center justify-between text-sm">
-                      <span className="text-red-800 dark:text-red-200">{bill.name}</span>
-                      <span className="font-semibold text-red-900 dark:text-red-100">
-                        {formatCurrency(bill.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                </span>
+              </div>
+              <div className="space-y-1">
+                {overdueBills.map((bill) => (
+                  <div key={bill.id} className="flex items-center justify-between text-sm">
+                    <span className="text-red-800 dark:text-red-200">{bill.name}</span>
+                    <span className="font-semibold text-red-900 dark:text-red-100">
+                      {formatCurrency(bill.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
               </motion.div>
-            )}
+          )}
 
-            {upcomingBills.length > 0 && (
+          {upcomingBills.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
                 className="p-3 border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
                     {upcomingBills.length} {t('finance.recurringBills.upcoming')}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {upcomingBills.map((bill) => (
-                    <div key={bill.id} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-800 dark:text-yellow-200">{bill.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {t('finance.recurringBills.due')} {bill.due_day}
-                        </Badge>
-                      </div>
-                      <span className="font-semibold text-yellow-900 dark:text-yellow-100">
-                        {formatCurrency(bill.amount)}
-                      </span>
+                </span>
+              </div>
+              <div className="space-y-1">
+                {upcomingBills.map((bill) => (
+                  <div key={bill.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-800 dark:text-yellow-200">{bill.name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {t('finance.recurringBills.due')} {bill.due_day}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
+                    <span className="font-semibold text-yellow-900 dark:text-yellow-100">
+                      {formatCurrency(bill.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
               </motion.div>
             )}
           </motion.div>
@@ -416,6 +488,7 @@ export const RecurringBillsBlock = ({
 
       {/* Tabela */}
       <motion.div
+        data-testid="recurring-bills-table"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
@@ -429,7 +502,7 @@ export const RecurringBillsBlock = ({
           e.stopPropagation()
         }}
       >
-        <Table>
+        <Table role="table" aria-label={t('finance.recurringBills.title')}>
           <TableHeader>
             <TableRow className="h-8">
               <TableHead className="h-8 text-xs w-8">
@@ -443,23 +516,31 @@ export const RecurringBillsBlock = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bills.map((bill) => (
-              <TableRow
+      {bills.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-sm text-muted-foreground">
+            {t('finance.recurringBills.noBills')}
+                </TableCell>
+              </TableRow>
+            ) : (
+              bills.map((bill) => (
+                <TableRow
                 key={bill.id}
-                className={`h-8 ${bill.paid ? 'opacity-60' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                }}
-                onMouseDown={(e) => {
-                  const target = e.target as HTMLElement
-                  if (target.closest('.cursor-text') || target.closest('input') || target.closest('[role="combobox"]') || target.closest('button') || target.closest('[data-slot="popover-trigger"]')) {
-                    return
-                  }
-                  e.preventDefault()
-                  e.stopPropagation()
-                }}
-              >
+                  data-testid={`recurring-bill-row-${bill.id}`}
+                  className={`h-8 ${bill.paid ? 'opacity-60' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement
+                    if (target.closest('.cursor-text') || target.closest('input') || target.closest('[role="combobox"]') || target.closest('button') || target.closest('[data-slot="popover-trigger"]')) {
+                      return
+                    }
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }}
+                >
                 {/* Status Paid */}
                 <TableCell className="text-xs py-0 px-2">
                   <motion.div
@@ -468,12 +549,13 @@ export const RecurringBillsBlock = ({
                   >
                     <button
                       type="button"
+                      disabled={loading || (saving?.rowId === bill.id)}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
                         togglePaid(bill.id)
                       }}
-                      className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                      className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         bill.paid 
                           ? 'bg-green-600 border-green-600' 
                           : 'border-muted-foreground hover:border-green-600'
@@ -496,46 +578,58 @@ export const RecurringBillsBlock = ({
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
                       >
-                        <Input
-                          type="text"
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onBlur={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            if (editingValue.trim()) {
-                              handleCellSave(bill.id, 'name')
-                            } else {
-                              setEditingCell(null)
-                              setEditingValue('')
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="text"
+                            data-testid={`edit-name-input-${bill.id}`}
+                            aria-label={t('finance.table.description')}
+                            value={editingValue}
+                            disabled={saving?.rowId === bill.id && saving?.field === 'name'}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            onBlur={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
                               if (editingValue.trim()) {
                                 handleCellSave(bill.id, 'name')
+                              } else {
+                                setEditingCell(null)
+                                setEditingValue('')
                               }
-                            }
-                            if (e.key === 'Escape') {
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (editingValue.trim()) {
+                                  handleCellSave(bill.id, 'name')
+                                }
+                              }
+                              if (e.key === 'Escape') {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setEditingCell(null)
+                                setEditingValue(bill.name)
+                              }
+                            }}
+                            onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
-                              setEditingCell(null)
-                              setEditingValue(bill.name)
-                            }
-                          }}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                          }}
-                          className="h-7 text-xs border-none p-1 focus-visible:ring-1"
-                          autoFocus
-                        />
+                            }}
+                            className="h-7 text-xs border-none p-1 focus-visible:ring-1"
+                            autoFocus
+                          />
+                          {saving?.rowId === bill.id && saving?.field === 'name' && (
+                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
                       </motion.div>
                     ) : (
                       <motion.div
                         key="display-name"
+                        data-testid={`display-name-${bill.id}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`${t('finance.table.description')}: ${bill.name || t('finance.table.description')}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -548,6 +642,13 @@ export const RecurringBillsBlock = ({
                           e.preventDefault()
                           e.stopPropagation()
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleCellEdit(e as any, bill.id, 'name', bill.name)
+                          }
+                        }}
                         className={`cursor-text hover:bg-muted/50 px-1 py-0.5 rounded min-h-[28px] flex items-center transition-colors ${
                           bill.paid ? 'line-through text-muted-foreground' : ''
                         }`}
@@ -555,7 +656,7 @@ export const RecurringBillsBlock = ({
                         {bill.name || (
                           <span className="text-muted-foreground italic">
                             {t('finance.table.description')}...
-                          </span>
+                    </span>
                         )}
                       </motion.div>
                     )}
@@ -572,12 +673,13 @@ export const RecurringBillsBlock = ({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="flex justify-end"
+                        className="flex justify-end items-center gap-1"
                       >
                         <Input
                           type="text"
                           inputMode="decimal"
                           value={editingValue}
+                          disabled={saving?.rowId === bill.id && saving?.field === 'amount'}
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^0-9,.-]/g, '')
                             setEditingValue(value)
@@ -616,6 +718,9 @@ export const RecurringBillsBlock = ({
                           className="h-7 text-xs border-none p-1 focus-visible:ring-1 text-right w-full max-w-[120px]"
                           autoFocus
                         />
+                        {saving?.rowId === bill.id && saving?.field === 'amount' && (
+                          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                        )}
                       </motion.div>
                     ) : (
                       <motion.div
@@ -633,10 +738,10 @@ export const RecurringBillsBlock = ({
                           e.stopPropagation()
                         }}
                         className={`cursor-text hover:bg-muted/50 px-1 py-0.5 rounded min-h-[28px] flex items-center justify-end font-semibold transition-colors ${
-                          bill.paid ? 'text-muted-foreground' : 'text-red-600'
+                  bill.paid ? 'text-muted-foreground' : 'text-red-600'
                         }`}
                       >
-                        {formatCurrency(bill.amount)}
+                  {formatCurrency(bill.amount)}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -647,15 +752,27 @@ export const RecurringBillsBlock = ({
                   <Popover
                     open={calendarOpen?.rowId === bill.id}
                     onOpenChange={(open) => {
-                      setCalendarOpen(open ? { rowId: bill.id } : null)
-                      if (!open && editingCell?.rowId === bill.id && editingCell?.field === 'due_day') {
-                        handleCellSave(bill.id, 'due_day')
+                      if (open) {
+                        setCalendarOpen({ rowId: bill.id })
+                        setEditingCell({ rowId: bill.id, field: 'due_day' })
+                        setEditingValue(String(bill.due_day))
+                      } else {
+                        // Se fechar sem selecionar, apenas limpar estados
+                        setCalendarOpen(null)
+                        // Não chamar handleCellSave aqui porque o onSelect já salva quando seleciona
+                        if (!editingValue || editingValue === String(bill.due_day)) {
+                          setEditingCell(null)
+                          setEditingValue('')
+                        }
                       }
                     }}
                   >
                     <PopoverTrigger asChild>
                       <motion.button
                         type="button"
+                        data-testid={`calendar-trigger-${bill.id}`}
+                        aria-label={`${t('finance.recurringBills.dueDay')}: ${bill.due_day}`}
+                        aria-expanded={calendarOpen?.rowId === bill.id}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={(e) => {
@@ -703,7 +820,8 @@ export const RecurringBillsBlock = ({
                           onSelect={async (date) => {
                             if (date) {
                               const day = date.getDate()
-                              setEditingValue(String(day))
+                              setSaving({ rowId: bill.id, field: 'due_day' })
+                              
                               // Salvar diretamente
                               const updateData = { due_day: day }
                               try {
@@ -715,22 +833,27 @@ export const RecurringBillsBlock = ({
                                 if (error) throw error
                                 
                                 // Atualizar estado local
-                                setBills(bills.map(b => 
+                                setBills(prevBills => prevBills.map(b => 
                                   b.id === bill.id ? { ...b, due_day: day } : b
                                 ))
                                 
                                 toast.success(t('finance.recurringBills.updated'))
                               } catch (err: any) {
+                                console.error('Error updating due day:', err)
                                 toast.error(t('finance.recurringBills.errorUpdate'), {
-                                  description: err.message,
+                                  description: err.message || t('finance.recurringBills.errorUpdate'),
                                 })
+                              } finally {
+                                setSaving(null)
                               }
+                              
+                              // Fechar calendário e limpar estados
                               setEditingCell(null)
                               setEditingValue('')
                               setCalendarOpen(null)
                             }
                           }}
-                          locale={ptBR}
+                          locale={dateFnsLocale}
                           className="rounded-lg"
                           classNames={{
                             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
@@ -777,13 +900,43 @@ export const RecurringBillsBlock = ({
                           open={selectOpen?.field === 'category'}
                           onOpenChange={(open) => {
                             setSelectOpen(open ? { field: 'category' } : null)
-                            if (!open) {
-                              handleCellSave(bill.id, 'category')
+                            if (!open && !editingValue) {
+                              // Se fechou sem selecionar, cancelar edição
+                              setEditingCell(null)
+                              setEditingValue('')
                             }
                           }}
-                          onValueChange={(value) => {
+                          onValueChange={async (value) => {
                             setEditingValue(value)
-                            handleCellSave(bill.id, 'category')
+                            setSaving({ rowId: bill.id, field: 'category' })
+                            
+                            // Salvar diretamente com o valor selecionado
+                            const updateData = { category: value.trim() }
+                            try {
+                              const { error } = await supabase
+                                .from('recurring_bills')
+                                .update(updateData)
+                                .eq('id', bill.id)
+
+                              if (error) throw error
+                              
+                              // Atualizar estado local
+                              setBills(prevBills => prevBills.map(b => 
+                                b.id === bill.id ? { ...b, ...updateData } : b
+                              ))
+                              
+                              toast.success(t('finance.recurringBills.updated'))
+                            } catch (err: any) {
+                              console.error('Error updating category:', err)
+                              toast.error(t('finance.recurringBills.errorUpdate'), {
+                                description: err.message || t('finance.recurringBills.errorUpdate'),
+                              })
+                            } finally {
+                              setSaving(null)
+                              setEditingCell(null)
+                              setEditingValue('')
+                              setSelectOpen(null)
+                            }
                           }}
                         >
                           <SelectTrigger className="h-7 text-xs border-none p-1 focus-visible:ring-1">
@@ -824,7 +977,7 @@ export const RecurringBillsBlock = ({
                         {bill.category || (
                           <span className="text-muted-foreground italic">
                             {t('finance.table.category')}...
-                          </span>
+                </span>
                         )}
                       </motion.div>
                     )}
@@ -842,22 +995,31 @@ export const RecurringBillsBlock = ({
                       variant="ghost"
                       className="h-6 w-6"
                       type="button"
+                      data-testid={`delete-bill-${bill.id}`}
+                      aria-label={t('common.delete')}
+                      disabled={deleting === bill.id}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
                         deleteBill(bill.id)
                       }}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      {deleting === bill.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
                     </Button>
                   </motion.div>
                 </TableCell>
               </TableRow>
-            ))}
+              ))
+            )}
 
             {/* Linha para adicionar nova conta */}
             <TableRow 
               className="h-8 border-t-2 border-dashed"
+              data-testid="add-recurring-bill-row"
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -868,31 +1030,38 @@ export const RecurringBillsBlock = ({
               }}
             >
               <TableCell colSpan={6} className="text-xs py-0 px-2">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    handleAddNew()
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                  }}
-                  className="w-full text-left px-1 py-0.5 rounded hover:bg-muted/50 text-muted-foreground italic flex items-center gap-2 transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                  {t('finance.recurringBills.addNew')}
-                </motion.button>
+                  <motion.button
+                    type="button"
+                    data-testid="add-recurring-bill-button"
+                    aria-label={t('finance.recurringBills.addNew')}
+                    disabled={adding}
+                    whileHover={!adding ? { scale: 1.02 } : {}}
+                    whileTap={!adding ? { scale: 0.98 } : {}}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleAddNew()
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    className="w-full text-left px-1 py-0.5 rounded hover:bg-muted/50 text-muted-foreground italic flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {adding ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Plus className="h-3 w-3" />
+                    )}
+                    {adding ? t('finance.table.adding') : t('finance.recurringBills.addNew')}
+                  </motion.button>
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </motion.div>
 
-      {/* Resumo */}
+          {/* Resumo */}
       {bills.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -900,17 +1069,17 @@ export const RecurringBillsBlock = ({
           transition={{ delay: 0.2, duration: 0.3 }}
           className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
         >
-          <div className="text-sm">
-            <span className="text-muted-foreground">{t('finance.budget.totalBudget')}: </span>
+            <div className="text-sm">
+              <span className="text-muted-foreground">{t('finance.budget.totalBudget')}: </span>
             <span className="font-semibold">
               {formatCurrency(bills.reduce((sum, b) => sum + b.amount, 0))}
             </span>
-          </div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">{t('finance.recurringBills.paid')}: </span>
-            <span className="font-semibold text-green-600">
+            </div>
+            <div className="text-sm">
+              <span className="text-muted-foreground">{t('finance.recurringBills.paid')}: </span>
+              <span className="font-semibold text-green-600">
               {bills.filter(b => b.paid).length}/{bills.length}
-            </span>
+              </span>
           </div>
         </motion.div>
       )}

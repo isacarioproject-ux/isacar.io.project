@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale';
 import { createReminder } from '@/lib/tasks/reminders-db';
 import { reminderNotificationService } from '@/lib/tasks/reminder-notification-service';
 import { reminderLocationService } from '@/lib/tasks/reminder-location-service';
@@ -45,6 +45,7 @@ type NotificationTime = 'at_time' | '5min' | '10min' | '30min' | '1hour' | '1day
 export function ReminderTab({ onCreateReminder }: ReminderTabProps) {
   const { t } = useI18n();
   const { currentWorkspace } = useWorkspace();
+  const dateFnsLocale = useDateFnsLocale();
   const [reminderText, setReminderText] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState('09:00');
@@ -291,8 +292,8 @@ export function ReminderTab({ onCreateReminder }: ReminderTabProps) {
           <PopoverTrigger asChild>
             <Badge variant="outline" className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 gap-1.5">
               <CalendarIcon className="size-3" />
-              {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : t('tasks.reminder.selectDate')}
-              {selectedTime && ` às ${selectedTime}`}
+              {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: dateFnsLocale }) : t('tasks.reminder.selectDate')}
+              {selectedTime && ` ${t('tasks.reminder.at')} ${selectedTime}`}
             </Badge>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -327,7 +328,7 @@ export function ReminderTab({ onCreateReminder }: ReminderTabProps) {
                       setSelectedDate(date);
                     }
                   }}
-                  locale={ptBR}
+                  locale={dateFnsLocale}
                 />
               </div>
 

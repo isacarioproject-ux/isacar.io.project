@@ -400,7 +400,7 @@ export default function BillingPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {subscription?.next_billing_date 
-                    ? new Date(subscription.next_billing_date).toLocaleDateString('pt-BR')
+                    ? new Date(subscription.next_billing_date).toLocaleDateString()
                     : '-'
                   }
                 </p>
@@ -411,7 +411,7 @@ export default function BillingPage() {
                   {subscription?.members_used || 1} / {subscription?.members_limit || 2}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {subscription ? Math.round((subscription.members_used / subscription.members_limit) * 100) : 50}% usado
+                  {subscription ? Math.round((subscription.members_used / subscription.members_limit) * 100) : 50}{t('billing.percentUsed')}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-card/50 p-3">

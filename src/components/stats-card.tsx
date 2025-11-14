@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, TrendingDown, LucideIcon } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface StatsCardProps {
@@ -21,13 +22,25 @@ export const StatsCard = ({
   trendValue,
   className,
 }: StatsCardProps) => (
-  <Card className={cn('relative overflow-hidden', className)}>
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3, ease: "easeOut" }}
+    whileHover={{ y: -4, scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+  >
+    <Card className={cn('relative overflow-hidden cursor-pointer', className)}>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
     <CardHeader className="relative flex flex-row items-center justify-between pb-2">
       <CardTitle className="text-xs font-medium text-muted-foreground">
         {title}
       </CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
+      <motion.div
+        whileHover={{ rotate: 5, scale: 1.1 }}
+        transition={{ duration: 0.2 }}
+      >
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </motion.div>
     </CardHeader>
     <CardContent className="relative">
       <div className="text-2xl font-bold tracking-tight">{value}</div>
@@ -54,4 +67,5 @@ export const StatsCard = ({
       )}
     </CardContent>
   </Card>
+  </motion.div>
 )

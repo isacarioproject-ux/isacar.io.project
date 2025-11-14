@@ -392,7 +392,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
 
       {/* Tempo rastreado */}
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-gray-500 dark:text-gray-400">Tempo rastreado...</span>
+        <span className="text-gray-500 dark:text-gray-400">{t('tasks.timeTracked')}</span>
         <TimeTracker 
           taskId={task.id} 
           onTimeAdd={(minutes) => {
@@ -402,10 +402,10 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         />
       </div>
 
-      {/* Relacionamentos */}
+      {/* Relationships */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Relacionamentos</span>
+          <span>{t('tasks.relationships')}</span>
         </div>
         <RelationshipSelector 
           taskId={task.id}
@@ -423,7 +423,7 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
       {/* Etiquetas */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Etiquetas</span>
+          <span>{t('tasks.labels')}</span>
         </div>
         
         {/* Tags selecionadas */}

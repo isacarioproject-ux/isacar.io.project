@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { updateTask, deleteTask, getUsers } from '@/lib/tasks/tasks-storage';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useDateFnsLocale } from '@/hooks/use-date-fns-locale';
 import { useI18n } from '@/hooks/use-i18n';
 import { Separator } from '@/components/ui/separator';
 
@@ -25,6 +25,7 @@ interface TaskRowActionsPopoverProps {
 export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverProps) {
   const { t } = useI18n();
   const { currentWorkspace } = useWorkspace();
+  const dateFnsLocale = useDateFnsLocale();
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
@@ -152,7 +153,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                     setShowActions(false);
                   }
                 }}
-                locale={ptBR}
+                locale={dateFnsLocale}
                 className="rounded-md border-0"
               />
               <div className="p-3 border-t dark:border-gray-700 space-y-1">
@@ -223,7 +224,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
             </PopoverContent>
           </Popover>
 
-          {/* Definir Prioridade */}
+          {/* Set Priority */}
           <Popover open={showPriority} onOpenChange={setShowPriority}>
             <PopoverTrigger asChild>
               <button
@@ -243,7 +244,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   onClick={(e) => {
                     e.stopPropagation();
                     updateTask(task.id, { priority: 'urgent' });
-                    toast.success('Prioridade definida: Urgente');
+                    toast.success(`${t('tasks.prioritySet')}: ${t('tasks.priority.urgent')}`);
                     onUpdate();
                     setShowPriority(false);
                     setShowActions(false);
@@ -251,7 +252,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Flag className="size-4 text-red-500" />
-                  <span className="dark:text-white">Urgente</span>
+                  <span className="dark:text-white">{t('tasks.priority.urgent')}</span>
                   {task.priority === 'urgent' && (
                     <CheckCircle2 className="size-4 ml-auto text-blue-600" />
                   )}
@@ -260,7 +261,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   onClick={(e) => {
                     e.stopPropagation();
                     updateTask(task.id, { priority: 'high' });
-                    toast.success('Prioridade definida: Alta');
+                    toast.success(`${t('tasks.prioritySet')}: ${t('tasks.priority.high')}`);
                     onUpdate();
                     setShowPriority(false);
                     setShowActions(false);
@@ -268,7 +269,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Flag className="size-4 text-orange-500" />
-                  <span className="dark:text-white">Alta</span>
+                  <span className="dark:text-white">{t('tasks.priority.high')}</span>
                   {task.priority === 'high' && (
                     <CheckCircle2 className="size-4 ml-auto text-blue-600" />
                   )}
@@ -277,7 +278,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   onClick={(e) => {
                     e.stopPropagation();
                     updateTask(task.id, { priority: 'medium' });
-                    toast.success('Prioridade definida: Média');
+                    toast.success(`${t('tasks.prioritySet')}: ${t('tasks.priority.medium')}`);
                     onUpdate();
                     setShowPriority(false);
                     setShowActions(false);
@@ -285,7 +286,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Flag className="size-4 text-yellow-500" />
-                  <span className="dark:text-white">Média</span>
+                  <span className="dark:text-white">{t('tasks.priority.medium')}</span>
                   {task.priority === 'medium' && (
                     <CheckCircle2 className="size-4 ml-auto text-blue-600" />
                   )}
@@ -294,7 +295,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   onClick={(e) => {
                     e.stopPropagation();
                     updateTask(task.id, { priority: 'low' });
-                    toast.success('Prioridade definida: Baixa');
+                    toast.success(`${t('tasks.prioritySet')}: ${t('tasks.priority.low')}`);
                     onUpdate();
                     setShowPriority(false);
                     setShowActions(false);
@@ -302,7 +303,7 @@ export function TaskRowActionsPopover({ task, onUpdate }: TaskRowActionsPopoverP
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Flag className="size-4 text-gray-500" />
-                  <span className="dark:text-white">Baixa</span>
+                  <span className="dark:text-white">{t('tasks.priority.low')}</span>
                   {task.priority === 'low' && (
                     <CheckCircle2 className="size-4 ml-auto text-blue-600" />
                   )}

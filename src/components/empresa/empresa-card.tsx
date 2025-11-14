@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,21 +96,36 @@ export function EmpresaCard({ className, dragHandleProps }: EmpresaCardProps) {
               </div>
 
               {/* Botões - Visível no hover */}
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 sm:opacity-100 transition-opacity">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7"
-                  title={t('empresa.card.expand')}
-                  onClick={() => setIsExpandedViewOpen(true)}
+              <motion.div 
+                className="flex items-center gap-0.5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <Maximize2 className="size-3.5" />
-                </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7"
+                    title={t('empresa.card.expand')}
+                    onClick={() => setIsExpandedViewOpen(true)}
+                  >
+                    <Maximize2 className="size-3.5" />
+                  </Button>
+                </motion.div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <MoreVertical className="size-3.5" />
-                    </Button>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <MoreVertical className="size-3.5" />
+                      </Button>
+                    </motion.div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => toast.info(t('empresa.card.comingSoon'))}>
@@ -129,7 +145,7 @@ export function EmpresaCard({ className, dragHandleProps }: EmpresaCardProps) {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
+              </motion.div>
             </div>
           </CardHeader>
 

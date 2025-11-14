@@ -1,6 +1,6 @@
 import Draggable from 'react-draggable'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { X, Maximize2 } from 'lucide-react'
 import { WhiteboardItem } from '@/types/whiteboard'
 import { cn } from '@/lib/utils'
 import { useRef } from 'react'
@@ -31,8 +31,9 @@ export const WhiteboardTriangle = ({ item, onUpdate, onDelete }: Props) => {
   const startRef = useRef<{x:number;y:number;width:number;height:number}>()
   const nodeRef = useRef<HTMLDivElement | null>(null)
 
-  const onResizeStart = (e: React.MouseEvent) => {
+  const onResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation()
+    e.preventDefault()
     resizingRef.current = true
     startRef.current = {
       x: e.clientX,
@@ -40,12 +41,14 @@ export const WhiteboardTriangle = ({ item, onUpdate, onDelete }: Props) => {
       width,
       height,
     }
-    window.addEventListener('mousemove', onResizing)
-    window.addEventListener('mouseup', onResizeEnd, { once: true })
+    window.addEventListener('pointermove', onResizing)
+    window.addEventListener('pointerup', onResizeEnd, { once: true })
+    window.addEventListener('pointercancel', onResizeEnd, { once: true })
   }
 
-  const onResizing = (e: MouseEvent) => {
+  const onResizing = (e: PointerEvent) => {
     if (!resizingRef.current || !startRef.current) return
+    e.preventDefault()
     const dx = e.clientX - startRef.current.x
     const dy = e.clientY - startRef.current.y
     const nextWidth = Math.max(40, startRef.current.width + dx)
@@ -55,7 +58,7 @@ export const WhiteboardTriangle = ({ item, onUpdate, onDelete }: Props) => {
 
   const onResizeEnd = () => {
     resizingRef.current = false
-    window.removeEventListener('mousemove', onResizing)
+    window.removeEventListener('pointermove', onResizing)
   }
 
   return (
@@ -65,7 +68,7 @@ export const WhiteboardTriangle = ({ item, onUpdate, onDelete }: Props) => {
       handle=".drag-handle"
       nodeRef={nodeRef}
     >
-      <div ref={nodeRef} className="absolute cursor-move" style={{ width, height }}>
+      <div ref={nodeRef} className="absolute cursor-move group" style={{ width, height }}>
         <svg 
           className="drag-handle" 
           width={width} 
@@ -82,20 +85,27 @@ export const WhiteboardTriangle = ({ item, onUpdate, onDelete }: Props) => {
             style={{ transformOrigin: 'center' }}
           />
         </svg>
+        
+        {/* Botão X - superior esquerdo */}
         <Button 
           size="icon" 
           variant="ghost" 
-          className="absolute -top-2 -right-2 h-5 w-5 bg-background hover:bg-destructive/10 hover:text-destructive shadow-sm" 
-          onClick={() => onDelete(item.id)}
+          className="absolute -top-2 -left-2 h-6 w-6 md:h-7 md:w-7 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200" 
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(item.id)
+          }}
         >
-          <X className="h-3 w-3" />
+          <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
         </Button>
 
+        {/* Resize handle - inferior direito */}
         <div
-          onMouseDown={onResizeStart}
-          className="absolute -bottom-1 -right-1 h-3 w-3 bg-primary rounded-sm cursor-se-resize shadow ring-2 ring-background"
-          title="Redimensionar"
-        />
+          onPointerDown={onResizeStart}
+          className="absolute -bottom-2 -right-2 h-6 w-6 md:h-7 md:w-7 rounded-full bg-primary/90 hover:bg-primary text-white shadow-md cursor-se-resize opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center"
+        >
+          <Maximize2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+        </div>
       </div>
     </Draggable>
   )
