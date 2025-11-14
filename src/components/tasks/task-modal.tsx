@@ -60,9 +60,7 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
     const loadTask = async () => {
       try {
         const taskData = await getTaskWithDetails(taskId);
-        if (taskData) {
-          setTask(taskData);
-        }
+        setTask(taskData || null);
       } catch (error) {
         console.error('Erro ao carregar tarefa:', error);
         toast.error(t('tasks.modal.loadError'));
@@ -74,20 +72,24 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
     loadTask();
 
     // Carregar lista de IDs de tarefas para navegação
-    getTasks().then(allTasks => {
-      const ids = allTasks.map(t => t.id);
-      setAllTaskIds(ids);
-      setCurrentIndex(ids.indexOf(taskId));
-    }).catch(console.error);
+    const loadTaskIds = async () => {
+      try {
+        const allTasks = await getTasks();
+        const ids = allTasks.map(t => t.id);
+        setAllTaskIds(ids);
+        setCurrentIndex(ids.indexOf(taskId));
+      } catch (error) {
+        console.error('Erro ao carregar IDs das tarefas:', error);
+      }
+    };
+    loadTaskIds();
   }, [taskId]);
 
   const handleRefresh = async () => {
     if (!taskId) return;
     try {
       const taskData = await getTaskWithDetails(taskId);
-      if (taskData) {
-        setTask(taskData);
-      }
+      setTask(taskData || null);
       onUpdate();
     } catch (error) {
       console.error('Erro ao atualizar tarefa:', error);
@@ -101,10 +103,8 @@ export function TaskModal({ taskId, open, onClose, onUpdate }: TaskModalProps) {
       const newTaskId = allTaskIds[newIndex];
       try {
         const taskData = await getTaskWithDetails(newTaskId);
-        if (taskData) {
-          setTask(taskData);
-          setCurrentIndex(newIndex);
-        }
+        setTask(taskData || null);
+        setCurrentIndex(newIndex);
       } catch (error) {
         console.error('Erro ao navegar para tarefa:', error);
       }
