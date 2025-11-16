@@ -1,107 +1,96 @@
-import Draggable from 'react-draggable'
-import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
-import { WhiteboardItem } from '@/types/whiteboard'
-import { cn } from '@/lib/utils'
-import { useRef } from 'react'
+import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
+import type { WhiteboardItem } from '@/types/whiteboard';
 
-const strokeColors = {
-  blue: 'stroke-blue-500',
-  green: 'stroke-green-500',
-  purple: 'stroke-purple-500',
-  pink: 'stroke-pink-500',
-  orange: 'stroke-orange-500',
-  red: 'stroke-red-500',
-  yellow: 'stroke-yellow-500',
-  cyan: 'stroke-cyan-500',
-  gray: 'stroke-gray-500',
+interface WhiteboardPenProps {
+  item: WhiteboardItem;
+  onUpdate: (id: string, updates: Partial<WhiteboardItem>) => void;
+  onDelete: (id: string) => void;
+  viewportRef?: React.RefObject<{ zoom: number; pan: { x: number; y: number } }>;
+  isEditable?: boolean;
 }
 
-interface Props {
-  item: WhiteboardItem
-  onUpdate: (id: string, updates: Partial<WhiteboardItem>) => void
-  onDelete: (id: string) => void
-  onSelect?: (id: string) => void
-  isSelected?: boolean
-}
+export function WhiteboardPen({
+  item,
+  onDelete,
+  isEditable = true
+}: WhiteboardPenProps) {
+  const [isHovered, setIsHovered] = useState(false);
 
-export const WhiteboardPen = ({ item, onUpdate, onDelete, onSelect, isSelected }: Props) => {
-  const points = item.points || []
-  const strokeWidth = item.strokeWidth ?? 2
-  const nodeRef = useRef<HTMLDivElement | null>(null)
+  // ✅ Função para suavizar o path
+  const getSmoothPath = (points: { x: number; y: number }[]) => {
+    if (!points || points.length < 2) return '';
+    if (points.length === 2) {
+      return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+    }
 
-  // calcular bbox com padding adequado
-  const xs = points.map(p => p.x)
-  const ys = points.map(p => p.y)
-  const minX = Math.min(0, ...xs)
-  const minY = Math.min(0, ...ys)
-  const maxX = Math.max(0, ...xs)
-  const maxY = Math.max(0, ...ys)
-  const padding = 15
-  const width = Math.max(40, maxX - minX + padding * 2)
-  const height = Math.max(40, maxY - minY + padding * 2)
+    let path = `M ${points[0].x} ${points[0].y}`;
 
-  const path = points.map(p => `${p.x - minX + padding},${p.y - minY + padding}`).join(' ')
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
 
-  // Se não há pontos suficientes, não renderiza
-  if (points.length < 2) return null
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+
+    return path;
+  };
+
+  const points = item.points || [];
 
   return (
-    <Draggable
-      position={item.position}
-      onStop={(e, data) => onUpdate(item.id, { position: { x: data.x, y: data.y } })}
-      handle=".drag-handle"
-      nodeRef={nodeRef}
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="absolute inset-0"
+      style={{ pointerEvents: 'none' }} // ✅ CRÍTICO: Não bloqueia outros elementos
     >
-      <div ref={nodeRef} className="absolute group" style={{ width, height }}>
-        <svg
-          className="drag-handle cursor-move hover:bg-primary/5 rounded transition-colors"
-          width={width}
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
+      {/* ✅ SVG do desenho */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        style={{ pointerEvents: 'none' }}
+      >
+        <path
+          d={getSmoothPath(points)}
+          stroke={item.color || '#3b82f6'}
+          strokeWidth={item.strokeWidth || 2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          style={{ 
+            vectorEffect: 'non-scaling-stroke',
+            pointerEvents: 'stroke' // ✅ Só o path detecta hover
+          }}
+        />
+      </svg>
+
+      {/* ✅ Botão delete (no centro do path) */}
+      {isHovered && isEditable && points.length > 0 && (
+        <button
           onClick={(e) => {
-            e.stopPropagation()
-            onSelect?.(item.id)
+            e.stopPropagation();
+            onDelete(item.id);
+          }}
+          className="absolute p-1.5 bg-red-500 hover:bg-red-600 
+                     rounded-full text-white shadow-lg transition-all z-50
+                     hover:scale-110"
+          style={{
+            // ✅ Posicionar no centro aproximado do desenho
+            left: `${Math.min(...points.map(p => p.x))}px`,
+            top: `${Math.min(...points.map(p => p.y)) - 30}px`,
+            pointerEvents: 'auto'
           }}
         >
-          {isSelected && (
-            <rect
-              x={2}
-              y={2}
-              width={width - 4}
-              height={height - 4}
-              className="stroke-primary/60"
-              strokeDasharray="4 4"
-              fill="transparent"
-              strokeWidth={1}
-              rx={4}
-            />
-          )}
-          <polyline
-            points={path}
-            className={cn('fill-none transition-all', strokeColors[item.shapeColor || 'blue'])}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        
-        {/* Botão X posicionado corretamente no canto superior direito */}
-        <div className="absolute -top-2 -right-2 z-10">
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            className="h-6 w-6 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 md:h-7 md:w-7" 
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(item.id)
-            }}
-            aria-label="Excluir desenho"
-          >
-            <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
-          </Button>
-        </div>
-      </div>
-    </Draggable>
-  )
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
 }

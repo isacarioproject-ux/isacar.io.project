@@ -1,0 +1,75 @@
+/**
+ * CONFIGURAÇÃO DAS INTEGRAÇÕES
+ * 
+ * Use este arquivo para ligar/desligar integrações.
+ * Se algo der errado, mude para false e a integração para.
+ * 
+ * AGORA COM SUPORTE A LOCALSTORAGE:
+ * - Configurações da interface visual são salvas no localStorage
+ * - Se existir config no localStorage, ela tem prioridade
+ * - Caso contrário, usa os valores padrão deste arquivo
+ */
+
+const DEFAULT_CONFIG = {
+  // Master switch - desliga TUDO se false
+  ENABLED: false, // ← COMEÇA DESLIGADO para segurança
+
+  // Integrações específicas
+  WHITEBOARD_TO_TASKS: true,          // Criar tasks do whiteboard
+  WHITEBOARD_TO_GERENCIADOR: true,    // Criar metas/despesas do whiteboard
+  TASKS_TO_FINANCE: true,             // Criar despesas quando task concluir
+  CROSS_MODULE_SYNC: true,            // Sincronização bidirecional
+
+  // Opções de comportamento
+  AUTO_CREATE: true,                  // Criar automaticamente ou perguntar?
+  SHOW_NOTIFICATIONS: true,           // Mostrar notificações ao criar?
+  DEBUG_MODE: false,                  // Logs detalhados no console
+
+  // Delays (ms) para evitar spam
+  DEBOUNCE_DELAY: 500,                // Esperar 500ms antes de criar
+};
+
+/**
+ * Carregar configuração do localStorage ou usar padrão
+ */
+function loadConfig() {
+  try {
+    const stored = localStorage.getItem('integration-config');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      console.log('[Integration Config] Loaded from localStorage:', parsed);
+      return { ...DEFAULT_CONFIG, ...parsed };
+    }
+  } catch (error) {
+    console.warn('[Integration Config] Error loading from localStorage:', error);
+  }
+  
+  console.log('[Integration Config] Using default config');
+  return DEFAULT_CONFIG;
+}
+
+// Exportar configuração (carregada do localStorage ou padrão)
+export const INTEGRATION_CONFIG = loadConfig();
+
+/**
+ * Helper para verificar se integração está ativa
+ */
+export function isIntegrationEnabled(integration: keyof typeof INTEGRATION_CONFIG): boolean {
+  if (!INTEGRATION_CONFIG.ENABLED) return false;
+  return INTEGRATION_CONFIG[integration] as boolean;
+}
+
+/**
+ * Atualizar configuração (salva no localStorage e recarrega)
+ */
+export function updateConfig(newConfig: Partial<typeof DEFAULT_CONFIG>) {
+  try {
+    const updated = { ...INTEGRATION_CONFIG, ...newConfig };
+    localStorage.setItem('integration-config', JSON.stringify(updated));
+    console.log('[Integration Config] Saved to localStorage:', updated);
+    return true;
+  } catch (error) {
+    console.error('[Integration Config] Error saving to localStorage:', error);
+    return false;
+  }
+}

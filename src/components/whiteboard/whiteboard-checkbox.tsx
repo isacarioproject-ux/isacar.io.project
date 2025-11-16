@@ -1,85 +1,136 @@
-import Draggable from 'react-draggable'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
-import { WhiteboardItem } from '@/types/whiteboard'
-import { useRef, useState } from 'react'
-import { useI18n } from '@/hooks/use-i18n'
-import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
+import { useState } from 'react';
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
+import { Trash2, Check } from 'lucide-react';
+import type { WhiteboardItem } from '@/types/whiteboard';
 
-interface Props {
-  item: WhiteboardItem
-  onUpdate: (id: string, updates: Partial<WhiteboardItem>) => void
-  onDelete: (id: string) => void
+interface WhiteboardCheckboxProps {
+  item: WhiteboardItem;
+  onUpdate: (id: string, updates: Partial<WhiteboardItem>) => void;
+  onDelete: (id: string) => void;
+  viewportRef?: React.RefObject<{ zoom: number; pan: { x: number; y: number } }>;
+  isEditable?: boolean;
 }
 
-export const WhiteboardCheckbox = ({ item, onUpdate, onDelete }: Props) => {
-  const { t } = useI18n()
-  const [text, setText] = useState(item.content || '')
-  const nodeRef = useRef<HTMLDivElement | null>(null)
+export function WhiteboardCheckbox({
+  item,
+  onUpdate,
+  onDelete,
+  viewportRef,
+  isEditable = true
+}: WhiteboardCheckboxProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const checked = item.checked || false;
+
+  const handleDragStop = (e: DraggableEvent, data: DraggableData) => {
+    e.stopPropagation();
+    const scale = viewportRef?.current?.zoom || 1;
+    onUpdate(item.id, { 
+      position: { x: data.x / scale, y: data.y / scale }
+    });
+  };
+
+  const toggleCheck = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onUpdate(item.id, { 
+      checked: !checked 
+    });
+  };
+
+  const scale = viewportRef?.current?.zoom || 1;
 
   return (
     <Draggable
-      position={item.position}
-      onStop={(e, data) => onUpdate(item.id, { position: { x: data.x, y: data.y } })}
-      handle=".drag-handle"
-      nodeRef={nodeRef}
+      position={{ x: item.position.x * scale, y: item.position.y * scale }}
+      onStop={handleDragStop}
+      onDrag={(e) => e.stopPropagation()}
+      scale={scale}
+      disabled={!isEditable}
+      handle=".drag-handle" // ✅ CORREÇÃO: Especificar handle para não interferir com input
+      cancel="input, button" // ✅ CORREÇÃO: Cancelar drag em inputs e botões
     >
-      <motion.div 
-        ref={nodeRef} 
-        className={cn(
-          "absolute flex items-center gap-2 bg-card border border-border rounded-lg p-2 shadow-md group",
-          "hover:shadow-lg transition-all duration-200"
-        )}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        whileHover={{ 
-          scale: 1.01,
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="absolute"
+        style={{
+          width: item.width || 200,
+          transformOrigin: 'top left'
         }}
-        whileTap={{ scale: 0.99 }}
       >
-        {/* Drag handle - barra lateral */}
-        <div className="drag-handle h-full w-2 -ml-1 mr-1 rounded-l cursor-move hover:bg-primary/20 transition-colors" />
-        
-        <div className="flex items-center gap-2 flex-1">
-          <Checkbox
-            checked={item.checked}
-            onCheckedChange={(checked) => onUpdate(item.id, { checked: !!checked })}
-            className="cursor-pointer"
-          />
-          <Input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={() => onUpdate(item.id, { content: text })}
-            placeholder={t('whiteboard.item.task')}
-            className="h-7 w-40 text-sm border-0 bg-transparent focus-visible:ring-0"
-          />
-        </div>
-        
-        {/* Botão X - Melhor visibilidade e usabilidade */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            className="h-6 w-6 md:h-7 md:w-7 rounded-full bg-destructive/90 hover:bg-destructive text-white shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200" 
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(item.id)
-            }}
-            aria-label="Excluir checkbox"
+        <div className="flex items-start gap-2 p-2 bg-background/90 backdrop-blur-sm 
+                        rounded-lg border border-border shadow-sm">
+          
+          {/* ✅ CORREÇÃO: Área de drag específica - mais visível */}
+          <div className="drag-handle absolute left-0 top-0 bottom-0 w-6 cursor-move hover:bg-primary/20 bg-primary/5 border-r border-primary/20 transition-colors" 
+               style={{ pointerEvents: 'auto', zIndex: 1 }} 
+               title="Arrastar para mover" />
+          
+          <div className="relative z-10 flex items-start gap-2 w-full">
+          {/* Checkbox */}
+          <button
+            onClick={toggleCheck}
+            className={`flex-shrink-0 w-5 h-5 rounded border-2 transition-all
+                       ${checked 
+                         ? 'bg-blue-500 border-blue-500' 
+                         : 'bg-background border-border hover:border-blue-400'
+                       }`}
+            style={{ pointerEvents: 'auto' }}
           >
-            <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
-          </Button>
-        </motion.div>
-      </motion.div>
+            {checked && <Check className="w-4 h-4 text-white" />}
+          </button>
+
+          {/* Texto editável */}
+          {isEditing ? (
+            <input
+              autoFocus
+              type="text"
+              defaultValue={item.content || 'Nova tarefa'}
+              onBlur={(e) => {
+                onUpdate(item.id, { content: e.target.value });
+                setIsEditing(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  onUpdate(item.id, { content: e.currentTarget.value });
+                  setIsEditing(false);
+                }
+                if (e.key === 'Escape') {
+                  setIsEditing(false);
+                }
+              }}
+              className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div
+              onDoubleClick={() => setIsEditing(true)}
+              className={`flex-1 text-sm cursor-text ${
+                checked ? 'line-through text-muted-foreground' : 'text-foreground'
+              }`}
+            >
+              {item.content || 'Nova tarefa'}
+            </div>
+          )}
+
+          {/* Delete button */}
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item.id);
+              }}
+              className="p-1 bg-red-500 hover:bg-red-600 rounded text-white 
+                         transition-all hover:scale-110"
+              style={{ pointerEvents: 'auto' }}
+              aria-label="Deletar checkbox"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          )}
+          </div> {/* ✅ CORREÇÃO: Fechando div do conteúdo */}
+        </div>
+      </div>
     </Draggable>
-  )
+  );
 }

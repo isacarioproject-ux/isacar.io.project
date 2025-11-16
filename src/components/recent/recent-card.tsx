@@ -11,11 +11,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ResizableCard } from '@/components/ui/resizable-card';
 import { RecentExpandedView } from '@/components/recent/recent-expanded-view';
-import { MoreVertical, Clock, Settings, Maximize2, GripVertical } from 'lucide-react';
+import { 
+  MoreVertical, 
+  Clock, 
+  Settings, 
+  Maximize2, 
+  GripVertical,
+  CheckSquare,
+  FileText,
+  DollarSign,
+  FolderKanban,
+  Users,
+  Presentation,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getActivities } from '@/lib/tasks/tasks-storage';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import type { Activity } from '@/types/tasks';
+import { useRecentActivities } from '@/hooks/use-recent-activities';
 import { useI18n } from '@/hooks/use-i18n';
 
 interface RecentCardProps {
@@ -26,18 +38,10 @@ interface RecentCardProps {
 export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
   const { t } = useI18n();
   const [isExpandedViewOpen, setIsExpandedViewOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const activities = getActivities();
+  const { activities, loading } = useRecentActivities(50);
 
-  // Simular loading inicial
-  useState(() => {
-    setTimeout(() => setLoading(false), 500);
-  });
-
-  // Pegar apenas as 10 atividades mais recentes
-  const recentActivities = activities
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10);
+  // Pegar apenas as 10 atividades mais recentes para o card
+  const recentActivities = activities.slice(0, 10);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -53,6 +57,44 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
     if (diffDays < 7) return `${diffDays}d atrás`;
     
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'task':
+        return <CheckSquare className="size-4" />;
+      case 'document':
+        return <FileText className="size-4" />;
+      case 'finance':
+        return <DollarSign className="size-4" />;
+      case 'project':
+        return <FolderKanban className="size-4" />;
+      case 'member':
+        return <Users className="size-4" />;
+      case 'whiteboard':
+        return <Presentation className="size-4" />;
+      default:
+        return <Clock className="size-4" />;
+    }
+  };
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'task':
+        return 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400';
+      case 'document':
+        return 'bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400';
+      case 'finance':
+        return 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400';
+      case 'project':
+        return 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400';
+      case 'member':
+        return 'bg-pink-100 text-pink-600 dark:bg-pink-950 dark:text-pink-400';
+      case 'whiteboard':
+        return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400';
+      default:
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+    }
   };
 
   return (
@@ -76,7 +118,7 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
               {/* Drag Handle - 6 pontinhos - visível no hover */}
               <div 
                 {...dragHandleProps}
-                className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted/70 rounded transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 relative z-50"
+                className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted/70 rounded transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 relative z-10"
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </div>
@@ -148,7 +190,18 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
         {/* Conteúdo com Animações */}
         <CardContent className="flex-1 overflow-y-auto p-2">
           <div className="space-y-3">
-            {recentActivities.length === 0 ? (
+            {loading ? (
+              // Skeleton loading
+              Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex gap-3 p-2">
+                  <Skeleton className="size-8 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : recentActivities.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -173,13 +226,11 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
-                  className="flex gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer"
+                  className="flex gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <Avatar className="size-8 flex-shrink-0">
-                    <AvatarFallback className="text-xs">
-                      {activity.user_name.substring(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className={`size-8 rounded-lg flex items-center justify-center flex-shrink-0 ${getActivityColor(activity.type)}`}>
+                    {getActivityIcon(activity.type)}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm">
                       <span className="font-medium dark:text-gray-100">
@@ -187,6 +238,9 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
                       </span>
                       <span className="text-gray-600 dark:text-gray-400 ml-1">
                         {activity.details}
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100 ml-1">
+                        "{activity.entity_name}"
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

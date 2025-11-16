@@ -8,17 +8,22 @@ import { AuthProvider } from '@/contexts/auth-context'
 import { PendingInvitesNotification } from '@/components/workspace/pending-invites-notification'
 import { InitialPreload } from '@/components/loading-skeleton'
 import { useReminderServices } from '@/hooks/use-reminder-services'
+import { ProtectedRoute } from '@/components/protected-route'
+import { initIntegrations } from '@/integrations'
+import { useEffect } from 'react'
 
 // Lazy load pages for code splitting
 const AuthPage = lazy(() => import('@/pages/auth'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const MyWorkPage = lazy(() => import('@/pages/my-work'))
 const MyFinancePage = lazy(() => import('@/pages/my-finance'))
+const MyBudgetPage = lazy(() => import('@/pages/my-budget'))
 const MyCompanyPage = lazy(() => import('@/pages/my-company'))
 const ProfilePage = lazy(() => import('@/pages/settings/profile'))
 const NotificationsPage = lazy(() => import('@/pages/settings/notifications'))
 const PreferencesPage = lazy(() => import('@/pages/settings/preferences'))
 const BillingPage = lazy(() => import('@/pages/settings/billing'))
+const IntegrationsPage = lazy(() => import('@/pages/settings/integrations'))
 const PrivacyPolicyPage = lazy(() => import('@/pages/privacy-policy'))
 const TermsOfServicePage = lazy(() => import('@/pages/terms-of-service'))
 const AcceptInvitePage = lazy(() => import('@/pages/accept-invite'))
@@ -29,6 +34,11 @@ const PageLoader = () => <InitialPreload />
 function App() {
   // Inicializar serviços de lembrete
   useReminderServices();
+
+  // Inicializar sistema de integrações modulares
+  useEffect(() => {
+    initIntegrations();
+  }, []);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
@@ -50,16 +60,18 @@ function App() {
           <Route path="/invite/:token" element={<AcceptInvitePage />} />
           
           {/* Protected Routes */}
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/meu-trabalho" element={<MyWorkPage />} />
-          <Route path="/minha-financa" element={<MyFinancePage />} />
-          <Route path="/minha-empresa" element={<MyCompanyPage />} />
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/meu-trabalho" element={<ProtectedRoute><MyWorkPage /></ProtectedRoute>} />
+          <Route path="/minha-financa" element={<ProtectedRoute><MyFinancePage /></ProtectedRoute>} />
+          <Route path="/meu-gerenciador" element={<ProtectedRoute><MyBudgetPage /></ProtectedRoute>} />
+          <Route path="/minha-empresa" element={<ProtectedRoute><MyCompanyPage /></ProtectedRoute>} />
           
           {/* Settings Routes */}
-          <Route path="/settings/profile" element={<ProfilePage />} />
-          <Route path="/settings/notifications" element={<NotificationsPage />} />
-          <Route path="/settings/preferences" element={<PreferencesPage />} />
-          <Route path="/settings/billing" element={<BillingPage />} />
+          <Route path="/settings/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/settings/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/settings/preferences" element={<ProtectedRoute><PreferencesPage /></ProtectedRoute>} />
+          <Route path="/settings/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+          <Route path="/settings/integrations" element={<ProtectedRoute><IntegrationsPage /></ProtectedRoute>} />
           
           {/* Redirects - apenas home */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

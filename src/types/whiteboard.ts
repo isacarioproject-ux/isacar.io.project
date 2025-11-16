@@ -17,6 +17,8 @@ export type WhiteboardItemType =
   | 'heart'
   | 'line'
   | 'pen'
+  | 'mindmap-node'
+  | 'mindmap-connection'
 
 export type ShapeColor = 'blue' | 'green' | 'purple' | 'pink' | 'orange' | 'red' | 'yellow' | 'cyan' | 'gray'
 
@@ -40,8 +42,28 @@ export interface WhiteboardItem {
   fill?: boolean // se a forma é preenchida ou apenas contorno
   // Novos opcionais (backward-compatible)
   strokeWidth?: number // para linhas/setas
-  arrowStyle?: 'triangle' | 'bar' | 'diamond' | 'line' // variações de ponta de seta
+  arrowStyle?: 'triangle' | 'bar' | 'diamond' | 'line' | 'straight' | 'double' | 'curved' | 'dashed' | 'thick' // variações de ponta de seta
   opacity?: number
+  // Metadados para setas desenhadas por arrastar
+  metadata?: {
+    style?: 'straight' | 'double' | 'curved' | 'dashed' | 'thick'
+    startX?: number
+    startY?: number
+    endX?: number
+    endY?: number
+    // Mind Map específicos
+    backgroundColor?: string
+    textColor?: string
+    borderColor?: string
+    connectionStyle?: 'straight' | 'curved' | 'stepped'
+  }
+  // Mind Map específicos
+  parentId?: string // ID do node pai (para mindmap-node)
+  childIds?: string[] // IDs dos filhos (para mindmap-node)
+  level?: number // Nível na hierarquia (0 = root)
+  collapsed?: boolean // Se o node está colapsado
+  fromNodeId?: string // Para mindmap-connection
+  toNodeId?: string // Para mindmap-connection
   penStyle?: 'pen' | 'marker'
   // Texto
   fontFamily?: string

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { FinanceCard } from '@/components/finance/finance-card'
+import { BudgetCard } from '@/components/finance/budget-card'
 import { TasksCard } from '@/components/tasks/tasks-card'
 import { RecentCard } from '@/components/recent/recent-card'
 import { EmpresaCard } from '@/components/empresa/empresa-card'
@@ -20,12 +21,15 @@ export default function DashboardPage() {
   // Estado para ordem dos cards
   const [cardOrder, setCardOrder] = useState(() => {
     const saved = localStorage.getItem('dashboard-card-order')
-    const defaultOrder = ['finance-card', 'recent-card', 'tasks-card', 'empresa-card']
+    const defaultOrder = ['finance-card', 'budget-card', 'recent-card', 'tasks-card', 'empresa-card']
     const order = saved ? JSON.parse(saved) : defaultOrder
     
     // Garantir que todos os cards estão na lista
     if (!order.includes('finance-card')) {
       order.push('finance-card')
+    }
+    if (!order.includes('budget-card')) {
+      order.push('budget-card')
     }
     if (!order.includes('tasks-card')) {
       order.push('tasks-card')
@@ -119,6 +123,13 @@ export default function DashboardPage() {
                           return (
                             <DraggableCardWrapper key="recent-card" id="recent-card">
                               <RecentCard />
+                            </DraggableCardWrapper>
+                          )
+                        }
+                        if (cardId === 'budget-card') {
+                          return (
+                            <DraggableCardWrapper key="budget-card" id="budget-card">
+                              <BudgetCard />
                             </DraggableCardWrapper>
                           )
                         }

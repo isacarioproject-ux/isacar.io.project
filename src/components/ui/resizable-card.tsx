@@ -156,8 +156,9 @@ export const ResizableCard = ({
     return cursors[direction] || 'default'
   }
 
-  // Classes para handles - invisíveis
-  const handleBaseClass = "absolute z-10"
+  // Classes para handles - invisíveis mas funcionais
+  // z-1 para não interferir com headers dos cards
+  const handleBaseClass = "absolute z-[1]"
   const handleHoverClass = ""
   const handleActiveClass = ""
 
@@ -178,11 +179,12 @@ export const ResizableCard = ({
       }}
     >
       {/* Conteúdo do card */}
-      <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-full overflow-hidden relative z-[2]">
         {children}
       </div>
 
       {/* Handles de redimensionamento - APENAS DESKTOP */}
+      {/* Posicionados abaixo do header típico (48-56px) para não interferir */}
       
       {/* Handle TOP - APENAS DESKTOP - Dentro da borda, abaixo do header */}
       {enableResize.top && (
@@ -191,7 +193,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block top-10 left-2 right-2 h-1 cursor-n-resize"
+            "hidden md:block top-14 left-2 right-2 h-1 cursor-n-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('top')}
         />
@@ -204,7 +206,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block top-10 right-1 bottom-2 w-1 cursor-e-resize"
+            "hidden md:block top-14 right-1 bottom-2 w-1 cursor-e-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('right')}
         />
@@ -217,7 +219,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block bottom-1 left-2 right-2 h-1 cursor-s-resize"
+            "hidden md:block bottom-1 left-2 right-2 h-1 cursor-s-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('bottom')}
         />
@@ -230,7 +232,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block top-10 left-1 bottom-2 w-1 cursor-w-resize"
+            "hidden md:block top-14 left-1 bottom-2 w-1 cursor-w-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('left')}
         />
@@ -243,7 +245,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block top-10 right-1 w-6 h-6 cursor-ne-resize"
+            "hidden md:block top-14 right-1 w-6 h-6 cursor-ne-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('top-right')}
         />
@@ -256,7 +258,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block bottom-1 right-1 w-6 h-6 cursor-se-resize"
+            "hidden md:block bottom-1 right-1 w-6 h-6 cursor-se-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('bottom-right')}
         />
@@ -269,7 +271,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block bottom-1 left-1 w-6 h-6 cursor-sw-resize"
+            "hidden md:block bottom-1 left-1 w-6 h-6 cursor-sw-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('bottom-left')}
         />
@@ -282,7 +284,7 @@ export const ResizableCard = ({
             handleBaseClass,
             handleHoverClass,
             handleActiveClass,
-            "hidden md:block top-10 left-1 w-6 h-6 cursor-nw-resize"
+            "hidden md:block top-14 left-1 w-6 h-6 cursor-nw-resize pointer-events-auto"
           )}
           onMouseDown={handleMouseDown('top-left')}
         />
@@ -290,7 +292,7 @@ export const ResizableCard = ({
 
       {/* Overlay durante resize para evitar problemas com iframes/etc */}
       {isResizing && (
-        <div className="absolute inset-0 z-20 pointer-events-none" />
+        <div className="absolute inset-0 z-[100] pointer-events-none" />
       )}
     </div>
   )

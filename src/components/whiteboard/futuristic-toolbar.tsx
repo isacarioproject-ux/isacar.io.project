@@ -21,6 +21,7 @@ export interface ToolItem {
   id: string;
   icon: React.ReactNode;
   label: string;
+  shortcut?: string;
   color?: string;
   action?: () => void;
   disabled?: boolean;
@@ -125,7 +126,14 @@ const FuturisticToolbar = ({ tools, activeTool, onToolSelect, rightSlot }: Props
                     </motion.button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs">
-                    {tool.label}
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{tool.label}</span>
+                      {tool.shortcut && (
+                        <span className="text-[10px] opacity-70 bg-background/50 px-1 py-0.5 rounded">
+                          {tool.shortcut}
+                        </span>
+                      )}
+                    </div>
                   </TooltipContent>
                 </Tooltip>
 

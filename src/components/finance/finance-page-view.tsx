@@ -47,7 +47,6 @@ import { toast } from 'sonner'
 import { FinanceTemplateSelector } from './finance-template-selector'
 import { FinanceViewer } from './finance-viewer'
 import { CategoriesManager } from './categories-manager'
-import { BudgetManagerNotion } from './budget-manager-notion'
 import { supabase } from '@/lib/supabase'
 import { createDefaultBlocksForDocument } from '@/lib/finance-blocks-utils'
 import {
@@ -93,7 +92,6 @@ export const FinancePageView = () => {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
   const [showCategoriesManager, setShowCategoriesManager] = useState(false)
-  const [showBudgetManager, setShowBudgetManager] = useState(false)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [showSidebar, setShowSidebar] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
@@ -388,29 +386,6 @@ export const FinancePageView = () => {
                 </TooltipContent>
               </Tooltip>
             )}
-
-            {/* Botão Orçamentos - sempre visível */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={() => {
-                    if (selectedDocId) {
-                      setShowBudgetManager(true)
-                    } else {
-                      toast.info('Selecione um documento primeiro')
-                    }
-                  }}
-                >
-                  <Target className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('finance.card.manageBudgets')}</p>
-              </TooltipContent>
-            </Tooltip>
 
             {/* Botão de Capa - aparece quando há documento selecionado */}
             {selectedDocId && (
@@ -786,13 +761,6 @@ export const FinancePageView = () => {
         onUpdate={() => {
           refetch()
         }}
-      />
-
-      {/* Budget Manager - Estilo Notion */}
-      <BudgetManagerNotion
-        open={showBudgetManager}
-        onOpenChange={setShowBudgetManager}
-        documentId={selectedDocId || ''}
       />
     </div>
   )

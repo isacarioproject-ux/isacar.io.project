@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { supabase } from '@/lib/supabase'
 import { useWhiteboard } from '@/hooks/use-whiteboard'
+import { useWhiteboardPresence } from '@/hooks/use-whiteboard-presence'
+import { useWhiteboardCollaborators } from '@/hooks/use-whiteboard-collaborators'
+import { useMindMap } from '@/hooks/use-mindmap'
 import { WhiteboardCheckbox } from './whiteboard-checkbox'
 import { WhiteboardNote } from './whiteboard-note'
 import { WhiteboardText } from './whiteboard-text'
@@ -28,6 +31,9 @@ import { WhiteboardPen } from './whiteboard-pen'
 import { WhiteboardImage } from './whiteboard-image'
 import { WhiteboardItem } from '@/types/whiteboard'
 import { CollaboratorCursor } from './collaborator-cursor'
+import { ArrowPreview } from './arrow-preview'
+import { MindMapNode } from './mindmap-node'
+import { MindMapConnection } from './mindmap-connection'
 import { ZoomControls } from './zoom-controls'
 import { ShareDialog } from './share-dialog'
 import { Input } from '@/components/ui/input'
@@ -43,8 +49,6 @@ import {
   MenubarRadioItem
 } from '@/components/ui/menubar'
 import FuturisticToolbar, { ToolItem } from './futuristic-toolbar'
-import { useWhiteboardPresence } from '@/hooks/use-whiteboard-presence'
-import { useWhiteboardCollaborators } from '@/hooks/use-whiteboard-collaborators'
 import { AddCollaboratorsDialog } from './add-collaborators-dialog'
 import { CollaboratorsAvatars } from './collaborators-avatars'
 import { exportWhiteboardToPNG, exportWhiteboardToPDF, copyWhiteboardToClipboard } from '@/lib/whiteboard-export'
@@ -212,7 +216,27 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
   const imageInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const { whiteboard, loading, saving, hasChanges, addItem, updateItem, deleteItem, save, toggleFavorite, undo, redo, canUndo, canRedo, uploadImage } = useWhiteboard({ projectId, whiteboardId })
+  const { 
+    whiteboard, 
+    loading, 
+    saving, 
+    hasChanges, 
+    addItem, 
+    updateItem, 
+    deleteItem, 
+    save, 
+    toggleFavorite, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo, 
+    uploadImage,
+    arrowDrawMode,
+    startArrowDrawing,
+    cancelArrowDrawing,
+    setArrowStartPoint,
+    setArrowCurrentPoint
+  } = useWhiteboard({ projectId, whiteboardId })
   // Safe wrappers para funcionar sem DB
   const addItemSafe = useCallback((item: WhiteboardItem) => {
     if (whiteboard) return addItem(item)
@@ -238,9 +262,25 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
     whiteboard?.user_id
   )
 
-  const allItems = useMemo(() => whiteboard?.items ?? localItems, [whiteboard?.items, localItems])
+  // Sempre usar a fonte mais atualizada de items
+  const currentItems = whiteboard?.items ?? localItems
+  const allItems = useMemo(() => currentItems, [currentItems])
 
   const penItems = useMemo(() => allItems.filter(item => item.type === 'pen'), [allItems])
+
+  // Mind Map hook - IMPORTANTE: passar currentItems diretamente para sempre ter a versão mais recente
+  const {
+    createRootNode,
+    addChildNode,
+    deleteNodeRecursive,
+    toggleNodeCollapse,
+    reorganizeChildren
+  } = useMindMap({
+    items: currentItems, // ✅ Passando items frescos, não memoizados
+    addItem: addItemSafe,
+    updateItem: updateItemSafe,
+    deleteItem: deleteItemSafe
+  })
 
   const statusState = useMemo(() => {
     if (saving) {
@@ -343,10 +383,15 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
       const imageUrl = await uploadImage(file)
       
       if (imageUrl) {
+        // ✅ CORREÇÃO: Calcular posição no centro da viewport
+        const canvasRect = containerRef.current?.getBoundingClientRect()
+        const centerX = canvasRect ? (canvasRect.width / 2 - pan.x) / zoom : 400
+        const centerY = canvasRect ? (canvasRect.height / 2 - pan.y) / zoom : 300
+
         addItem({
           id: nanoid(),
           type: 'image',
-          position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 },
+          position: { x: centerX, y: centerY }, // ✅ Centro da viewport
           imageUrl,
           width: 200,
           height: 200
@@ -403,6 +448,12 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
     const y = (clientY - rect.top - pan.y) / zoom
     updateCursor(x, y)
 
+    // Handle Arrow Drawing Preview
+    if (arrowDrawMode.active && arrowDrawMode.startPoint) {
+      setArrowCurrentPoint({ x, y })
+      return
+    }
+
     // Handle Panning
     if (isPanning && selectedTool === 'hand') {
       const dx = clientX - panStart.x
@@ -448,15 +499,22 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = (e.clientX - rect.left - pan.x) / zoom
+    const y = (e.clientY - rect.top - pan.y) / zoom
+
+    // Handle Arrow Drawing Start
+    if (arrowDrawMode.active) {
+      setArrowStartPoint({ x, y })
+      return
+    }
+
     if (selectedTool === 'hand') {
       setIsPanning(true)
       setPanStart({ x: e.clientX, y: e.clientY })
     } else if (selectedTool === 'pen') {
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) return
       if (!containerRef.current) return
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
       if (penMode === 'erase') {
         setIsErasing(true)
         eraseAtPoint(x, y)
@@ -483,6 +541,38 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
   }
 
   const handleMouseUp = () => {
+    // Handle Arrow Drawing Finish
+    if (arrowDrawMode.active && arrowDrawMode.startPoint && arrowDrawMode.currentPoint) {
+      const start = arrowDrawMode.startPoint
+      const end = arrowDrawMode.currentPoint
+
+      // Só cria se tiver tamanho mínimo (10px)
+      const distance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2))
+      if (distance >= 10) {
+        // Criar elemento de seta
+        const newArrow: WhiteboardItem = {
+          id: nanoid(),
+          type: 'arrow',
+          position: { x: start.x, y: start.y },
+          shapeColor: selectedShapeColor,
+          metadata: {
+            style: arrowDrawMode.style,
+            startX: start.x,
+            startY: start.y,
+            endX: end.x,
+            endY: end.y
+          }
+        }
+
+        addItemSafe(newArrow)
+        toast.success('Seta criada!')
+      }
+      
+      cancelArrowDrawing()
+      setSelectedTool('select')
+      return
+    }
+
     setIsPanning(false)
     if (isDrawing) {
       setIsDrawing(false)
@@ -741,10 +831,22 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
 
   const handleAdd = useCallback((type: 'checkbox' | 'note' | 'text' | 'box' | 'circle' | 'triangle' | 'diamond' | 'hexagon' | 'star' | 'pentagon' | 'trapezoid' | 'cloud' | 'speech' | 'heart' | 'line' | 'arrow' | 'pen') => {
     closeMenus()
+    
+    // ✅ CORREÇÃO: Calcular posição no CENTRO da viewport atual
+    const canvasRect = containerRef.current?.getBoundingClientRect()
+    
+    // Centro da tela visível no canvas
+    const centerX = canvasRect 
+      ? (canvasRect.width / 2 - pan.x) / zoom
+      : 400
+    const centerY = canvasRect
+      ? (canvasRect.height / 2 - pan.y) / zoom  
+      : 300
+
     const baseItem = {
       id: nanoid(),
       type,
-      position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 },
+      position: { x: centerX, y: centerY }, // ✅ Centro da viewport
     }
 
     if (type === 'note') {
@@ -1054,7 +1156,7 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
           onTouchCancel={handleTouchEnd}
           style={{
             touchAction: selectedTool === 'hand' || selectedTool === 'pen' ? 'none' : 'manipulation',
-            cursor: selectedTool === 'hand' ? (isPanning ? 'grabbing' : 'grab') : selectedTool === 'select' ? 'default' : 'crosshair'
+            cursor: arrowDrawMode.active ? 'crosshair' : selectedTool === 'hand' ? (isPanning ? 'grabbing' : 'grab') : selectedTool === 'select' ? 'default' : 'crosshair'
           }}
         >
           {/* Toggle Button - Top Toolbar (Mobile) */}
@@ -1353,8 +1455,48 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                 transition: isPanning ? 'none' : 'transform 0.1s ease-out'
               }}
             >
+              {/* Renderizar conexões do mind map primeiro (atrás dos nodes) */}
+              {(whiteboard?.items ?? localItems)
+                .filter(item => item.type === 'mindmap-connection')
+                .map(connection => {
+                  const fromNode = (whiteboard?.items ?? localItems).find(el => el.id === connection.fromNodeId)
+                  const toNode = (whiteboard?.items ?? localItems).find(el => el.id === connection.toNodeId)
+                  
+                  return (
+                    <MindMapConnection
+                      key={connection.id}
+                      connection={connection}
+                      fromNode={fromNode}
+                      toNode={toNode}
+                      viewportRef={{ current: { zoom, pan } }}
+                    />
+                  )
+                })}
+
+              {/* Renderizar todos os elementos */}
               {(whiteboard?.items ?? localItems).map(item => {
                 switch (item.type) {
+                  case 'mindmap-node':
+                    // Não renderizar se o pai está colapsado
+                    if (item.parentId) {
+                      const parent = (whiteboard?.items ?? localItems).find(el => el.id === item.parentId)
+                      if (parent && parent.collapsed) return null
+                    }
+                    return (
+                      <MindMapNode
+                        key={item.id}
+                        node={item}
+                        onUpdate={updateItemSafe}
+                        onDelete={() => deleteNodeRecursive(item.id)}
+                        onAddChild={() => addChildNode(item)}
+                        onToggleCollapse={() => toggleNodeCollapse(item.id)}
+                        viewportRef={{ current: { zoom, pan } }}
+                        isEditable={true}
+                      />
+                    )
+                  case 'mindmap-connection':
+                    // Já renderizado acima
+                    return null
                   case 'checkbox':
                     return <WhiteboardCheckbox key={item.id} item={item} onUpdate={updateItemSafe} onDelete={deleteItemSafe} />
                   case 'note':
@@ -1366,12 +1508,6 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                         item={item}
                         onUpdate={updateItemSafe}
                         onDelete={deleteItemSafe}
-                        onFocus={handleTextFocus}
-                        onBlur={handleTextBlur}
-                        isActive={activeTextId === item.id}
-                        overrideFontFamily={fontFamily}
-                        overrideFontWeight={fontWeight}
-                        overrideFontSize={fontSize}
                       />
                     )
                   case 'box':
@@ -1435,6 +1571,27 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                 <CollaboratorCursor key={collab.id} collaborator={collab} />
               ))}
             </div>
+          )}
+
+          {/* Preview da seta enquanto desenha */}
+          {arrowDrawMode.active && arrowDrawMode.startPoint && arrowDrawMode.currentPoint && (
+            <ArrowPreview
+              startPoint={arrowDrawMode.startPoint}
+              currentPoint={arrowDrawMode.currentPoint}
+              style={arrowDrawMode.style}
+              color={
+                selectedShapeColor === 'blue' ? '#3b82f6' :
+                selectedShapeColor === 'green' ? '#22c55e' :
+                selectedShapeColor === 'purple' ? '#a855f7' :
+                selectedShapeColor === 'pink' ? '#ec4899' :
+                selectedShapeColor === 'orange' ? '#f97316' :
+                selectedShapeColor === 'red' ? '#ef4444' :
+                selectedShapeColor === 'yellow' ? '#eab308' :
+                selectedShapeColor === 'cyan' ? '#06b6d4' :
+                selectedShapeColor === 'gray' ? '#6b7280' : '#3b82f6'
+              }
+              viewportRef={{ current: { zoom, pan } }}
+            />
           )}
 
           {/* Zoom Controls - Canto Inferior Esquerdo */}
@@ -1556,6 +1713,50 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                     </div>
                   </ToolbarSubmenuButton>
 
+                  {/* Mind Map Button */}
+                  <Tooltip delayDuration={150}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rect = containerRef.current?.getBoundingClientRect()
+                          const centerX = rect ? (rect.width / 2 - pan.x) / zoom : 400
+                          const centerY = rect ? (rect.height / 2 - pan.y) / zoom : 300
+                          createRootNode(centerX, centerY)
+                          setShowShapesMenu(false)
+                        }}
+                        className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-full border transition",
+                          "border-border/40 bg-muted/40 text-muted-foreground hover:bg-muted/55 hover:border-primary/40"
+                        )}
+                        aria-label="Criar Mind Map"
+                      >
+                        <svg 
+                          className="h-3.5 w-3.5" 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="3" />
+                          <circle cx="6" cy="6" r="2" />
+                          <circle cx="18" cy="6" r="2" />
+                          <circle cx="6" cy="18" r="2" />
+                          <circle cx="18" cy="18" r="2" />
+                          <line x1="12" y1="9" x2="6" y2="7.5" />
+                          <line x1="12" y1="9" x2="18" y2="7.5" />
+                          <line x1="12" y1="15" x2="6" y2="16.5" />
+                          <line x1="12" y1="15" x2="18" y2="16.5" />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      Mind Map 🧠
+                    </TooltipContent>
+                  </Tooltip>
+
                   <ToolbarSubmenuButton
                     label="Cores"
                     isActive={activeShapeSubmenu === 'colors'}
@@ -1650,33 +1851,112 @@ export const WhiteboardDialog = ({ projectId, whiteboardId, open, onOpenChange }
                     )}
                   >
                     <div className="flex items-center gap-1.5">
-                      {arrowStyleOptions.map(option => (
-                        <Tooltip key={option.style} delayDuration={150}>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={() => {
-                                addItemSafe({
-                                  id: nanoid(),
-                                  type: 'arrow',
-                                  position: { x: 120 + Math.random() * 160, y: 120 + Math.random() * 160 },
-                                  points: [{ x: 0, y: 0 }, { x: 150, y: 0 }],
-                                  shapeColor: selectedShapeColor,
-                                  arrowStyle: option.style,
-                                  strokeWidth: arrowStrokeWidth,
-                                })
-                                setShowArrowMenu(false)
-                              }}
-                              className="group flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-muted/10 hover:bg-background transition"
-                              type="button"
-                            >
-                              {renderArrowStyleIcon(option.style)}
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
-                            {option.label}
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
+                      <Tooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              startArrowDrawing('straight')
+                              setShowArrowMenu(false)
+                              setSelectedTool('arrow')
+                            }}
+                            className={cn(
+                              "group flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-muted/10 hover:bg-background transition",
+                              arrowDrawMode.style === 'straight' && "bg-primary/15 border-primary"
+                            )}
+                            type="button"
+                          >
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Seta Reta
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              startArrowDrawing('double')
+                              setShowArrowMenu(false)
+                              setSelectedTool('arrow')
+                            }}
+                            className={cn(
+                              "group flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-muted/10 hover:bg-background transition",
+                              arrowDrawMode.style === 'double' && "bg-primary/15 border-primary"
+                            )}
+                            type="button"
+                          >
+                            <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+                            <ArrowRight className="h-3.5 w-3.5 -ml-3" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Seta Dupla
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              startArrowDrawing('curved')
+                              setShowArrowMenu(false)
+                              setSelectedTool('arrow')
+                            }}
+                            className={cn(
+                              "group flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-muted/10 hover:bg-background transition",
+                              arrowDrawMode.style === 'curved' && "bg-primary/15 border-primary"
+                            )}
+                            type="button"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5 rotate-45" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Seta Curva
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              startArrowDrawing('dashed')
+                              setShowArrowMenu(false)
+                              setSelectedTool('arrow')
+                            }}
+                            className={cn(
+                              "group flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-muted/10 hover:bg-background transition border-dashed",
+                              arrowDrawMode.style === 'dashed' && "bg-primary/15 border-primary"
+                            )}
+                            type="button"
+                          >
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Seta Pontilhada
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              startArrowDrawing('thick')
+                              setShowArrowMenu(false)
+                              setSelectedTool('arrow')
+                            }}
+                            className={cn(
+                              "group flex h-8 w-8 items-center justify-center rounded-full border-2 border-border/60 bg-muted/10 hover:bg-background transition",
+                              arrowDrawMode.style === 'thick' && "bg-primary/15 border-primary"
+                            )}
+                            type="button"
+                          >
+                            <ArrowRight className="h-4 w-4 stroke-[3]" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Seta Grossa
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </ToolbarSubmenuButton>
 

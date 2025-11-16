@@ -35,6 +35,7 @@ import {
   CheckSquare,
   Wallet,
   Building2,
+  GitBranch,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
@@ -65,9 +66,19 @@ export function AppSidebar() {
       href: '/minha-financa',
     },
     {
+      title: 'Meu Gerenciador',
+      icon: BarChart3,
+      href: '/meu-gerenciador',
+    },
+    {
       title: t('nav.myCompany'),
       icon: Building2,
       href: '/minha-empresa',
+    },
+    {
+      title: 'Integrações',
+      icon: GitBranch,
+      href: '/settings/integrations',
     },
   ]
 

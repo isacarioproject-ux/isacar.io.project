@@ -50,6 +50,19 @@ export const useWhiteboard = (arg?: UseWhiteboardArg) => {
   const lastSavedRef = useRef<string>('')
   const [currentUserId, setCurrentUserId] = useState<string>('')
   
+  // Estado do modo de desenho de seta
+  const [arrowDrawMode, setArrowDrawMode] = useState<{
+    active: boolean
+    startPoint: { x: number; y: number } | null
+    currentPoint: { x: number; y: number } | null
+    style: 'straight' | 'curved' | 'double' | 'dashed' | 'thick'
+  }>({
+    active: false,
+    startPoint: null,
+    currentPoint: null,
+    style: 'straight'
+  })
+  
   // Undo/Redo state
   // Pilhas por usuário (colaboração): histórico e índice independentes por userId
   const historyByUserRef = useRef<Map<string, WhiteboardItem[][]>>(new Map())
@@ -419,6 +432,43 @@ export const useWhiteboard = (arg?: UseWhiteboardArg) => {
     }
   }
 
+  // Ativar modo de desenho de seta
+  const startArrowDrawing = useCallback((style: 'straight' | 'curved' | 'double' | 'dashed' | 'thick' = 'straight') => {
+    setArrowDrawMode({
+      active: true,
+      startPoint: null,
+      currentPoint: null,
+      style
+    })
+  }, [])
+
+  // Cancelar modo de desenho
+  const cancelArrowDrawing = useCallback(() => {
+    setArrowDrawMode({
+      active: false,
+      startPoint: null,
+      currentPoint: null,
+      style: 'straight'
+    })
+  }, [])
+
+  // Atualizar ponto inicial da seta
+  const setArrowStartPoint = useCallback((point: { x: number; y: number }) => {
+    setArrowDrawMode(prev => ({
+      ...prev,
+      startPoint: point,
+      currentPoint: point
+    }))
+  }, [])
+
+  // Atualizar ponto atual (preview)
+  const setArrowCurrentPoint = useCallback((point: { x: number; y: number }) => {
+    setArrowDrawMode(prev => ({
+      ...prev,
+      currentPoint: point
+    }))
+  }, [])
+
   return { 
     whiteboard, 
     loading, 
@@ -433,6 +483,12 @@ export const useWhiteboard = (arg?: UseWhiteboardArg) => {
     redo,
     canUndo,
     canRedo,
-    uploadImage
+    uploadImage,
+    // Arrow drawing mode
+    arrowDrawMode,
+    startArrowDrawing,
+    cancelArrowDrawing,
+    setArrowStartPoint,
+    setArrowCurrentPoint
   }
 }

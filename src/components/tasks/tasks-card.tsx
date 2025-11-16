@@ -216,7 +216,7 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
               {/* Drag Handle - 6 pontinhos - visível no hover */}
               <div 
                 {...dragHandleProps}
-                className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted/70 rounded transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 relative z-50"
+                className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted/70 rounded transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 relative z-10"
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </div>

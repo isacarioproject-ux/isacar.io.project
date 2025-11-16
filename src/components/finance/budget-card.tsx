@@ -1,0 +1,450 @@
+import { useState, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { useI18n } from '@/hooks/use-i18n'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { 
+  Maximize2,
+  MoreVertical, 
+  Copy,
+  Trash2,
+  Target,
+  GripVertical,
+  TrendingUp,
+  TrendingDown,
+  PiggyBank,
+  Wallet,
+} from 'lucide-react'
+import { useWorkspace } from '@/contexts/workspace-context'
+import { toast } from 'sonner'
+import { BudgetManagerNotion } from './budget-manager-notion'
+import { ResizableCard } from '@/components/ui/resizable-card'
+import { supabase } from '@/lib/supabase'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { PieChart, Pie, Cell } from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+} from '@/components/ui/chart'
+
+interface BudgetCardProps {
+  workspaceId?: string
+  dragHandleProps?: any
+}
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value)
+}
+
+const COLORS = [
+  '#10b981', // Entradas - verde
+  '#ef4444', // Gastos - vermelho  
+  '#f59e0b', // Reservas - amarelo
+  '#8b5cf6', // Metas - roxo
+  '#3b82f6', // Orçamento - azul
+]
+
+export function BudgetCard({ workspaceId, dragHandleProps }: BudgetCardProps) {
+  const { t } = useI18n()
+  const { currentWorkspace } = useWorkspace()
+  const [cardName, setCardName] = useState(() => {
+    const saved = localStorage.getItem('budget-card-name')
+    return saved || 'Gerenciador de Orçamentos'
+  })
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [budgetData, setBudgetData] = useState({
+    incomes: 0,
+    expenses: 0,
+    reserves: 0,
+    goals: 0,
+    budgets: 0,
+  })
+
+  // Carregar dados agregados
+  useEffect(() => {
+    const loadBudgetData = async () => {
+      setLoading(true)
+      try {
+        let query = supabase
+          .from('finance_documents')
+          .select('id, total_income, total_expenses, template_config')
+          
+        if (currentWorkspace?.id) {
+          query = query.eq('workspace_id', currentWorkspace.id)
+        } else {
+          query = query.is('workspace_id', null)
+        }
+        
+        const { data: documents, error } = await query
+
+        if (error) throw error
+
+        if (documents && documents.length > 0) {
+          // Usar o primeiro documento ou agregar todos
+          const firstDoc = documents[0]
+          setSelectedDocId(firstDoc.id)
+
+          // Agregar valores do template_config de todos os documentos
+          let totalIncome = 0
+          let totalExpenses = 0
+          let totalReserves = 0
+          let totalGoals = 0
+          
+          documents.forEach(doc => {
+            const config = doc.template_config || {}
+            const incomes = config.incomes || []
+            const reserves = config.reserves || []
+            const metas = config.metas || []
+            
+            totalIncome += incomes.reduce((sum: number, i: any) => sum + (i.value || 0), 0)
+            totalReserves += reserves.reduce((sum: number, r: any) => sum + (r.value || 0), 0)
+            totalGoals += metas.reduce((sum: number, m: any) => sum + (m.value || 0), 0)
+          })
+          
+          // Buscar gastos (expenses) das transações
+          const { data: transactions } = await supabase
+            .from('finance_transactions')
+            .select('amount')
+            .eq('type', 'expense')
+            .in('finance_document_id', documents.map(d => d.id))
+          
+          totalExpenses = transactions?.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) || 0
+
+          // Buscar budgets
+          const { data: budgets } = await supabase
+            .from('finance_budgets')
+            .select('planned_amount')
+            .in('finance_document_id', documents.map(d => d.id))
+          
+          const totalBudgets = budgets?.reduce((sum, b) => sum + (Number(b.planned_amount) || 0), 0) || 0
+
+          setBudgetData({
+            incomes: totalIncome,
+            expenses: totalExpenses,
+            reserves: totalReserves,
+            goals: totalGoals,
+            budgets: totalBudgets,
+          })
+        }
+      } catch (err) {
+        console.error('Error loading budget data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadBudgetData()
+  }, [currentWorkspace?.id])
+
+  const chartData = useMemo(() => {
+    return [
+      { name: 'Entradas', value: budgetData.incomes, color: COLORS[0] },
+      { name: 'Gastos', value: budgetData.expenses, color: COLORS[1] },
+      { name: 'Reservas', value: budgetData.reserves, color: COLORS[2] },
+      { name: 'Metas', value: budgetData.goals, color: COLORS[3] },
+      { name: 'Orçamento', value: budgetData.budgets, color: COLORS[4] },
+    ].filter(item => item.value > 0)
+  }, [budgetData])
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    setCardName(newName)
+    localStorage.setItem('budget-card-name', newName)
+  }
+
+  const handleDelete = () => {
+    const confirmed = window.confirm('Deseja deletar este card?')
+    if (confirmed) {
+      toast.info('Funcionalidade em desenvolvimento')
+    }
+  }
+
+  return (
+    <>
+      <ResizableCard
+        minWidth={350}
+        minHeight={350}
+        maxWidth={600}
+        maxHeight={500}
+        defaultWidth={450}
+        defaultHeight={400}
+        storageKey={`budget-card-${workspaceId || 'default'}`}
+        className="group"
+      >
+        <Card className="border border-border bg-card rounded-lg overflow-hidden h-full flex flex-col">
+          {/* MENUBAR SUPERIOR */}
+          <CardHeader className="p-0">
+            <div className="flex items-center justify-between gap-2 px-0.5 py-0.5">
+              {/* Drag Handle + Input */}
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                {/* Drag Handle */}
+                <div 
+                  {...dragHandleProps}
+                  className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted/70 rounded transition-colors flex-shrink-0"
+                >
+                  <GripVertical className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                </div>
+                
+                {/* Input Editável de Nome */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Input
+                    value={cardName}
+                    onChange={handleNameChange}
+                    placeholder="Gerenciador de Orçamentos"
+                    className="text-sm font-semibold bg-transparent border-none focus:border-border focus:ring-1 focus:ring-ring h-7 px-2 w-full max-w-[200px] sm:max-w-[250px] truncate"
+                  />
+                  {/* Badge do Workspace */}
+                  {currentWorkspace && (
+                    <Badge variant="secondary" className="text-xs h-5 hidden sm:inline-flex truncate max-w-[120px]">
+                      {currentWorkspace.name}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <TooltipProvider>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 sm:opacity-100 transition-opacity">
+                  {/* Botão Expandir */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setIsExpanded(true)}
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Expandir gerenciador</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Dropdown Menu */}
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                          >
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mais opções</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => toast.info('Em breve')}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Duplicar card
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={handleDelete}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Deletar card
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipProvider>
+            </div>
+          </CardHeader>
+
+          {/* CONTEÚDO DO CARD */}
+          <CardContent className="p-4 flex-1 flex items-center justify-center overflow-hidden">
+            {loading ? (
+              <div className="space-y-4 w-full">
+                <div className="flex justify-center">
+                  <Skeleton className="h-48 w-48 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-3 rounded-full" />
+                      <Skeleton className="h-3 flex-1" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : chartData.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className="text-center text-muted-foreground"
+              >
+                <Target className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                <p className="text-sm font-medium">Nenhum dado disponível</p>
+                <p className="text-xs mt-1">Crie documentos financeiros para ver o gráfico</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ 
+                  duration: 0.6, 
+                  ease: "easeOut",
+                  opacity: { duration: 0.4 },
+                  scale: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] },
+                  rotate: { duration: 0.6, ease: "easeOut" }
+                }}
+                className="w-full h-full flex items-center justify-center"
+              >
+                {/* Gráfico de Pizza - Sem Separadores com Tooltips Avançados */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ 
+                    delay: 0.3, 
+                    duration: 0.8,
+                    ease: [0.34, 1.56, 0.64, 1]
+                  }}
+                  className="w-full h-full flex items-center justify-center"
+                >
+                  <ChartContainer
+                    config={{
+                      value: { label: 'Valor' },
+                      entradas: { label: 'Entradas', color: COLORS[0] },
+                      gastos: { label: 'Gastos', color: COLORS[1] },
+                      reservas: { label: 'Reservas', color: COLORS[2] },
+                      metas: { label: 'Metas', color: COLORS[3] },
+                      orçamento: { label: 'Orçamento', color: COLORS[4] },
+                    }}
+                    className="aspect-square max-h-[220px] w-full max-w-[220px]"
+                  >
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0]
+                          if (!data || !data.value) return null
+                          
+                          const total = chartData.reduce((sum, item) => sum + item.value, 0)
+                          const percentage = ((Number(data.value) / total) * 100).toFixed(1)
+                          
+                          // Ícones por categoria
+                          const getIcon = (name: string) => {
+                            switch(name) {
+                              case 'Entradas': return <TrendingUp className="h-3.5 w-3.5" />
+                              case 'Gastos': return <TrendingDown className="h-3.5 w-3.5" />
+                              case 'Reservas': return <PiggyBank className="h-3.5 w-3.5" />
+                              case 'Metas': return <Target className="h-3.5 w-3.5" />
+                              case 'Orçamento': return <Wallet className="h-3.5 w-3.5" />
+                              default: return null
+                            }
+                          }
+                          
+                          return (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.15 }}
+                              className="rounded-lg border border-border/60 bg-background/95 backdrop-blur-sm p-2.5 shadow-lg"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <div
+                                  className="flex items-center justify-center h-6 w-6 rounded-md"
+                                  style={{ backgroundColor: data.payload.fill }}
+                                >
+                                  <span className="text-white">
+                                    {getIcon(String(data.name || ''))}
+                                  </span>
+                                </div>
+                                <span className="text-sm font-semibold">{String(data.name || '')}</span>
+                              </div>
+                              <div className="space-y-1.5">
+                                <div className="flex items-baseline justify-between gap-3">
+                                  <span className="text-[10px] text-muted-foreground">Valor</span>
+                                  <span className="text-sm font-mono font-bold tabular-nums">
+                                    {formatCurrency(Number(data.value))}
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-baseline justify-between gap-3">
+                                    <span className="text-[10px] text-muted-foreground">{percentage}%</span>
+                                    <span className="text-[10px] text-muted-foreground">de {formatCurrency(total)}</span>
+                                  </div>
+                                  {/* Barra de progresso compacta */}
+                                  <div className="w-full h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                                    <motion.div
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${percentage}%` }}
+                                      transition={{ duration: 0.4, ease: "easeOut" }}
+                                      className="h-full rounded-full"
+                                      style={{ backgroundColor: data.payload.fill }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Pie
+                      data={chartData}
+                      dataKey="value"
+                      nameKey="name"
+                      stroke="0"
+                      animationBegin={0}
+                      animationDuration={800}
+                      animationEasing="ease-out"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+                </motion.div>
+              </motion.div>
+            )}
+          </CardContent>
+        </Card>
+      </ResizableCard>
+
+      {/* Dialog do Budget Manager */}
+      {selectedDocId && (
+        <BudgetManagerNotion
+          open={isExpanded}
+          onOpenChange={setIsExpanded}
+          documentId={selectedDocId}
+        />
+      )}
+    </>
+  )
+}

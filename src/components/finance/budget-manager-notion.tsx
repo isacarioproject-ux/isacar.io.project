@@ -81,6 +81,7 @@ interface IncomeEntry {
   name: string
   value: number
   percentage: number
+  date: string
 }
 
 interface ExpenseEntry {
@@ -139,11 +140,11 @@ export const BudgetManagerNotion = ({
   const [documents, setDocuments] = useState<Array<{id: string, name: string}>>([])
   const [currentDocumentId, setCurrentDocumentId] = useState(documentId)
 
-  // Estados para sidebars
-  const [showLeftSidebar, setShowLeftSidebar] = useState(true)
-  const [showRightSidebar1, setShowRightSidebar1] = useState(true)
-  const [showRightSidebar2, setShowRightSidebar2] = useState(true)
-  const [showRightSidebar3, setShowRightSidebar3] = useState(true)
+  // Estados para sidebars (fechados por padrão)
+  const [showLeftSidebar, setShowLeftSidebar] = useState(false)
+  const [showRightSidebar1, setShowRightSidebar1] = useState(false)
+  const [showRightSidebar2, setShowRightSidebar2] = useState(false)
+  const [showRightSidebar3, setShowRightSidebar3] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Estados para dados das tabelas
@@ -213,7 +214,8 @@ export const BudgetManagerNotion = ({
           id: e.id || Date.now().toString() + Math.random(),
           name: e.name || '',
           value: e.value || 0,
-          percentage: totalIncome > 0 ? ((e.value || 0) / totalIncome) * 100 : 0
+          percentage: totalIncome > 0 ? ((e.value || 0) / totalIncome) * 100 : 0,
+          date: e.date || new Date().toISOString().split('T')[0]
         })))
         
         // Carregar reservas
@@ -572,7 +574,8 @@ export const BudgetManagerNotion = ({
           id: Date.now().toString(),
           name: editingValue.trim(),
           value: 0,
-          percentage: 0
+          percentage: 0,
+          date: new Date().toISOString().split('T')[0] // Data atual como padrão
         }
         updated = [...incomeEntries, newEntry]
         const newTotal = updated.reduce((sum, e) => sum + e.value, 0)
@@ -596,6 +599,8 @@ export const BudgetManagerNotion = ({
             ...e,
             percentage: newTotal > 0 ? (e.value / newTotal) * 100 : 0
         }))
+      } else if (field === 'date') {
+        updated[entryIndex] = { ...updated[entryIndex], date: editingValue }
       }
       setIncomeEntries(updated)
       await saveIncomeEntries(updated)
@@ -797,7 +802,8 @@ export const BudgetManagerNotion = ({
             incomes: entries.map(e => ({
               id: e.id,
               name: e.name,
-              value: e.value
+              value: e.value,
+              date: e.date
             }))
           }
         })
@@ -1075,11 +1081,11 @@ export const BudgetManagerNotion = ({
           {showLeftSidebar && (
             <>
               <ResizablePanel 
-                defaultSize={25} 
-                minSize={20} 
-                maxSize={40} 
+                defaultSize={30} 
+                minSize={25} 
+                maxSize={45} 
                 collapsible 
-                className="min-w-[200px]"
+                className="min-w-[280px]"
               >
                 <div className="h-full overflow-y-auto p-4 border-r border-border">
               <div className="space-y-4">
@@ -1096,6 +1102,7 @@ export const BudgetManagerNotion = ({
                             <TableHead className="h-8 text-xs">Nome</TableHead>
                             <TableHead className="h-8 text-xs text-right">Valor</TableHead>
                             <TableHead className="h-8 text-xs text-right">%</TableHead>
+                            <TableHead className="h-8 text-xs">Data</TableHead>
                             <TableHead className="h-8 w-8"></TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1152,6 +1159,29 @@ export const BudgetManagerNotion = ({
                               <TableCell className="text-xs text-right py-0 px-2">
                                 {entry.percentage.toFixed(1)}%
                               </TableCell>
+                              <TableCell className="text-xs py-0 px-2">
+                                {editingCell?.rowId === entry.id && editingCell?.field === 'date' ? (
+                                  <Input
+                                    type="date"
+                                    value={editingValue}
+                                    onChange={(e) => setEditingValue(e.target.value)}
+                                    onBlur={() => handleCellSave(entry.id, 'date')}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleCellSave(entry.id, 'date')
+                                      if (e.key === 'Escape') setEditingCell(null)
+                                    }}
+                                    className="h-7 text-xs border-none p-1 focus-visible:ring-1"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <div
+                                    onClick={() => handleCellEdit(entry.id, 'date', entry.date || '')}
+                                    className="cursor-text hover:bg-muted/50 px-1 py-0.5 rounded min-h-[28px] flex items-center"
+                                  >
+                                    {entry.date ? new Date(entry.date).toLocaleDateString('pt-BR') : <span className="text-muted-foreground">Data...</span>}
+                                  </div>
+                                )}
+                              </TableCell>
                               <TableCell className="py-0 px-1">
                     <Button
                                   size="icon"
@@ -1199,7 +1229,7 @@ export const BudgetManagerNotion = ({
                   </div>
                               )}
                             </TableCell>
-                            <TableCell colSpan={3} className="text-xs py-0 px-2"></TableCell>
+                            <TableCell colSpan={4} className="text-xs py-0 px-2"></TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
@@ -1341,14 +1371,14 @@ export const BudgetManagerNotion = ({
             <>
               <ResizablePanel 
                 defaultSize={
-                  showRightSidebar2 && showRightSidebar3 ? 20 :
-                  (showRightSidebar2 || showRightSidebar3) ? 25 :
-                  30
+                  showRightSidebar2 && showRightSidebar3 ? 25 :
+                  (showRightSidebar2 || showRightSidebar3) ? 30 :
+                  35
                 } 
-                minSize={18} 
-                maxSize={35} 
+                minSize={22} 
+                maxSize={40} 
                 collapsible 
-                className="min-w-[200px]"
+                className="min-w-[280px]"
               >
                 <div className="h-full overflow-y-auto p-4 border-l border-border">
                   <div className="space-y-4">
@@ -1564,14 +1594,15 @@ export const BudgetManagerNotion = ({
             <>
               <ResizablePanel 
                 defaultSize={
-                  showRightSidebar1 && showRightSidebar3 ? 15 :
-                  showRightSidebar3 ? 20 :
-                  25
+                  showRightSidebar1 && showRightSidebar3 ? 25 :
+                  showRightSidebar3 ? 30 :
+                  showRightSidebar1 ? 30 :
+                  35
                 } 
-                minSize={15} 
-                maxSize={30} 
+                minSize={22} 
+                maxSize={40} 
                 collapsible 
-                className="min-w-[200px]"
+                className="min-w-[280px]"
               >
                 <div className="h-full overflow-y-auto p-4 border-l border-border">
                   <div className="space-y-4">
@@ -1749,14 +1780,14 @@ export const BudgetManagerNotion = ({
           {showRightSidebar3 && (
             <ResizablePanel 
               defaultSize={
-                showRightSidebar1 && showRightSidebar2 ? 15 :
-                (showRightSidebar1 || showRightSidebar2) ? 20 :
-                25
+                showRightSidebar1 && showRightSidebar2 ? 25 :
+                (showRightSidebar1 || showRightSidebar2) ? 30 :
+                35
               } 
-              minSize={12} 
-              maxSize={25} 
+              minSize={22} 
+              maxSize={40} 
               collapsible 
-              className="min-w-[180px]"
+              className="min-w-[280px]"
             >
               <div className="h-full overflow-y-auto p-4 border-l border-border">
                 <div className="space-y-4">
