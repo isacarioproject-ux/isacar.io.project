@@ -22,7 +22,7 @@ import {
   DollarSign,
   FolderKanban,
   Users,
-  Presentation,
+  // Presentation, // Removido - whiteboard deletado
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,8 +71,7 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
         return <FolderKanban className="size-4" />;
       case 'member':
         return <Users className="size-4" />;
-      case 'whiteboard':
-        return <Presentation className="size-4" />;
+      // case 'whiteboard': // Removido - whiteboard deletado
       default:
         return <Clock className="size-4" />;
     }
@@ -90,8 +89,7 @@ export function RecentCard({ className, dragHandleProps }: RecentCardProps) {
         return 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400';
       case 'member':
         return 'bg-pink-100 text-pink-600 dark:bg-pink-950 dark:text-pink-400';
-      case 'whiteboard':
-        return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400';
+      // case 'whiteboard': // Removido - whiteboard deletado
       default:
         return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
     }

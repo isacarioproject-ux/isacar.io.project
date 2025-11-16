@@ -15,10 +15,10 @@ const DEFAULT_CONFIG = {
   ENABLED: false, // ← COMEÇA DESLIGADO para segurança
 
   // Integrações específicas
-  WHITEBOARD_TO_TASKS: true,          // Criar tasks do whiteboard
-  WHITEBOARD_TO_GERENCIADOR: true,    // Criar metas/despesas do whiteboard
-  TASKS_TO_FINANCE: true,             // Criar despesas quando task concluir
-  CROSS_MODULE_SYNC: true,            // Sincronização bidirecional
+  WHITEBOARD_TO_TASKS: false,          // DESABILITADO - Whiteboard removido
+  WHITEBOARD_TO_GERENCIADOR: false,    // DESABILITADO - Whiteboard removido
+  TASKS_TO_FINANCE: true,              // Criar despesas quando task concluir
+  CROSS_MODULE_SYNC: true,             // Sincronização bidirecional
 
   // Opções de comportamento
   AUTO_CREATE: true,                  // Criar automaticamente ou perguntar?

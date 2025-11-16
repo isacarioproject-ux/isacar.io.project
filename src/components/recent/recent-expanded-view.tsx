@@ -25,14 +25,14 @@ import {
   Flag,
   Trash2,
 } from 'lucide-react';
-import { Activity } from '@/types/tasks';
+import { RecentActivity } from '@/hooks/use-recent-activities';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
 interface RecentExpandedViewProps {
   open: boolean;
   onClose: () => void;
-  activities: Activity[];
+  activities: RecentActivity[];
 }
 
 export function RecentExpandedView({
@@ -104,7 +104,7 @@ export function RecentExpandedView({
   });
   const olderActivities = sortedActivities.filter(a => new Date(a.created_at) < lastWeek);
 
-  const ActivityList = ({ activities }: { activities: Activity[] }) => (
+  const ActivityList = ({ activities }: { activities: RecentActivity[] }) => (
     <div className="space-y-2">
       {activities.map((activity, index) => (
         <motion.div

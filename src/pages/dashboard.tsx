@@ -5,7 +5,7 @@ import { FinanceCard } from '@/components/finance/finance-card'
 import { BudgetCard } from '@/components/finance/budget-card'
 import { TasksCard } from '@/components/tasks/tasks-card'
 import { RecentCard } from '@/components/recent/recent-card'
-import { EmpresaCard } from '@/components/empresa/empresa-card'
+// import { EmpresaCard } from '@/components/empresa/empresa-card' // REMOVIDO - Whiteboard
 import { DashboardSkeleton } from '@/components/loading-skeleton'
 import { DraggableCardWrapper } from '@/components/draggable-card-wrapper'
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
@@ -21,7 +21,7 @@ export default function DashboardPage() {
   // Estado para ordem dos cards
   const [cardOrder, setCardOrder] = useState(() => {
     const saved = localStorage.getItem('dashboard-card-order')
-    const defaultOrder = ['finance-card', 'budget-card', 'recent-card', 'tasks-card', 'empresa-card']
+    const defaultOrder = ['finance-card', 'budget-card', 'recent-card', 'tasks-card'] // 'empresa-card' removido
     const order = saved ? JSON.parse(saved) : defaultOrder
     
     // Garantir que todos os cards estão na lista
@@ -37,9 +37,7 @@ export default function DashboardPage() {
     if (!order.includes('recent-card')) {
       order.push('recent-card')
     }
-    if (!order.includes('empresa-card')) {
-      order.push('empresa-card')
-    }
+    // empresa-card removido - whiteboard deletado
     localStorage.setItem('dashboard-card-order', JSON.stringify(order))
     
     console.log('Card Order:', order)
@@ -133,13 +131,7 @@ export default function DashboardPage() {
                             </DraggableCardWrapper>
                           )
                         }
-                        if (cardId === 'empresa-card') {
-                          return (
-                            <DraggableCardWrapper key="empresa-card" id="empresa-card">
-                              <EmpresaCard />
-                            </DraggableCardWrapper>
-                          )
-                        }
+                        // empresa-card removido - whiteboard deletado
                         return null
                       })}
                     </div>

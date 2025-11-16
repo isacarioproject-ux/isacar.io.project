@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/dashboard-layout'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Save, Loader2, Presentation, CheckSquare, Wallet, ArrowRight } from 'lucide-react'
+import { Save, Loader2, CheckSquare, Wallet, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function IntegrationsPage() {
@@ -142,32 +142,6 @@ export default function IntegrationsPage() {
               <IntegrationItem
                 icon={
                   <div className="flex items-center gap-1.5">
-                    <Presentation className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                    <CheckSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                }
-                title="Whiteboard → Tasks"
-                description="Criar action item no whiteboard cria task automaticamente"
-                settingKey="WHITEBOARD_TO_TASKS"
-                disabled={!config.ENABLED}
-              />
-              <IntegrationItem
-                icon={
-                  <div className="flex items-center gap-1.5">
-                    <Presentation className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                    <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                }
-                title="Whiteboard → Gerenciador"
-                description="Criar meta no whiteboard adiciona no Meu Gerenciador"
-                settingKey="WHITEBOARD_TO_GERENCIADOR"
-                disabled={!config.ENABLED}
-              />
-              <IntegrationItem
-                icon={
-                  <div className="flex items-center gap-1.5">
                     <CheckSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <ArrowRight className="h-3 w-3 text-muted-foreground" />
                     <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -178,6 +152,9 @@ export default function IntegrationsPage() {
                 settingKey="TASKS_TO_FINANCE"
                 disabled={!config.ENABLED}
               />
+              <p className="text-xs text-muted-foreground pt-2">
+                ℹ️ Integrações com Whiteboard foram removidas
+              </p>
             </div>
           </div>
 

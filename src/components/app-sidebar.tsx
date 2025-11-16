@@ -71,11 +71,6 @@ export function AppSidebar() {
       href: '/meu-gerenciador',
     },
     {
-      title: t('nav.myCompany'),
-      icon: Building2,
-      href: '/minha-empresa',
-    },
-    {
       title: 'Integrações',
       icon: GitBranch,
       href: '/settings/integrations',

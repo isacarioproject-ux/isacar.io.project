@@ -18,7 +18,7 @@ const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const MyWorkPage = lazy(() => import('@/pages/my-work'))
 const MyFinancePage = lazy(() => import('@/pages/my-finance'))
 const MyBudgetPage = lazy(() => import('@/pages/my-budget'))
-const MyCompanyPage = lazy(() => import('@/pages/my-company'))
+// const MyCompanyPage = lazy(() => import('@/pages/my-company')) // REMOVIDO - Whiteboard
 const ProfilePage = lazy(() => import('@/pages/settings/profile'))
 const NotificationsPage = lazy(() => import('@/pages/settings/notifications'))
 const PreferencesPage = lazy(() => import('@/pages/settings/preferences'))
@@ -64,7 +64,7 @@ function App() {
           <Route path="/meu-trabalho" element={<ProtectedRoute><MyWorkPage /></ProtectedRoute>} />
           <Route path="/minha-financa" element={<ProtectedRoute><MyFinancePage /></ProtectedRoute>} />
           <Route path="/meu-gerenciador" element={<ProtectedRoute><MyBudgetPage /></ProtectedRoute>} />
-          <Route path="/minha-empresa" element={<ProtectedRoute><MyCompanyPage /></ProtectedRoute>} />
+          {/* <Route path="/minha-empresa" element={<ProtectedRoute><MyCompanyPage /></ProtectedRoute>} /> */}
           
           {/* Settings Routes */}
           <Route path="/settings/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
