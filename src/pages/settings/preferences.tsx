@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,31 +15,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import {
-  Shield, 
-  Key, 
-  Smartphone, 
-  Globe, 
-  Clock,
-  AlertTriangle,
-  Trash2,
-  LogOut,
-  Save,
-  Loader2
-} from 'lucide-react'
+import { Smartphone, LogOut, Trash2, Save, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '@/hooks/use-i18n'
 import { toast } from 'sonner'
-import { Link } from 'react-router-dom'
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
 
 export default function PreferencesPage() {
   const navigate = useNavigate()
@@ -62,15 +40,12 @@ export default function PreferencesPage() {
     timeFormat: '24h',
   })
 
-  // Sync language with i18n system
   const [currentLanguage, setCurrentLanguage] = useState<'pt-BR' | 'en' | 'es'>(locale)
 
-  // Sync with i18n when locale changes
   useEffect(() => {
     setCurrentLanguage(locale)
   }, [locale])
 
-  // Load preferences from Supabase
   useEffect(() => {
     loadPreferences()
   }, [])
@@ -106,11 +81,9 @@ export default function PreferencesPage() {
     }
   }
 
-  // Update language when changed
   const handleLanguageChange = (newLanguage: string) => {
     const lang = newLanguage as 'pt-BR' | 'en' | 'es'
     setCurrentLanguage(lang)
-    // Update i18n immediately - this triggers re-render of entire app
     changeLocale(lang)
   }
 
@@ -150,12 +123,10 @@ export default function PreferencesPage() {
   const handleDeleteAccount = async () => {
     setDeleting(true)
     try {
-      // Here you would call your API to delete the account
-      // For now, just sign out
       await supabase.auth.signOut()
       navigate('/auth')
     } catch (error) {
-      alert('Erro ao deletar conta')
+      toast.error('Erro ao deletar conta')
     } finally {
       setDeleting(false)
     }
@@ -166,112 +137,100 @@ export default function PreferencesPage() {
       await supabase.auth.signOut({ scope: 'global' })
       navigate('/auth')
     } catch (error) {
-      alert('Erro ao desconectar dispositivos')
+      toast.error('Erro ao desconectar dispositivos')
     }
   }
 
+  const PreferenceItem = ({ 
+    label, 
+    description, 
+    children 
+  }: { 
+    label: string
+    description: string
+    children: React.ReactNode
+  }) => (
+    <div className="flex items-start justify-between gap-4 py-2">
+      <div className="space-y-0.5 flex-1 min-w-0">
+        <Label className="font-medium cursor-pointer text-sm">
+          {label}
+        </Label>
+        <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+      <div className="shrink-0">
+        {children}
+      </div>
+    </div>
+  )
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center justify-between">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/">{t('nav.dashboard')}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/settings">{t('settings.title')}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{t('preferences.title')}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <Button onClick={handleSave} disabled={saving} className="h-9">
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('settings.saving')}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {t('settings.save')}
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="min-h-screen w-full flex items-start justify-center pt-6 pb-8">
+        <div className="w-[60%] space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h1 className="text-xl font-semibold tracking-tight">{t('preferences.title')}</h1>
+              <p className="text-xs text-muted-foreground">
+                Gerencie suas preferências e configurações de segurança
+              </p>
+            </div>
+            <Button onClick={handleSave} disabled={saving} size="sm">
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-3.5 w-3.5" />
+                  Salvar
+                </>
+              )}
+            </Button>
+          </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Security */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                {t('settings.security')}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {t('settings.securityDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 2FA */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="twoFactor" className="font-medium text-sm">
-                      {t('settings.twoFactor')}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      {t('settings.twoFactorDesc')}
-                    </p>
-                  </div>
-                  <Switch
-                    id="twoFactor"
-                    checked={security.twoFactor}
-                    onCheckedChange={(checked) => 
-                      setSecurity({ ...security, twoFactor: checked })
-                    }
-                  />
-                </div>
+          {/* Segurança */}
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">{t('settings.security')}</h2>
+            <div className="space-y-1">
+              <PreferenceItem
+                label={t('settings.twoFactor')}
+                description={t('settings.twoFactorDesc')}
+              >
+                <Switch
+                  checked={security.twoFactor}
+                  onCheckedChange={(checked) => setSecurity({ ...security, twoFactor: checked })}
+                  className="scale-90"
+                />
+              </PreferenceItem>
 
-                {security.twoFactor && (
-                  <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
-                    <div className="flex items-start gap-2">
-                      <Smartphone className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm text-green-400">{t('settings.twoFactorActive')}</p>
-                        <p className="mt-0.5 text-xs text-green-400/80">
-                          {t('settings.twoFactorActiveDesc')}
-                        </p>
-                        <Button variant="outline" size="sm" className="mt-2 h-8">
-                          {t('settings.configureApp')}
-                        </Button>
-                      </div>
+              {security.twoFactor && (
+                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3 ml-0">
+                  <div className="flex items-start gap-2">
+                    <Smartphone className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm text-green-400">{t('settings.twoFactorActive')}</p>
+                      <p className="mt-0.5 text-xs text-green-400/80">
+                        {t('settings.twoFactorActiveDesc')}
+                      </p>
+                      <Button variant="outline" size="sm" className="mt-2 h-7 text-xs">
+                        {t('settings.configureApp')}
+                      </Button>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              <Separator />
-
-              {/* Session Timeout */}
-              <div className="space-y-2">
-                <Label htmlFor="sessionTimeout" className="text-sm">{t('settings.sessionTimeout')}</Label>
+              <PreferenceItem
+                label={t('settings.sessionTimeout')}
+                description={t('settings.sessionTimeoutDesc')}
+              >
                 <Select
                   value={security.sessionTimeout}
-                  onValueChange={(value) => 
-                    setSecurity({ ...security, sessionTimeout: value })
-                  }
+                  onValueChange={(value) => setSecurity({ ...security, sessionTimeout: value })}
                 >
-                  <SelectTrigger id="sessionTimeout">
+                  <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -282,75 +241,42 @@ export default function PreferencesPage() {
                     <SelectItem value="never">{t('settings.timeoutNever')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  {t('settings.sessionTimeoutDesc')}
-                </p>
-              </div>
+              </PreferenceItem>
 
-              <Separator />
-
-              {/* Login Notifications */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="loginNotifications" className="font-medium text-sm">
-                    {t('settings.loginNotifications')}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t('settings.loginNotificationsDesc')}
-                  </p>
-                </div>
+              <PreferenceItem
+                label={t('settings.loginNotifications')}
+                description={t('settings.loginNotificationsDesc')}
+              >
                 <Switch
-                  id="loginNotifications"
                   checked={security.loginNotifications}
-                  onCheckedChange={(checked) => 
-                    setSecurity({ ...security, loginNotifications: checked })
-                  }
+                  onCheckedChange={(checked) => setSecurity({ ...security, loginNotifications: checked })}
+                  className="scale-90"
                 />
-              </div>
+              </PreferenceItem>
 
-              <Separator />
-
-              {/* Suspicious Activity */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="suspiciousActivity" className="font-medium text-sm">
-                    {t('settings.suspiciousActivity')}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t('settings.suspiciousActivityDesc')}
-                  </p>
-                </div>
+              <PreferenceItem
+                label={t('settings.suspiciousActivity')}
+                description={t('settings.suspiciousActivityDesc')}
+              >
                 <Switch
-                  id="suspiciousActivity"
                   checked={security.suspiciousActivity}
-                  onCheckedChange={(checked) => 
-                    setSecurity({ ...security, suspiciousActivity: checked })
-                  }
+                  onCheckedChange={(checked) => setSecurity({ ...security, suspiciousActivity: checked })}
+                  className="scale-90"
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </PreferenceItem>
+            </div>
+          </div>
 
-          {/* Language & Region */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                {t('settings.languageRegion')}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {t('settings.languageRegionDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Language */}
-              <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm">{t('settings.language')}</Label>
-                <Select
-                  value={currentLanguage}
-                  onValueChange={handleLanguageChange}
-                >
-                  <SelectTrigger id="language">
+          {/* Idioma e Região */}
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">{t('settings.languageRegion')}</h2>
+            <div className="space-y-1">
+              <PreferenceItem
+                label={t('settings.language')}
+                description={t('settings.languageDesc')}
+              >
+                <Select value={currentLanguage} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -359,23 +285,17 @@ export default function PreferencesPage() {
                     <SelectItem value="es">🇪🇸 Español</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  {t('settings.languageDesc')}
-                </p>
-              </div>
+              </PreferenceItem>
 
-              <Separator />
-
-              {/* Timezone */}
-              <div className="space-y-2">
-                <Label htmlFor="timezone" className="text-sm">{t('settings.timezone')}</Label>
+              <PreferenceItem
+                label={t('settings.timezone')}
+                description="Fuso horário para exibição de datas e horas"
+              >
                 <Select
                   value={preferences.timezone}
-                  onValueChange={(value) => 
-                    setPreferences({ ...preferences, timezone: value })
-                  }
+                  onValueChange={(value) => setPreferences({ ...preferences, timezone: value })}
                 >
-                  <SelectTrigger id="timezone">
+                  <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -387,20 +307,17 @@ export default function PreferencesPage() {
                     <SelectItem value="Asia/Tokyo">(UTC+9) Tokyo</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </PreferenceItem>
 
-              <Separator />
-
-              {/* Date Format */}
-              <div className="space-y-2">
-                <Label htmlFor="dateFormat" className="text-sm">{t('settings.dateFormat')}</Label>
+              <PreferenceItem
+                label={t('settings.dateFormat')}
+                description="Formato de exibição de datas"
+              >
                 <Select
                   value={preferences.dateFormat}
-                  onValueChange={(value) => 
-                    setPreferences({ ...preferences, dateFormat: value })
-                  }
+                  onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value })}
                 >
-                  <SelectTrigger id="dateFormat">
+                  <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -409,20 +326,17 @@ export default function PreferencesPage() {
                     <SelectItem value="YYYY-MM-DD">YYYY-MM-DD (2024-10-24)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </PreferenceItem>
 
-              <Separator />
-
-              {/* Time Format */}
-              <div className="space-y-2">
-                <Label htmlFor="timeFormat" className="text-sm">{t('settings.timeFormat')}</Label>
+              <PreferenceItem
+                label={t('settings.timeFormat')}
+                description="Formato de exibição de horas"
+              >
                 <Select
                   value={preferences.timeFormat}
-                  onValueChange={(value) => 
-                    setPreferences({ ...preferences, timeFormat: value })
-                  }
+                  onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value })}
                 >
-                  <SelectTrigger id="timeFormat">
+                  <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -430,100 +344,92 @@ export default function PreferencesPage() {
                     <SelectItem value="12h">12 horas (11:59 PM)</SelectItem>
                   </SelectContent>
                 </Select>
+              </PreferenceItem>
+            </div>
+          </div>
+
+          {/* Zona de Perigo */}
+          <div className="space-y-3 pt-4 border-t border-red-500/20">
+            <h2 className="text-base font-medium text-red-400">{t('settings.dangerZone')}</h2>
+            <div className="space-y-2">
+              {/* Sair de Todos Dispositivos */}
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium text-sm">{t('settings.signOutAll')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.signOutAllDesc')}
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <LogOut className="h-3.5 w-3.5" />
+                      {t('settings.signOut')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('settings.signOutAllTitle')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('settings.signOutAllConfirm')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleSignOutAllDevices}>
+                        {t('common.confirm')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* Deletar Conta */}
+              <div className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                <div>
+                  <p className="font-medium text-sm text-red-400">{t('settings.deleteAccount')}</p>
+                  <p className="text-xs text-red-400/70">
+                    {t('settings.deleteAccountDesc')}
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {t('common.delete')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-red-400">
+                        {t('settings.deleteAccountTitle')}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('settings.deleteAccountConfirm')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        {deleting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t('settings.deleting')}
+                          </>
+                        ) : (
+                          t('settings.deleteAccountButton')
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Danger Zone */}
-        <Card className="border-red-500/20">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2 text-red-400">
-              <AlertTriangle className="h-4 w-4" />
-              {t('settings.dangerZone')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('settings.dangerZoneDesc')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Sign Out All Devices */}
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <div>
-                <p className="font-medium text-sm">{t('settings.signOutAll')}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('settings.signOutAllDesc')}
-                </p>
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <LogOut className="h-4 w-4" />
-                    {t('settings.signOut')}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('settings.signOutAllTitle')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('settings.signOutAllConfirm')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSignOutAllDevices}>
-                      {t('common.confirm')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-
-            {/* Delete Account */}
-            <div className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-              <div>
-                <p className="font-medium text-sm text-red-400">{t('settings.deleteAccount')}</p>
-                <p className="text-xs text-red-400/70">
-                  {t('settings.deleteAccountDesc')}
-                </p>
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    {t('common.delete')}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-red-400">
-                      {t('settings.deleteAccountTitle')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('settings.deleteAccountConfirm')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAccount}
-                      className="bg-red-500 hover:bg-red-600"
-                    >
-                      {deleting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t('settings.deleting')}
-                        </>
-                      ) : (
-                        t('settings.deleteAccountButton')
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   )
