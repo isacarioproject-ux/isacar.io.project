@@ -319,6 +319,30 @@ export function FinanceCard({ workspaceId, dragHandleProps }: FinanceCardProps) 
                 {currentWorkspace.name}
               </Badge>
             )}
+            
+            {/* Badge Ao vivo */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="hidden sm:flex"
+            >
+              <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-1 border-green-500/30 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30">
+                <motion.div
+                  className="h-1.5 w-1.5 rounded-full bg-green-500"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [1, 0.8, 1]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                Ao vivo
+              </Badge>
+            </motion.div>
             </div>
           </div>
 
