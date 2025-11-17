@@ -15,6 +15,7 @@ import {
   Loader2,
   Globe,
 } from 'lucide-react';
+import { GoogleLoginButton } from '@/components/auth/google-login-button';
 
 // Types
 type AuthMode = 'login' | 'signup' | 'reset';
@@ -555,6 +556,21 @@ export function AuthFormMinimal({
           )}
         </button>
       </form>
+
+      {/* Divisor */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border"></div>
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-card px-2 text-muted-foreground">
+            Ou continue com
+          </span>
+        </div>
+      </div>
+
+      {/* Google Login Button */}
+      <GoogleLoginButton />
 
       {/* Toggle link */}
       <div className="text-center mt-4">

@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 
 // Lazy load pages for code splitting
 const AuthPage = lazy(() => import('@/pages/auth'))
+const AuthCallbackPage = lazy(() => import('@/pages/auth/callback'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const MyWorkPage = lazy(() => import('@/pages/my-work'))
 const MyFinancePage = lazy(() => import('@/pages/my-finance'))
@@ -51,6 +52,7 @@ function App() {
             <Routes>
           {/* Auth */}
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
           
           {/* Legal Pages */}
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
