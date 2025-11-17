@@ -9,6 +9,7 @@ interface FileUploadProps {
   maxSize?: number; // em MB
   accept?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function FileUpload({
@@ -17,6 +18,7 @@ export function FileUpload({
   maxSize = 10,
   accept = '*',
   className,
+  disabled = false,
 }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -77,12 +79,15 @@ export function FileUpload({
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          setIsDragging(true);
+          if (!disabled) setIsDragging(true);
         }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
+        onDrop={(e) => {
+          if (!disabled) handleDrop(e);
+        }}
         className={cn(
           'border-2 border-dashed rounded-lg p-4 text-center transition-colors',
+          disabled ? 'opacity-50 cursor-not-allowed' : '',
           isDragging
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
             : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
@@ -102,14 +107,16 @@ export function FileUpload({
           accept={accept}
           onChange={handleFileInput}
           className="hidden"
+          disabled={disabled}
         />
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={() => document.getElementById('file-input')?.click()}
+          disabled={disabled}
         >
-          Selecionar Arquivos
+          {disabled ? 'Enviando...' : 'Selecionar Arquivos'}
         </Button>
       </div>
 
