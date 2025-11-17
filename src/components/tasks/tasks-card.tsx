@@ -416,25 +416,25 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
               </Tooltip>
               
               {/* Menu */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenu>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
                         <MoreVertical className="size-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t('tasks.card.moreOptions')}</p>
+                  </TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>{t('tasks.card.settings')}</DropdownMenuItem>
                   <DropdownMenuItem>{t('common.filter')}</DropdownMenuItem>
                   <DropdownMenuItem>{t('common.export')}</DropdownMenuItem>
                 </DropdownMenuContent>
-                  </DropdownMenu>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('tasks.card.moreOptions')}</p>
-                </TooltipContent>
-              </Tooltip>
+              </DropdownMenu>
             </div>
             </TooltipProvider>
           </div>
