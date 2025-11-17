@@ -186,11 +186,9 @@ export const useRecentActivities = (limit: number = 50) => {
         }
 
         // 6. EMPRESAS (companies)
-        // TODO: Descomentar quando tabela 'companies' for criada no Supabase
-        /* 
         const companiesQuery = supabase
           .from('companies')
-          .select('id, name, created_at')
+          .select('id, name, created_by, created_at')
           .order('created_at', { ascending: false })
           .limit(5)
 
@@ -204,17 +202,16 @@ export const useRecentActivities = (limit: number = 50) => {
           companies.forEach(company => {
             allActivities.push({
               id: `company-${company.id}`,
-              type: 'project',
+              type: 'project', // Usa ícone de projeto (FolderKanban)
               action: 'created',
               user_name: 'Você',
-              user_id: user.id,
+              user_id: company.created_by || user.id,
               details: 'criou a empresa',
               entity_name: company.name,
               created_at: company.created_at,
             })
           })
         }
-        */
 
         // Ordenar tudo por data (mais recente primeiro)
         const sortedActivities = allActivities

@@ -337,11 +337,8 @@ export default function BillingPage() {
   }
 
   const handleDownloadInvoice = (invoice: any) => {
-    if (!invoice.pdf_url) {
-      toast.info(t('billing.noInvoicePdf'))
-      return
-    }
-    window.open(invoice.pdf_url, '_blank')
+    // TODO: Implementar download de fatura quando integração de pagamento estiver pronta
+    toast.info('Download de faturas estará disponível após integração com gateway de pagamento')
   }
 
   const getDiscountedPrice = (price: number | null) => {
