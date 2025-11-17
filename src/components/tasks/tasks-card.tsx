@@ -560,13 +560,47 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
         onClose={() => setIsExpandedViewOpen(false)}
         tasks={Object.values(tasks).flat()}
         onTaskClick={handleTaskClick}
-        onDeleteTask={(taskId) => {
-          // TODO: Implementar delete
-          refetch();
+        onDeleteTask={async (taskId) => {
+          try {
+            const { error } = await supabase
+              .from('tasks')
+              .delete()
+              .eq('id', taskId);
+            
+            if (error) throw error;
+            toast.success('Tarefa excluída com sucesso');
+            refetch();
+          } catch (error: any) {
+            console.error('Error deleting task:', error);
+            toast.error('Erro ao excluir tarefa');
+          }
         }}
-        onToggleComplete={(taskId) => {
-          // TODO: Implementar toggle
-          refetch();
+        onToggleComplete={async (taskId) => {
+          try {
+            // Buscar tarefa atual para verificar status
+            const allTasks = Object.values(tasks).flat();
+            const task = allTasks.find(t => t.id === taskId);
+            
+            if (!task) {
+              toast.error('Tarefa não encontrada');
+              return;
+            }
+
+            const { error } = await supabase
+              .from('tasks')
+              .update({
+                completed_at: task.completed_at ? null : new Date().toISOString()
+              })
+              .eq('id', taskId);
+            
+            if (error) throw error;
+            
+            toast.success(task.completed_at ? 'Tarefa reaberta' : 'Tarefa concluída');
+            refetch();
+          } catch (error: any) {
+            console.error('Error toggling task:', error);
+            toast.error('Erro ao atualizar tarefa');
+          }
         }}
       />
 

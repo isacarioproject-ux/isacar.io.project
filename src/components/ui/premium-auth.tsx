@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import {
   Mail,
@@ -721,13 +722,13 @@ export function AuthForm({
               />
               <span className="text-sm text-muted-foreground">
                 I agree to the{' '}
-                <a href="#" className="text-primary hover:underline transition-colors">
+                <Link to="/terms-of-service" className="text-primary hover:underline transition-colors">
                   Terms of Service
-                </a>{' '}
+                </Link>{' '}
                 and{' '}
-                <a href="#" className="text-primary hover:underline transition-colors">
+                <Link to="/privacy-policy" className="text-primary hover:underline transition-colors">
                   Privacy Policy
-                </a>
+                </Link>
               </span>
             </label>
           )}
