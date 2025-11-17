@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 // Skeleton SUAVE e minimalista para cards do dashboard
 export const CardSkeleton = () => (
-  <Card className="w-full h-[280px] flex flex-col overflow-hidden border-gray-200/40 dark:border-gray-800/40">
+  <Card className="w-full h-[400px] md:h-auto flex flex-col overflow-hidden border-gray-200/40 dark:border-gray-800/40">
     {/* Header super minimalista */}
     <CardHeader className="pb-1.5 px-3 py-2 border-b border-gray-200/20 dark:border-gray-800/20">
       <div className="flex items-center justify-between">
@@ -92,11 +92,9 @@ export const TableSkeleton = ({ rows = 5, cols = 4 }) => (
   </div>
 )
 
-// Skeleton minimalista para 6 cards do dashboard (grid completo)
+// Skeleton minimalista para 4 cards do dashboard (número real)
 export const DashboardSkeleton = () => (
-  <div className="grid gap-[3px] grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr h-full w-full">
-    <CardSkeleton />
-    <CardSkeleton />
+  <div className="grid gap-3 md:gap-[3px] grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full md:h-full md:auto-rows-fr">
     <CardSkeleton />
     <CardSkeleton />
     <CardSkeleton />
