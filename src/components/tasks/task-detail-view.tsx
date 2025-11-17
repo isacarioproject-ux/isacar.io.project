@@ -1,5 +1,6 @@
 import { updateTask, createTask, getUsers, getTasks, getTaskWithDetails } from '@/lib/tasks/tasks-storage';
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { Task, TaskWithDetails, TaskStatus, TaskPriority, CustomField, User } from '@/types/tasks';
@@ -89,6 +90,8 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(task.tag_ids || []);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{name: string; url: string}>>([]);
   const [isStartDateOpen, setIsStartDateOpen] = useState(false);
   const [isDueDateOpen, setIsDueDateOpen] = useState(false);
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
@@ -610,16 +613,88 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
       <div className="space-y-3">
         <Label>Anexos</Label>
         <FileUpload
-          onFileSelect={(files) => {
-            files.forEach(file => {
-              toast.success(`Arquivo "${file.name}" adicionado`);
-            });
-            // TODO: Implementar upload real para Supabase Storage
+          onFileSelect={async (files) => {
+            try {
+              setUploadingFiles(true);
+              const uploadPromises = files.map(async (file) => {
+                // Criar nome único para o arquivo
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${task.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                const filePath = `task-attachments/${fileName}`;
+
+                // Upload para Supabase Storage
+                const { error: uploadError, data } = await supabase.storage
+                  .from('attachments')
+                  .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                  });
+
+                if (uploadError) {
+                  console.error('Erro no upload:', uploadError);
+                  throw uploadError;
+                }
+
+                // Obter URL pública
+                const { data: { publicUrl } } = supabase.storage
+                  .from('attachments')
+                  .getPublicUrl(filePath);
+
+                return {
+                  name: file.name,
+                  url: publicUrl,
+                };
+              });
+
+              const uploadedFiles = await Promise.all(uploadPromises);
+              setAttachments(prev => [...prev, ...uploadedFiles]);
+              
+              toast.success(`${files.length} arquivo(s) enviado(s) com sucesso!`);
+            } catch (error: any) {
+              console.error('Erro ao fazer upload:', error);
+              toast.error('Erro ao enviar arquivo(s). Tente novamente.');
+            } finally {
+              setUploadingFiles(false);
+            }
           }}
           maxFiles={10}
           maxSize={50}
           accept="*"
+          disabled={uploadingFiles}
         />
+        
+        {/* Lista de anexos */}
+        {attachments.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {attachments.map((attachment, index) => (
+              <div key={index} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                <a 
+                  href={attachment.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline truncate flex-1"
+                >
+                  {attachment.name}
+                </a>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => {
+                    setAttachments(prev => prev.filter((_, i) => i !== index));
+                    toast.success('Anexo removido');
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {uploadingFiles && (
+          <p className="text-xs text-muted-foreground mt-1">Enviando arquivo(s)...</p>
+        )}
       </div>
     </div>
   );
