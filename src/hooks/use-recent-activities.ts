@@ -134,7 +134,7 @@ export const useRecentActivities = (limit: number = 50) => {
         // 4. WHITEBOARDS
         const whiteboardsQuery = supabase
           .from('whiteboards')
-          .select('id, name, created_at, updated_at, created_by')
+          .select('id, name, created_at, updated_at')
           .order('updated_at', { ascending: false })
           .limit(10)
 
