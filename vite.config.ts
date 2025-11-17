@@ -84,4 +84,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000, // Aumenta o limite de aviso para 1000 KB
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separar bibliotecas grandes em chunks próprios
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'supabase': ['@supabase/supabase-js'],
+          'charts': ['recharts'],
+          'editor': ['@tiptap/react', '@tiptap/starter-kit'],
+        },
+      },
+    },
+  },
 })
