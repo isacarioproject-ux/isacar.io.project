@@ -94,16 +94,27 @@ export function TasksGroupView({
       toast.success('Tarefa criada com sucesso!');
       
       onUpdate();
+      
+      // Retornar ID da tarefa criada para uso posterior
+      return createdTask?.id || null;
     } catch (error) {
       console.error('❌ Error creating task:', error);
       const { toast } = await import('sonner');
       toast.error('Erro ao criar tarefa: ' + (error as Error).message);
+      return null;
     }
   };
 
   const handleCreateAndOpenTask = async (taskData: any) => {
-    await handleCreateTask(taskData);
-    // TODO: Abrir modal da tarefa criada
+    const taskId = await handleCreateTask(taskData);
+    
+    // Abrir modal da tarefa criada
+    if (taskId) {
+      // Pequeno delay para garantir que a tarefa foi salva
+      setTimeout(() => {
+        onTaskClick(taskId);
+      }, 100);
+    }
   };
 
   return (
