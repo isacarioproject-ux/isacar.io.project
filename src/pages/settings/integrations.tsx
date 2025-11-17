@@ -152,9 +152,6 @@ export default function IntegrationsPage() {
                 settingKey="TASKS_TO_FINANCE"
                 disabled={!config.ENABLED}
               />
-              <p className="text-xs text-muted-foreground pt-2">
-                ℹ️ Integrações com Whiteboard foram removidas
-              </p>
             </div>
           </div>
 

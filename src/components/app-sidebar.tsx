@@ -66,7 +66,7 @@ export function AppSidebar() {
       href: '/minha-financa',
     },
     {
-      title: 'Meu Gerenciador',
+      title: 'Gerenciador',
       icon: BarChart3,
       href: '/meu-gerenciador',
     },
