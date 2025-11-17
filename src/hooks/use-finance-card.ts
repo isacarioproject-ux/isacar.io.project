@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { FinanceDocument } from '@/types/finance'
+import { useRealtimeFinance } from './use-realtime-finance'
 
 interface FinanceDocumentWithStats extends FinanceDocument {
   transaction_count?: number
@@ -13,6 +14,16 @@ export const useFinanceCard = (workspaceId?: string) => {
   const { currentWorkspace } = useWorkspace()
   const [documents, setDocuments] = useState<FinanceDocumentWithStats[]>([])
   const [loading, setLoading] = useState(true)
+
+  // 📡 Realtime - Atualizar automaticamente quando houver mudanças
+  useRealtimeFinance(currentWorkspace?.id || null, {
+    enabled: true,
+    showNotifications: true,
+    onUpdate: () => {
+      console.log('🔄 [useFinanceCard] Realtime triggered, refetching...')
+      fetchDocuments()
+    },
+  })
 
   useEffect(() => {
     fetchDocuments()
