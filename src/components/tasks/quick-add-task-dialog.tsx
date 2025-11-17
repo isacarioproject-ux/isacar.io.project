@@ -35,6 +35,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { NotionBlockEditor, Block } from './notion-block-editor';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { useI18n } from '@/hooks/use-i18n';
+import { supabase } from '@/lib/supabase';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface QuickAddTaskDialogProps {
   open: boolean;
@@ -67,12 +69,56 @@ export function QuickAddTaskDialog({
   const [status, setStatus] = useState('PENDENTE');
   const [workspace, setWorkspace] = useState('kleoye');
   const [assignee, setAssignee] = useState('Eu');
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]); // ✨ IDs reais dos assignees
+  const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]); // ✨ Membros do workspace
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedDateTag, setSelectedDateTag] = useState<Date | undefined>();
   const [showDescription, setShowDescription] = useState(false);
   const [descriptionBlocks, setDescriptionBlocks] = useState<Block[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+
+  // ✨ Buscar membros do workspace e usuário atual
+  useEffect(() => {
+    const fetchWorkspaceMembers = async () => {
+      if (!currentWorkspace?.id) return;
+
+      try {
+        // Buscar usuário atual
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setCurrentUserId(user.id);
+          setAssigneeIds([user.id]); // Default: usuário atual
+        }
+
+        // Buscar membros do workspace
+        const { data, error } = await supabase
+          .from('workspace_members')
+          .select(`
+            user_id,
+            role,
+            users:user_id (
+              id,
+              email,
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('workspace_id', currentWorkspace.id);
+
+        if (error) throw error;
+
+        setWorkspaceMembers(data || []);
+      } catch (error) {
+        console.error('Erro ao buscar membros do workspace:', error);
+      }
+    };
+
+    if (open && currentWorkspace) {
+      fetchWorkspaceMembers();
+    }
+  }, [open, currentWorkspace]);
 
   // Atualizar tab quando initialTab mudar
   useEffect(() => {
@@ -138,6 +184,7 @@ export function QuickAddTaskDialog({
       workspace: currentWorkspace?.id || workspace,
       workspace_name: currentWorkspace?.name || workspace,
       assignee,
+      assignee_ids: assigneeIds.length > 0 ? assigneeIds : (currentUserId ? [currentUserId] : []), // ✨ IDs reais
       description: descriptionBlocks.length > 0 ? JSON.stringify(descriptionBlocks) : null,
     };
 
@@ -534,46 +581,68 @@ export function QuickAddTaskDialog({
               </TooltipContent>
             </Tooltip>
 
-            {/* Assignee with Dropdown */}
+            {/* Assignee with Dropdown - ✨ Dinâmico */}
             <Popover>
               <PopoverTrigger asChild>
                 <button className="flex items-center gap-1 px-2 py-1 text-xs border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <span className="size-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white text-[10px] flex items-center justify-center">
-                    {assignee === 'Eu' ? 'KY' : 'ID'}
+                  <Users className="size-3" />
+                  <span className="hidden sm:inline">
+                    {assigneeIds.length === 0 ? 'Ninguém' : 
+                     assigneeIds.length === 1 && assigneeIds[0] === currentUserId ? 'Eu' :
+                     `${assigneeIds.length} ${assigneeIds.length === 1 ? 'pessoa' : 'pessoas'}`}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0" align="start">
                 <div className="p-3 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                    <SearchInput 
-                      placeholder="Busque ou insira o e-mail..." 
-                      className="pl-8 h-8 text-sm"
-                    />
-                  </div>
+                  <h4 className="font-medium text-sm">Atribuir para</h4>
                 </div>
-                <div className="p-2 space-y-1">
-                  <button 
-                    onClick={() => setAssignee('Eu')}
-                    className="flex items-center gap-2 w-full px-2 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    <span className="size-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs flex items-center justify-center">
-                      KY
-                    </span>
-                    <span className="text-sm">Eu</span>
-                  </button>
-                  <button 
-                    onClick={() => setAssignee('isacar.dev@gmail.com')}
-                    className="flex items-center gap-2 w-full px-2 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    <span className="size-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 text-white text-xs flex items-center justify-center">
-                      ID
-                    </span>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm">isacar.dev@gmail.com</span>
+                <div className="p-2 space-y-1 max-h-60 overflow-y-auto">
+                  {workspaceMembers.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum membro encontrado
                     </div>
-                  </button>
+                  ) : (
+                    workspaceMembers.map((member: any) => {
+                      const user = member.users;
+                      const isSelected = assigneeIds.includes(user.id);
+                      const isCurrentUser = user.id === currentUserId;
+                      
+                      return (
+                        <button 
+                          key={user.id}
+                          onClick={() => {
+                            if (isSelected) {
+                              // Remover
+                              setAssigneeIds(prev => prev.filter(id => id !== user.id));
+                            } else {
+                              // Adicionar
+                              setAssigneeIds(prev => [...prev, user.id]);
+                            }
+                          }}
+                          className="flex items-center gap-2 w-full px-2 py-2 rounded hover:bg-muted transition-colors"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={user.avatar_url} />
+                            <AvatarFallback className="text-xs">
+                              {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 text-left">
+                            <div className="text-sm font-medium">
+                              {isCurrentUser ? 'Eu' : user.full_name || 'Sem nome'}
+                            </div>
+                            {user.email && (
+                              <div className="text-xs text-muted-foreground">{user.email}</div>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <Check className="size-4 text-primary" />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </PopoverContent>
             </Popover>

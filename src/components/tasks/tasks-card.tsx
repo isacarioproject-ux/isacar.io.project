@@ -148,6 +148,12 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
     try {
       const userId = await getCurrentUserId();
       
+      // Verificar workspace
+      if (!currentWorkspace?.id) {
+        toast.error('Por favor, selecione um workspace antes de criar uma tarefa.');
+        return;
+      }
+      
       // Converter prioridade do dialog para o formato do banco
       let priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium';
       if (taskData.priority === 'urgente') priority = 'urgent';
@@ -163,18 +169,19 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
         due_date: taskData.selectedDateTag ? taskData.selectedDateTag.toISOString() : null,
         start_date: null,
         completed_at: null,
-        assignee_ids: [userId],
+        assignee_ids: taskData.assignee_ids || [userId], // Usar assignees do dialog ou fallback para usuário atual
         created_by: userId,
         tag_ids: taskData.tags || [],
         project_id: null,
         list_id: taskData.list || 'lista-pessoal',
         parent_task_id: null,
         custom_fields: [],
+        workspace_id: currentWorkspace.id, // ✨ CRÍTICO: workspace_id para Realtime funcionar
       };
       
       const createdTask = await createTask(newTask);
       toast.success('Tarefa criada com sucesso!');
-      refetch();
+      // ✨ REMOVIDO refetch() - deixar o Realtime fazer o trabalho
     } catch (error) {
       console.error('Erro ao criar tarefa:', error);
       toast.error('Erro ao criar tarefa: ' + (error as Error).message);
