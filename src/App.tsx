@@ -29,6 +29,7 @@ const PrivacyPolicyPage = lazy(() => import('@/pages/privacy-policy'))
 const TermsOfServicePage = lazy(() => import('@/pages/terms-of-service'))
 const AcceptInvitePage = lazy(() => import('@/pages/accept-invite'))
 const GoogleIntegrationCallback = lazy(() => import('@/pages/integrations/google-callback'))
+const ImportGmailPage = lazy(() => import('@/pages/finance/import-gmail'))
 
 // Loader minimalista para lazy loading de páginas
 const PageLoader = () => <InitialPreload />
@@ -64,6 +65,9 @@ function App() {
           
           {/* Google Integration Callback */}
           <Route path="/integrations/google/callback" element={<GoogleIntegrationCallback />} />
+          
+          {/* Gmail Import */}
+          <Route path="/finance/import-gmail" element={<ProtectedRoute><ImportGmailPage /></ProtectedRoute>} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

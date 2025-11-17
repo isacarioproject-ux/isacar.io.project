@@ -73,10 +73,8 @@ export function useGoogleIntegration() {
         'https://www.googleapis.com/auth/drive.file'
       ]
 
-      // Construir URL OAuth
-      const redirectUri = window.location.hostname === 'localhost'
-        ? 'https://jjeudthfiqvvauuqnezs.supabase.co/auth/v1/callback'
-        : 'https://jjeudthfiqvvauuqnezs.supabase.co/auth/v1/callback'
+      // Construir URL OAuth (Supabase Auth callback)
+      const redirectUri = 'https://jjeudthfiqvvauuqnezs.supabase.co/auth/v1/callback'
 
       const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
       authUrl.searchParams.set('client_id', import.meta.env.VITE_GOOGLE_CLIENT_ID!)

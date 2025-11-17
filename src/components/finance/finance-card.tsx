@@ -119,6 +119,7 @@ export function FinanceCard({ workspaceId, dragHandleProps }: FinanceCardProps) 
   const [showSidebar, setShowSidebar] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [projects, setProjects] = useState<any[]>([])
+  const [memberCount, setMemberCount] = useState(0)
   const { documents, loading, refetch } = useFinanceCard(workspaceId)
 
   // Carregar projetos
@@ -132,6 +133,31 @@ export function FinanceCard({ workspaceId, dragHandleProps }: FinanceCardProps) 
     }
     loadProjects()
   }, [])
+
+  // Buscar contagem de membros do workspace
+  useEffect(() => {
+    const fetchMemberCount = async () => {
+      if (!currentWorkspace?.id) {
+        setMemberCount(0)
+        return
+      }
+
+      try {
+        const { count } = await supabase
+          .from('workspace_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('workspace_id', currentWorkspace.id)
+          .eq('status', 'active')
+
+        setMemberCount(count || 0)
+      } catch (error) {
+        console.error('Error fetching member count:', error)
+        setMemberCount(0)
+      }
+    }
+
+    fetchMemberCount()
+  }, [currentWorkspace?.id])
 
   // Calcular totais
   const totalBalance = documents.reduce((sum, doc) => sum + Number(doc.balance || 0), 0)
@@ -320,29 +346,31 @@ export function FinanceCard({ workspaceId, dragHandleProps }: FinanceCardProps) 
               </Badge>
             )}
             
-            {/* Badge Ao vivo */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="hidden sm:flex"
-            >
-              <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-1 border-green-500/30 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30">
-                <motion.div
-                  className="h-1.5 w-1.5 rounded-full bg-green-500"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [1, 0.8, 1]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-                Ao vivo
-              </Badge>
-            </motion.div>
+            {/* Badge Ao vivo - Apenas workspaces com 2+ membros */}
+            {currentWorkspace && memberCount > 1 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="hidden sm:flex"
+              >
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-1 border-green-500/30 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30">
+                  <motion.div
+                    className="h-1.5 w-1.5 rounded-full bg-green-500"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      opacity: [1, 0.8, 1]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
+                  Ao vivo ({memberCount})
+                </Badge>
+              </motion.div>
+            )}
             </div>
           </div>
 

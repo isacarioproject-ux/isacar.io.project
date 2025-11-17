@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useI18n } from '@/hooks/use-i18n'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -39,6 +40,7 @@ import {
   ArrowLeft,
   Layers,
   Settings,
+  Mail,
 } from 'lucide-react'
 import { FinanceCoverSelector } from './finance-cover-selector'
 import { useWorkspace } from '@/contexts/workspace-context'
@@ -85,6 +87,7 @@ const getDocumentIcon = (type: string) => {
 export const FinancePageView = () => {
   const { t } = useI18n()
   const { currentWorkspace } = useWorkspace()
+  const navigate = useNavigate()
   const [pageName] = useState(() => {
     const saved = localStorage.getItem('finance-page-name')
     return saved || t('finance.card.finances')
@@ -480,6 +483,23 @@ export const FinancePageView = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Botão Importar Gmail */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => navigate('/finance/import-gmail')}
+                >
+                  <Mail className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Importar do Gmail</p>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Botão Configurações */}
             <Tooltip>

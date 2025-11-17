@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { useI18n } from '@/hooks/use-i18n';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
+import { supabase } from '@/lib/supabase';
 
 interface TasksCardProps {
   className?: string;
@@ -68,10 +69,36 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddInitialTab, setQuickAddInitialTab] = useState<'tarefa' | 'lembrete'>('tarefa');
   const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
+  const [memberCount, setMemberCount] = useState(0);
 
   // Calcular total de tarefas para animação
   const totalTasks = Object.values(tasks).flat().length;
   const hasPendingTasks = totalTasks > 0;
+
+  // Buscar contagem de membros do workspace
+  useEffect(() => {
+    const fetchMemberCount = async () => {
+      if (!currentWorkspace?.id) {
+        setMemberCount(0);
+        return;
+      }
+
+      try {
+        const { count } = await supabase
+          .from('workspace_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('workspace_id', currentWorkspace.id)
+          .eq('status', 'active');
+
+        setMemberCount(count || 0);
+      } catch (error) {
+        console.error('Error fetching member count:', error);
+        setMemberCount(0);
+      }
+    };
+
+    fetchMemberCount();
+  }, [currentWorkspace?.id]);
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -276,7 +303,7 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
                 )}
                 
                 {/* Badge Ao vivo - Realtime ativo */}
-                {currentWorkspace && (
+                {currentWorkspace && memberCount > 1 && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="h-5 px-1.5 gap-1 text-[10px] border-green-500/30 bg-green-500/10">
@@ -289,7 +316,7 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Sincronização em tempo real ativa</p>
+                      <p>Sincronização em tempo real com {memberCount} membros</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
