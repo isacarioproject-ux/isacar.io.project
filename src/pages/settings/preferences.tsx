@@ -270,13 +270,15 @@ export default function PreferencesPage() {
           {/* Idioma e Região */}
           <div className="space-y-3">
             <h2 className="text-base font-medium">{t('settings.languageRegion')}</h2>
-            <div className="space-y-1">
-              <PreferenceItem
-                label={t('settings.language')}
-                description={t('settings.languageDesc')}
-              >
+            <div className="space-y-3">
+              {/* Idioma - Layout Vertical */}
+              <div className="space-y-2">
+                <div>
+                  <Label className="font-medium text-sm">{t('settings.language')}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('settings.languageDesc')}</p>
+                </div>
                 <Select value={currentLanguage} onValueChange={handleLanguageChange}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -285,17 +287,19 @@ export default function PreferencesPage() {
                     <SelectItem value="es">🇪🇸 Español</SelectItem>
                   </SelectContent>
                 </Select>
-              </PreferenceItem>
+              </div>
 
-              <PreferenceItem
-                label={t('settings.timezone')}
-                description="Fuso horário para exibição de datas e horas"
-              >
+              {/* Fuso Horário - Layout Vertical */}
+              <div className="space-y-2">
+                <div>
+                  <Label className="font-medium text-sm">{t('settings.timezone')}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Fuso horário para exibição de datas e horas</p>
+                </div>
                 <Select
                   value={preferences.timezone}
                   onValueChange={(value) => setPreferences({ ...preferences, timezone: value })}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -307,17 +311,19 @@ export default function PreferencesPage() {
                     <SelectItem value="Asia/Tokyo">(UTC+9) Tokyo</SelectItem>
                   </SelectContent>
                 </Select>
-              </PreferenceItem>
+              </div>
 
-              <PreferenceItem
-                label={t('settings.dateFormat')}
-                description="Formato de exibição de datas"
-              >
+              {/* Formato de Data - Layout Vertical */}
+              <div className="space-y-2">
+                <div>
+                  <Label className="font-medium text-sm">{t('settings.dateFormat')}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Formato de exibição de datas</p>
+                </div>
                 <Select
                   value={preferences.dateFormat}
                   onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value })}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -326,17 +332,19 @@ export default function PreferencesPage() {
                     <SelectItem value="YYYY-MM-DD">YYYY-MM-DD (2024-10-24)</SelectItem>
                   </SelectContent>
                 </Select>
-              </PreferenceItem>
+              </div>
 
-              <PreferenceItem
-                label={t('settings.timeFormat')}
-                description="Formato de exibição de horas"
-              >
+              {/* Formato de Hora - Layout Vertical */}
+              <div className="space-y-2">
+                <div>
+                  <Label className="font-medium text-sm">{t('settings.timeFormat')}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Formato de exibição de horas</p>
+                </div>
                 <Select
                   value={preferences.timeFormat}
                   onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value })}
                 >
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -344,7 +352,7 @@ export default function PreferencesPage() {
                     <SelectItem value="12h">12 horas (11:59 PM)</SelectItem>
                   </SelectContent>
                 </Select>
-              </PreferenceItem>
+              </div>
             </div>
           </div>
 
