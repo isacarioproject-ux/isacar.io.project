@@ -82,12 +82,18 @@ export function QuickAddTaskDialog({
   // ✨ Buscar membros do workspace e usuário atual
   useEffect(() => {
     const fetchWorkspaceMembers = async () => {
-      if (!currentWorkspace?.id) return;
+      if (!currentWorkspace?.id) {
+        console.log('⚠️ currentWorkspace não definido');
+        return;
+      }
+
+      console.log('🔍 Buscando membros do workspace:', currentWorkspace.id);
 
       try {
         // Buscar usuário atual
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          console.log('✅ Usuário atual:', user.id);
           setCurrentUserId(user.id);
           setAssigneeIds([user.id]); // Default: usuário atual
         }
@@ -98,17 +104,23 @@ export function QuickAddTaskDialog({
           .select(`
             user_id,
             role,
-            users:user_id (
+            status,
+            profiles:user_id (
               id,
-              email,
               full_name,
+              email,
               avatar_url
             )
           `)
-          .eq('workspace_id', currentWorkspace.id);
+          .eq('workspace_id', currentWorkspace.id)
+          .eq('status', 'active');
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Erro ao buscar membros:', error);
+          throw error;
+        }
 
+        console.log('✅ Membros do workspace:', data);
         setWorkspaceMembers(data || []);
       } catch (error) {
         console.error('Erro ao buscar membros do workspace:', error);
@@ -587,9 +599,9 @@ export function QuickAddTaskDialog({
               <div className="flex items-center gap-1">
                 {/* Avatares dos membros selecionados */}
                 {assigneeIds.map((userId) => {
-                  const member = workspaceMembers.find(m => m.users.id === userId);
-                  if (!member) return null;
-                  const user = member.users;
+                  const member = workspaceMembers.find(m => m.user_id === userId);
+                  if (!member || !member.profiles) return null;
+                  const user = member.profiles;
                   
                   return (
                     <Avatar 
@@ -623,18 +635,20 @@ export function QuickAddTaskDialog({
                         </div>
                       ) : (
                         workspaceMembers.map((member: any) => {
-                          const user = member.users;
-                          const isSelected = assigneeIds.includes(user.id);
-                          const isCurrentUser = user.id === currentUserId;
+                          if (!member.profiles) return null;
+                          const user = member.profiles;
+                          const userId = member.user_id;
+                          const isSelected = assigneeIds.includes(userId);
+                          const isCurrentUser = userId === currentUserId;
                           
                           return (
                             <div
-                              key={user.id}
+                              key={userId}
                               onClick={() => {
                                 if (isSelected) {
-                                  setAssigneeIds(prev => prev.filter(id => id !== user.id));
+                                  setAssigneeIds(prev => prev.filter(id => id !== userId));
                                 } else {
-                                  setAssigneeIds(prev => [...prev, user.id]);
+                                  setAssigneeIds(prev => [...prev, userId]);
                                 }
                               }}
                               className="w-full flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer"
