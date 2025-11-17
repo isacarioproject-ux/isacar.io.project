@@ -306,14 +306,16 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
                 {currentWorkspace && memberCount > 1 && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant="outline" className="h-5 px-1.5 gap-1 text-[10px] border-green-500/30 bg-green-500/10">
-                        <motion.div
-                          className="h-1.5 w-1.5 rounded-full bg-green-500"
-                          animate={{ opacity: [1, 0.5, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                        <span className="hidden sm:inline">Ao vivo</span>
-                      </Badge>
+                      <span className="inline-flex">
+                        <Badge variant="outline" className="h-5 px-1.5 gap-1 text-[10px] border-green-500/30 bg-green-500/10">
+                          <motion.div
+                            className="h-1.5 w-1.5 rounded-full bg-green-500"
+                            animate={{ opacity: [1, 0.5, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                          <span className="hidden sm:inline">Ao vivo</span>
+                        </Badge>
+                      </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Sincronização em tempo real com {memberCount} membros</p>
