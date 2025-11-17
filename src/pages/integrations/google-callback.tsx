@@ -45,7 +45,7 @@ export default function GoogleIntegrationCallback() {
         if (window.opener) {
           window.opener.postMessage(
             { type: 'google-oauth-success', data },
-            'https://app.isacar.dev'
+            window.location.origin
           )
           
           // Fechar popup após 1s
