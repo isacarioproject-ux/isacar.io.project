@@ -32,6 +32,8 @@ import { TaskGroups, Task, TaskTemplate } from '@/types/tasks';
 import { createTask, getCurrentUserId } from '@/lib/tasks/tasks-storage';
 import { toast } from 'sonner';
 import { useI18n } from '@/hooks/use-i18n';
+import { useWorkspace } from '@/contexts/workspace-context';
+import { useRealtimeTasks } from '@/hooks/use-realtime-tasks';
 
 interface TasksCardProps {
   className?: string;
@@ -40,6 +42,7 @@ interface TasksCardProps {
 
 export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
   const { t } = useI18n();
+  const { currentWorkspace } = useWorkspace();
   const {
     tasks,
     activeTab,
@@ -49,6 +52,14 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
     toggleGroup,
     isGroupExpanded,
   } = useTasksCard();
+
+  // ✨ REALTIME: Sincronização automática de tasks
+  useRealtimeTasks({
+    workspaceId: currentWorkspace?.id || null,
+    onUpdate: refetch,
+    showNotifications: true,
+    enabled: true,
+  });
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -255,6 +266,25 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
                       {totalTasks}
                     </Badge>
                   </motion.div>
+                )}
+                
+                {/* Badge Ao vivo - Realtime ativo */}
+                {currentWorkspace && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="h-5 px-1.5 gap-1 text-[10px] border-green-500/30 bg-green-500/10">
+                        <motion.div
+                          className="h-1.5 w-1.5 rounded-full bg-green-500"
+                          animate={{ opacity: [1, 0.5, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                        <span className="hidden sm:inline">Ao vivo</span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Sincronização em tempo real ativa</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             </div>
