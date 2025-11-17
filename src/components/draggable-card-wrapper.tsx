@@ -36,7 +36,7 @@ export const DraggableCardWrapper = ({ id, children }: DraggableCardWrapperProps
       ref={setNodeRef}
       style={style}
       className={cn(
-        'relative',
+        'relative min-h-[420px] md:min-h-0',
         isDragging && 'z-50 opacity-50'
       )}
     >

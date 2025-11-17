@@ -79,8 +79,8 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {/* Container que ocupa toda a altura disponível sem scroll */}
-      <div className="h-full w-full p-2 overflow-hidden">
+      {/* Container responsivo sem altura fixa */}
+      <div className="w-full p-2 md:p-4">
             {error ? (
               <Card className="border-destructive/50 bg-destructive/5">
                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -101,7 +101,7 @@ export default function DashboardPage() {
                 >
                   <SortableContext items={cardOrder} strategy={rectSortingStrategy}>
                     {/* Grid responsivo: 1 coluna mobile, 2 tablet, 3 desktop */}
-                    <div className="grid gap-[3px] grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr h-full w-full transition-all duration-300 ease-in-out">
+                    <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full transition-all duration-300 ease-in-out">
                       {cardOrder.map((cardId: string) => {
                         if (cardId === 'finance-card') {
                           return (
