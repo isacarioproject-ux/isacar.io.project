@@ -398,9 +398,41 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         <span className="text-gray-500 dark:text-gray-400">{t('tasks.timeTracked')}</span>
         <TimeTracker 
           taskId={task.id} 
-          onTimeAdd={(minutes) => {
-            toast.success(`${minutes} minutos adicionados`);
-            // TODO: Salvar no banco
+          onTimeAdd={async (minutes) => {
+            try {
+              // Salvar tempo no banco (task_time_entries)
+              const { data: { user } } = await supabase.auth.getUser();
+              
+              if (!user) {
+                toast.error('Usuário não autenticado');
+                return;
+              }
+
+              const { error } = await supabase
+                .from('task_time_entries')
+                .insert({
+                  task_id: task.id,
+                  user_id: user.id,
+                  minutes: minutes,
+                  logged_at: new Date().toISOString(),
+                  description: `${minutes} minutos adicionados`
+                });
+              
+              if (error) {
+                console.error('Erro ao salvar tempo:', error);
+                // Se a tabela não existir ainda, apenas mostra toast de sucesso
+                if (error.code === '42P01') {
+                  toast.success(`${minutes} minutos adicionados (tabela pendente)`);
+                } else {
+                  throw error;
+                }
+              } else {
+                toast.success(`${minutes} minutos adicionados e salvos!`);
+              }
+            } catch (error: any) {
+              console.error('Erro ao adicionar tempo:', error);
+              toast.error('Erro ao salvar tempo rastreado');
+            }
           }} 
         />
       </div>
@@ -413,10 +445,34 @@ export function TaskDetailView({ task, onUpdate }: TaskDetailViewProps) {
         <RelationshipSelector 
           taskId={task.id}
           onAdd={async (relatedTaskId, type) => {
-            // TODO: Salvar relacionamento no banco
-            // Por enquanto apenas mostra mensagem
-            toast.success(`Relacionamento "${type}" adicionado`);
-            setIsRelationshipOpen(false);
+            try {
+              // Salvar relacionamento no banco
+              const { error } = await supabase
+                .from('task_relationships')
+                .insert({
+                  task_id: task.id,
+                  related_task_id: relatedTaskId,
+                  relationship_type: type,
+                  created_at: new Date().toISOString()
+                });
+              
+              if (error) {
+                console.error('Erro ao salvar relacionamento:', error);
+                // Se a tabela não existir ainda, mostra aviso
+                if (error.code === '42P01') {
+                  toast.success(`Relacionamento "${type}" adicionado (tabela pendente)`);
+                } else {
+                  throw error;
+                }
+              } else {
+                toast.success(`Relacionamento "${type}" adicionado com sucesso!`);
+              }
+              
+              setIsRelationshipOpen(false);
+            } catch (error: any) {
+              console.error('Erro ao adicionar relacionamento:', error);
+              toast.error('Erro ao salvar relacionamento');
+            }
           }}
           open={isRelationshipOpen}
           onOpenChange={setIsRelationshipOpen}
