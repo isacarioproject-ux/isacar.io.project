@@ -24,7 +24,7 @@ import { TaskModal } from '@/components/tasks/task-modal';
 import { TaskTemplateSelector } from '@/components/tasks/task-template-selector';
 import { QuickAddTaskDialog } from '@/components/tasks/quick-add-task-dialog';
 import { TasksExpandedView } from '@/components/tasks/tasks-expanded-view';
-import { TasksCardSkeleton, TasksListSkeleton } from '@/components/tasks/tasks-card-skeleton';
+import { MinimalCardSkeleton } from '@/components/minimal-card-skeleton';
 import { MoreVertical, Plus, X, CheckSquare, Settings, Maximize2, GripVertical, Sparkles, Bell } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -467,20 +467,10 @@ export function TasksCard({ className, dragHandleProps }: TasksCardProps) {
             {/* Conteúdo das Abas com Transições */}
             <div className="flex-1 overflow-auto relative">
               {loading ? (
-                // Skeleton profissional baseado na aba ativa
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {activeTab === 'pendente' ? (
-                    <TasksCardSkeleton />
-                  ) : (
-                    <TasksListSkeleton count={4} />
-                  )}
-                </motion.div>
+                // Skeleton minimalista
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-primary/20 animate-pulse" />
+                </div>
               ) : (
                 <AnimatePresence mode="wait">
                   {activeTab === 'pendente' && (
