@@ -293,8 +293,8 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen w-full flex items-start justify-center pt-8 pb-8">
-        <div className="w-[60%] space-y-1">
+      <div className="min-h-screen w-full flex items-start justify-center pt-6 pb-8">
+        <div className="w-full px-4 md:w-[60%] md:px-0 space-y-4">
         {/* Header */}
         <div className="space-y-0.5">
           <h1 className="text-xl font-semibold tracking-tight">Minhas configurações</h1>

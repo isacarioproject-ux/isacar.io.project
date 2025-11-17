@@ -230,7 +230,7 @@ export default function PreferencesPage() {
                   value={security.sessionTimeout}
                   onValueChange={(value) => setSecurity({ ...security, sessionTimeout: value })}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -276,7 +276,7 @@ export default function PreferencesPage() {
                 description={t('settings.languageDesc')}
               >
                 <Select value={currentLanguage} onValueChange={handleLanguageChange}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -295,7 +295,7 @@ export default function PreferencesPage() {
                   value={preferences.timezone}
                   onValueChange={(value) => setPreferences({ ...preferences, timezone: value })}
                 >
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -317,7 +317,7 @@ export default function PreferencesPage() {
                   value={preferences.dateFormat}
                   onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value })}
                 >
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -336,7 +336,7 @@ export default function PreferencesPage() {
                   value={preferences.timeFormat}
                   onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value })}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
