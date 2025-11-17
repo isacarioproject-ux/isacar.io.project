@@ -64,6 +64,23 @@ interface UseAnalyticsReturn {
   refetch: () => Promise<void>
 }
 
+// Helper function para calcular duração média de projetos
+const calculateAverageProjectDuration = (projects: any[]): number => {
+  if (!projects || projects.length === 0) return 0;
+  
+  const completedProjects = projects.filter(p => p.status === 'completed' || p.status === 'done');
+  if (completedProjects.length === 0) return 0;
+  
+  const totalDuration = completedProjects.reduce((sum, project) => {
+    const createdAt = new Date(project.created_at);
+    const updatedAt = new Date(project.updated_at);
+    const durationInDays = Math.floor((updatedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    return sum + durationInDays;
+  }, 0);
+  
+  return Math.round(totalDuration / completedProjects.length);
+};
+
 export function useAnalytics(): UseAnalyticsReturn {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -303,7 +320,7 @@ export function useAnalytics(): UseAnalyticsReturn {
         projectsByStatus,
         documentsByCategory,
         completionRate,
-        avgProjectDuration: 0, // TODO: calcular duração média
+        avgProjectDuration: calculateAverageProjectDuration(projects),
         mostActiveDay,
         totalActivities: projects.length + documents.length,
       })

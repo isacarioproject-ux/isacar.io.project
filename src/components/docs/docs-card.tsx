@@ -51,6 +51,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useDateFnsLocale } from '@/hooks/use-date-fns-locale'
 import { useDocsCard } from '@/hooks/use-docs-card'
 import { useI18n } from '@/hooks/use-i18n'
+import { useWorkspace } from '@/contexts/workspace-context'
 import { toast } from 'sonner'
 import { UploadDocumentModal } from './upload-document-modal'
 import { PageEditorSidebar } from './page-editor-sidebar'
@@ -66,6 +67,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Badge } from '@/components/ui/badge'
 
 interface DocsCardProps {
   defaultName?: string
@@ -94,7 +96,7 @@ const formatFileSize = (bytes: number) => {
 
 export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, onDuplicate, onDelete }: DocsCardProps) => {
   const { t } = useI18n()
-  // const { currentWorkspace } = useWorkspace() // TODO: Fix import
+  const { currentWorkspace } = useWorkspace()
   const dateFnsLocale = useDateFnsLocale()
   const [cardName, setCardName] = useState(() => {
     const saved = localStorage.getItem('docs-card-name')
@@ -205,7 +207,12 @@ export const DocsCard = ({ defaultName = 'Docs', projectId, onExpand, onAddDoc, 
             className="text-sm font-semibold bg-transparent border-none focus-visible:ring-1 focus-visible:ring-ring h-7 px-2 flex-1 min-w-0"
           />
 
-          {/* 3. Badge Workspace (condicional) - TODO: implementar quando tiver workspace */}
+          {/* 3. Badge Workspace (condicional) */}
+          {currentWorkspace && (
+            <Badge variant="secondary" className="h-5 px-2 text-[10px] font-medium shrink-0">
+              {currentWorkspace.name}
+            </Badge>
+          )}
           
           {/* Botões de Ação */}
           <TooltipProvider>

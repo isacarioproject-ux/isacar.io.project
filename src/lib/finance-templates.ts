@@ -35,18 +35,21 @@ export const FINANCE_TEMPLATES: FinanceTemplate[] = [
       ],
     },
   },
-  // TODO: Implementar template "Documento em Branco" com funcionalidade real
-  // {
-  //   id: 'blank',
-  //   name: 'Documento em Branco',
-  //   description: 'Comece do zero e personalize como quiser',
-  //   template_type: 'expenses',
-  //   icon: '📄',
-  //   category: 'personal',
-  //   config: {
-  //     default_currency: 'BRL',
-  //   },
-  // },
+  {
+    id: 'blank',
+    name: 'Documento em Branco',
+    description: 'Comece do zero e personalize como quiser',
+    template_type: 'expenses',
+    icon: '📄',
+    category: 'personal',
+    config: {
+      default_currency: 'BRL',
+      default_categories: [], // Sem categorias pré-definidas - usuário cria as suas
+      default_period: 'monthly' as const,
+      show_charts: true,
+      show_budget_tracking: true,
+    },
+  },
 ]
 
 export const getCategoryLabel = (category: string): string => {
