@@ -4,8 +4,8 @@
  * Importe este arquivo UMA VEZ no App.tsx
  */
 
-import { initWhiteboardToTasks } from './handlers/whiteboard-to-tasks';
-import { initWhiteboardToGerenciador } from './handlers/whiteboard-to-gerenciador';
+// import { initWhiteboardToTasks } from './handlers/whiteboard-to-tasks';
+// import { initWhiteboardToGerenciador } from './handlers/whiteboard-to-gerenciador';
 import { initTasksToFinance } from './handlers/tasks-to-finance';
 import { INTEGRATION_CONFIG } from './config';
 
@@ -30,8 +30,8 @@ export function initIntegrations() {
   console.log('[Integrations] Initializing...');
 
   // Inicializar cada integração
-  initWhiteboardToTasks();
-  initWhiteboardToGerenciador();
+  // initWhiteboardToTasks();
+  // initWhiteboardToGerenciador();
   initTasksToFinance();
 
   initialized = true;
