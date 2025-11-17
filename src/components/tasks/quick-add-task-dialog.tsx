@@ -37,6 +37,8 @@ import { useWorkspace } from '@/contexts/workspace-context';
 import { useI18n } from '@/hooks/use-i18n';
 import { supabase } from '@/lib/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getUsers } from '@/lib/tasks/tasks-storage';
+import type { User } from '@/types/tasks';
 
 interface QuickAddTaskDialogProps {
   open: boolean;
@@ -70,7 +72,7 @@ export function QuickAddTaskDialog({
   const [workspace, setWorkspace] = useState('kleoye');
   const [assignee, setAssignee] = useState('Eu');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]); // ✨ IDs reais dos assignees
-  const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]); // ✨ Membros do workspace
+  const [workspaceMembers, setWorkspaceMembers] = useState<User[]>([]); // ✨ Membros do workspace
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedDateTag, setSelectedDateTag] = useState<Date | undefined>();
@@ -98,32 +100,12 @@ export function QuickAddTaskDialog({
           setAssigneeIds([user.id]); // Default: usuário atual
         }
 
-        // Buscar membros do workspace
-        const { data, error } = await supabase
-          .from('workspace_members')
-          .select(`
-            user_id,
-            role,
-            status,
-            profiles:user_id (
-              id,
-              full_name,
-              email,
-              avatar_url
-            )
-          `)
-          .eq('workspace_id', currentWorkspace.id)
-          .eq('status', 'active');
-
-        if (error) {
-          console.error('❌ Erro ao buscar membros:', error);
-          throw error;
-        }
-
-        console.log('✅ Membros do workspace:', data);
-        setWorkspaceMembers(data || []);
+        // Buscar membros do workspace usando a função que JÁ FUNCIONA no TaskDetailView
+        const users = await getUsers();
+        console.log('✅ Membros encontrados:', users.length, users);
+        setWorkspaceMembers(users);
       } catch (error) {
-        console.error('Erro ao buscar membros do workspace:', error);
+        console.error('❌ Erro ao buscar membros do workspace:', error);
       }
     };
 
@@ -599,9 +581,8 @@ export function QuickAddTaskDialog({
               <div className="flex items-center gap-1">
                 {/* Avatares dos membros selecionados */}
                 {assigneeIds.map((userId) => {
-                  const member = workspaceMembers.find(m => m.user_id === userId);
-                  if (!member || !member.profiles) return null;
-                  const user = member.profiles;
+                  const user = workspaceMembers.find(u => u.id === userId);
+                  if (!user) return null;
                   
                   return (
                     <Avatar 
@@ -612,9 +593,9 @@ export function QuickAddTaskDialog({
                         setAssigneeIds(prev => prev.filter(id => id !== user.id));
                       }}
                     >
-                      <AvatarImage src={user.avatar_url} />
+                      <AvatarImage src={user.avatar} />
                       <AvatarFallback className="text-xs">
-                        {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
+                        {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
                   );
@@ -634,34 +615,31 @@ export function QuickAddTaskDialog({
                           Nenhum membro encontrado
                         </div>
                       ) : (
-                        workspaceMembers.map((member: any) => {
-                          if (!member.profiles) return null;
-                          const user = member.profiles;
-                          const userId = member.user_id;
-                          const isSelected = assigneeIds.includes(userId);
-                          const isCurrentUser = userId === currentUserId;
+                        workspaceMembers.map((user) => {
+                          const isSelected = assigneeIds.includes(user.id);
+                          const isCurrentUser = user.id === currentUserId;
                           
                           return (
                             <div
-                              key={userId}
+                              key={user.id}
                               onClick={() => {
                                 if (isSelected) {
-                                  setAssigneeIds(prev => prev.filter(id => id !== userId));
+                                  setAssigneeIds(prev => prev.filter(id => id !== user.id));
                                 } else {
-                                  setAssigneeIds(prev => [...prev, userId]);
+                                  setAssigneeIds(prev => [...prev, user.id]);
                                 }
                               }}
                               className="w-full flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer"
                             >
                               <Check className={`size-4 ${isSelected ? 'text-primary' : 'text-transparent'}`} />
                               <Avatar className="size-5">
-                                <AvatarImage src={user.avatar_url} />
+                                <AvatarImage src={user.avatar} />
                                 <AvatarFallback className="text-xs">
-                                  {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
+                                  {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
                                 </AvatarFallback>
                               </Avatar>
                               <span className="text-sm dark:text-white">
-                                {isCurrentUser ? 'Eu' : user.full_name || user.email}
+                                {isCurrentUser ? 'Eu' : user.name || user.email}
                               </span>
                             </div>
                           );
