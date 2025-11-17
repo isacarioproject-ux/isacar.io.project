@@ -28,6 +28,7 @@ const IntegrationsPage = lazy(() => import('@/pages/settings/integrations'))
 const PrivacyPolicyPage = lazy(() => import('@/pages/privacy-policy'))
 const TermsOfServicePage = lazy(() => import('@/pages/terms-of-service'))
 const AcceptInvitePage = lazy(() => import('@/pages/accept-invite'))
+const GoogleIntegrationCallback = lazy(() => import('@/pages/integrations/google-callback'))
 
 // Loader minimalista para lazy loading de páginas
 const PageLoader = () => <InitialPreload />
@@ -60,6 +61,9 @@ function App() {
           
           {/* Workspace Invite - ANTES dos redirects */}
           <Route path="/invite/:token" element={<AcceptInvitePage />} />
+          
+          {/* Google Integration Callback */}
+          <Route path="/integrations/google/callback" element={<GoogleIntegrationCallback />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

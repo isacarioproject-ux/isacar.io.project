@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Save, Loader2, CheckSquare, Wallet, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { GoogleIntegrationCard } from '@/components/integrations/google-integration-card'
 
 export default function IntegrationsPage() {
   const [config, setConfig] = useState({
@@ -123,13 +124,19 @@ export default function IntegrationsPage() {
             </Button>
           </div>
 
+          {/* Integrações API REST */}
+          <div className="space-y-3">
+            <h2 className="text-base font-medium">Integrações API REST</h2>
+            <GoogleIntegrationCard />
+          </div>
+
           {/* Sistema Principal */}
           <div className="space-y-3">
-            <h2 className="text-base font-medium">Sistema Principal</h2>
+            <h2 className="text-base font-medium">Sistema de Integrações Internas</h2>
             <div className="space-y-1">
               <IntegrationItem
                 title="Ativar Sistema de Integrações"
-                description="Ativa ou desativa todas as integrações de uma vez"
+                description="Ativa ou desativa todas as integrações internas de uma vez"
                 settingKey="ENABLED"
               />
             </div>
