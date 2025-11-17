@@ -270,86 +270,86 @@ export default function PreferencesPage() {
           {/* Idioma e Região */}
           <div className="space-y-3">
             <h2 className="text-base font-medium">{t('settings.languageRegion')}</h2>
-            <div className="space-y-3">
-              {/* Idioma - Layout Vertical */}
-              <div className="space-y-2">
-                <div>
+            <div className="space-y-1">
+              {/* Idioma - Layout Inline */}
+              <div className="flex items-center justify-between gap-3 py-2">
+                <div className="flex-1 min-w-0">
                   <Label className="font-medium text-sm">{t('settings.language')}</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t('settings.languageDesc')}</p>
+                  <p className="text-xs text-muted-foreground">{t('settings.languageDesc')}</p>
                 </div>
                 <Select value={currentLanguage} onValueChange={handleLanguageChange}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-[110px] shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
-                    <SelectItem value="en">🇺🇸 English (US)</SelectItem>
-                    <SelectItem value="es">🇪🇸 Español</SelectItem>
+                    <SelectItem value="pt-BR">🇧🇷 PT-BR</SelectItem>
+                    <SelectItem value="en">🇺🇸 EN</SelectItem>
+                    <SelectItem value="es">🇪🇸 ES</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Fuso Horário - Layout Vertical */}
-              <div className="space-y-2">
-                <div>
+              {/* Fuso Horário - Layout Inline */}
+              <div className="flex items-center justify-between gap-3 py-2">
+                <div className="flex-1 min-w-0">
                   <Label className="font-medium text-sm">{t('settings.timezone')}</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Fuso horário para exibição de datas e horas</p>
+                  <p className="text-xs text-muted-foreground">Fuso horário para exibição de datas e horas</p>
                 </div>
                 <Select
                   value={preferences.timezone}
                   onValueChange={(value) => setPreferences({ ...preferences, timezone: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-[130px] shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="America/Sao_Paulo">(UTC-3) São Paulo</SelectItem>
-                    <SelectItem value="America/New_York">(UTC-5) New York</SelectItem>
-                    <SelectItem value="America/Los_Angeles">(UTC-8) Los Angeles</SelectItem>
-                    <SelectItem value="Europe/London">(UTC+0) London</SelectItem>
-                    <SelectItem value="Europe/Paris">(UTC+1) Paris</SelectItem>
-                    <SelectItem value="Asia/Tokyo">(UTC+9) Tokyo</SelectItem>
+                    <SelectItem value="America/Sao_Paulo">UTC-3</SelectItem>
+                    <SelectItem value="America/New_York">UTC-5</SelectItem>
+                    <SelectItem value="America/Los_Angeles">UTC-8</SelectItem>
+                    <SelectItem value="Europe/London">UTC+0</SelectItem>
+                    <SelectItem value="Europe/Paris">UTC+1</SelectItem>
+                    <SelectItem value="Asia/Tokyo">UTC+9</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Formato de Data - Layout Vertical */}
-              <div className="space-y-2">
-                <div>
+              {/* Formato de Data - Layout Inline */}
+              <div className="flex items-center justify-between gap-3 py-2">
+                <div className="flex-1 min-w-0">
                   <Label className="font-medium text-sm">{t('settings.dateFormat')}</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Formato de exibição de datas</p>
+                  <p className="text-xs text-muted-foreground">Formato de exibição de datas</p>
                 </div>
                 <Select
                   value={preferences.dateFormat}
                   onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-[130px] shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DD/MM/YYYY">DD/MM/YYYY (24/10/2024)</SelectItem>
-                    <SelectItem value="MM/DD/YYYY">MM/DD/YYYY (10/24/2024)</SelectItem>
-                    <SelectItem value="YYYY-MM-DD">YYYY-MM-DD (2024-10-24)</SelectItem>
+                    <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                    <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                    <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Formato de Hora - Layout Vertical */}
-              <div className="space-y-2">
-                <div>
+              {/* Formato de Hora - Layout Inline */}
+              <div className="flex items-center justify-between gap-3 py-2">
+                <div className="flex-1 min-w-0">
                   <Label className="font-medium text-sm">{t('settings.timeFormat')}</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Formato de exibição de horas</p>
+                  <p className="text-xs text-muted-foreground">Formato de exibição de horas</p>
                 </div>
                 <Select
                   value={preferences.timeFormat}
                   onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-[100px] shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="24h">24 horas (23:59)</SelectItem>
-                    <SelectItem value="12h">12 horas (11:59 PM)</SelectItem>
+                    <SelectItem value="24h">24h</SelectItem>
+                    <SelectItem value="12h">12h</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
