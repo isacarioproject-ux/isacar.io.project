@@ -6,7 +6,7 @@ import { BudgetCard } from '@/components/finance/budget-card'
 import { TasksCard } from '@/components/tasks/tasks-card'
 import { RecentCard } from '@/components/recent/recent-card'
 // import { EmpresaCard } from '@/components/empresa/empresa-card' // REMOVIDO - Whiteboard
-import { DashboardSkeleton } from '@/components/loading-skeleton'
+// import { DashboardSkeleton } from '@/components/loading-skeleton' // REMOVIDO - Skeleton interno nos cards
 import { DraggableCardWrapper } from '@/components/draggable-card-wrapper'
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
 import { useI18n } from '@/hooks/use-i18n'
@@ -87,13 +87,9 @@ export default function DashboardPage() {
                   <p className="text-destructive">{error.message}</p>
                 </CardContent>
               </Card>
-            ) : null}
-
-            {loading ? (
-              <DashboardSkeleton />
-            ) : stats ? (
+            ) : (
               <>
-                {/* Cards de Gestão com Drag & Drop */}
+                {/* Cards de Gestão com Drag & Drop - Renderiza sempre, skeletons internos */}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -138,7 +134,7 @@ export default function DashboardPage() {
                   </SortableContext>
                 </DndContext>
               </>
-            ) : null}
+            )}
       </div>
     </DashboardLayout>
   )
