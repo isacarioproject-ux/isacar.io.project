@@ -581,71 +581,83 @@ export function QuickAddTaskDialog({
               </TooltipContent>
             </Tooltip>
 
-            {/* Assignee with Dropdown - ✨ Dinâmico */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="flex items-center gap-1 px-2 py-1 text-xs border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <Users className="size-3" />
-                  <span className="hidden sm:inline">
-                    {assigneeIds.length === 0 ? 'Ninguém' : 
-                     assigneeIds.length === 1 && assigneeIds[0] === currentUserId ? 'Eu' :
-                     `${assigneeIds.length} ${assigneeIds.length === 1 ? 'pessoa' : 'pessoas'}`}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="start">
-                <div className="p-3 border-b">
-                  <h4 className="font-medium text-sm">Atribuir para</h4>
-                </div>
-                <div className="p-2 space-y-1 max-h-60 overflow-y-auto">
-                  {workspaceMembers.length === 0 ? (
-                    <div className="text-sm text-muted-foreground text-center py-4">
-                      Nenhum membro encontrado
-                    </div>
-                  ) : (
-                    workspaceMembers.map((member: any) => {
-                      const user = member.users;
-                      const isSelected = assigneeIds.includes(user.id);
-                      const isCurrentUser = user.id === currentUserId;
-                      
-                      return (
-                        <button 
-                          key={user.id}
-                          onClick={() => {
-                            if (isSelected) {
-                              // Remover
-                              setAssigneeIds(prev => prev.filter(id => id !== user.id));
-                            } else {
-                              // Adicionar
-                              setAssigneeIds(prev => [...prev, user.id]);
-                            }
-                          }}
-                          className="flex items-center gap-2 w-full px-2 py-2 rounded hover:bg-muted transition-colors"
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={user.avatar_url} />
-                            <AvatarFallback className="text-xs">
-                              {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 text-left">
-                            <div className="text-sm font-medium">
-                              {isCurrentUser ? 'Eu' : user.full_name || 'Sem nome'}
+            {/* Responsáveis - Círculos com botão + */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Responsáveis</span>
+              <div className="flex items-center gap-1">
+                {/* Avatares dos membros selecionados */}
+                {assigneeIds.map((userId) => {
+                  const member = workspaceMembers.find(m => m.users.id === userId);
+                  if (!member) return null;
+                  const user = member.users;
+                  
+                  return (
+                    <Avatar 
+                      key={user.id} 
+                      className="size-6 cursor-pointer hover:opacity-80 border border-gray-200 dark:border-gray-700"
+                      onClick={() => {
+                        // Remover ao clicar
+                        setAssigneeIds(prev => prev.filter(id => id !== user.id));
+                      }}
+                    >
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="text-xs">
+                        {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                  );
+                })}
+                
+                {/* Botão + para adicionar */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="size-6 rounded-full border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+                      <Plus className="size-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2" align="start">
+                    <div className="space-y-1">
+                      {workspaceMembers.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          Nenhum membro encontrado
+                        </div>
+                      ) : (
+                        workspaceMembers.map((member: any) => {
+                          const user = member.users;
+                          const isSelected = assigneeIds.includes(user.id);
+                          const isCurrentUser = user.id === currentUserId;
+                          
+                          return (
+                            <div
+                              key={user.id}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setAssigneeIds(prev => prev.filter(id => id !== user.id));
+                                } else {
+                                  setAssigneeIds(prev => [...prev, user.id]);
+                                }
+                              }}
+                              className="w-full flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-left cursor-pointer"
+                            >
+                              <Check className={`size-4 ${isSelected ? 'text-primary' : 'text-transparent'}`} />
+                              <Avatar className="size-5">
+                                <AvatarImage src={user.avatar_url} />
+                                <AvatarFallback className="text-xs">
+                                  {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm dark:text-white">
+                                {isCurrentUser ? 'Eu' : user.full_name || user.email}
+                              </span>
                             </div>
-                            {user.email && (
-                              <div className="text-xs text-muted-foreground">{user.email}</div>
-                            )}
-                          </div>
-                          {isSelected && (
-                            <Check className="size-4 text-primary" />
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                          );
+                        })
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
 
             {/* Date with Calendar */}
             <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>

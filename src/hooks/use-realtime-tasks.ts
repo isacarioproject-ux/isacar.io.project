@@ -144,33 +144,62 @@ export function useRealtimeTasks({
    * Configurar subscrição Realtime
    */
   useEffect(() => {
+    console.log('🔍 [useRealtimeTasks] useEffect executado', {
+      workspaceId,
+      enabled,
+      hasCallback: !!handleRealtimeEvent,
+    })
+
     // Não fazer nada se:
     // - Não tiver workspaceId
     // - Estiver desabilitado
-    if (!workspaceId || !enabled) {
+    if (!workspaceId) {
+      console.warn('⚠️ [useRealtimeTasks] WorkspaceId não fornecido, ignorando subscrição')
+      return
+    }
+
+    if (!enabled) {
+      console.warn('⚠️ [useRealtimeTasks] Realtime desabilitado via props')
       return
     }
 
     const channelName = `tasks:${workspaceId}`
 
-    console.log('🔄 [useRealtimeTasks] Iniciando subscrição', {
+    console.log('✨ [useRealtimeTasks] Iniciando subscrição', {
       workspaceId,
       channelName,
       showNotifications,
+      timestamp: new Date().toISOString(),
     })
 
     // Subscrever no channel
-    realtimeManager.subscribe(channelName, {
+    const channel = realtimeManager.subscribe(channelName, {
       event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
       schema: 'public',
       table: 'tasks',
       filter: `workspace_id=eq.${workspaceId}`,
-      callback: handleRealtimeEvent,
+      callback: (payload) => {
+        console.log('🎯 [useRealtimeTasks] Callback disparado!', {
+          eventType: payload.eventType,
+          table: payload.table,
+          hasNew: !!payload.new,
+          hasOld: !!payload.old,
+        })
+        handleRealtimeEvent(payload)
+      },
+    })
+
+    console.log('📡 [useRealtimeTasks] Subscrição criada', {
+      channelName,
+      activeChannels: realtimeManager.getActiveChannelsCount(),
     })
 
     // Cleanup ao desmontar
     return () => {
-      console.log('🔌 [useRealtimeTasks] Removendo subscrição', { channelName })
+      console.log('🔌 [useRealtimeTasks] Removendo subscrição', { 
+        channelName,
+        timestamp: new Date().toISOString(),
+      })
       realtimeManager.unsubscribe(channelName)
     }
   }, [workspaceId, enabled, handleRealtimeEvent, showNotifications])
